@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{39dbd752-e45e-4b83-8328-fa8f6a90fe2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets">
+      <UniqueIdentifier>{5c8a55e8-539a-45c6-be61-137c6613e02e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="docs">
+      <UniqueIdentifier>{4decaa02-8de7-47ef-8a76-4aec5cb95dbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\shaders">
+      <UniqueIdentifier>{9481183f-d339-4792-b51d-6bd409aaf12b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\lab">
+      <UniqueIdentifier>{d0d07f51-7cd0-4b5c-835f-58932a58d34b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\camera">
+      <UniqueIdentifier>{5563e104-fe76-4060-be1a-b64a0d1f9533}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\input">
+      <UniqueIdentifier>{6133063d-9a0d-4108-9cb8-f880b9ee1b27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\renderer">
+      <UniqueIdentifier>{6715d97b-44fa-43f9-b812-e97d519fdacd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external">
+      <UniqueIdentifier>{1ea69fb5-45a8-4c90-8d2f-b0c352f1ce00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\Glad">
+      <UniqueIdentifier>{fb132837-6f93-4091-a687-931b163b8433}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\ImGui">
+      <UniqueIdentifier>{83eeb365-445a-4ba1-87ea-e087a8da8e2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\ImGui\backends">
+      <UniqueIdentifier>{f13a3c5d-94b4-4680-b426-769058210aef}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\shaders\debug_color.frag">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="assets\shaders\debug_color.vert">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="docs\code_conventions.md">
+      <Filter>docs</Filter>
+    </None>
+    <None Include="docs\module_contracts.md">
+      <Filter>docs</Filter>
+    </None>
+    <None Include="docs\todo.md">
+      <Filter>docs</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lab\active_experiment.cpp">
+      <Filter>src\lab</Filter>
+    </ClCompile>
+    <ClCompile Include="src\camera\camera_math.cpp">
+      <Filter>src\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="src\camera\dev_camera.cpp">
+      <Filter>src\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="src\input\input.cpp">
+      <Filter>src\input</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\gpu_mesh.cpp">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\renderer.cpp">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\shader.cpp">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="external\glad\glad.c">
+      <Filter>external\Glad</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui.cpp">
+      <Filter>external\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_demo.cpp">
+      <Filter>external\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_draw.cpp">
+      <Filter>external\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_tables.cpp">
+      <Filter>external\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_widgets.cpp">
+      <Filter>external\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\backends\imgui_impl_glfw.cpp">
+      <Filter>external\ImGui\backends</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\backends\imgui_impl_opengl3.cpp">
+      <Filter>external\ImGui\backends</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lab\lab.cpp">
+      <Filter>src\lab</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lab\lab_world.cpp">
+      <Filter>src\lab</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\lab\active_experiment.h">
+      <Filter>src\lab</Filter>
+    </ClInclude>
+    <ClInclude Include="src\camera\camera_math.h">
+      <Filter>src\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="src\camera\dev_camera.h">
+      <Filter>src\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="src\input\input.h">
+      <Filter>src\input</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\gpu_mesh.h">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\renderer.h">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\shader.h">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lab\lab.h">
+      <Filter>src\lab</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lab\lab_world.h">
+      <Filter>src\lab</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

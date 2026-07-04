@@ -1,0 +1,57 @@
+# Visual Studio user/local files
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.VC.opendb
+*.opensdf
+*.sdf
+
+# Visual Studio generated folders
+.vscode/
+.ipch/
+
+# Build outputs
+x64/
+x86/
+Debug/
+Release/
+bin/
+obj/
+out/
+build/
+
+# Compiler/intermediate files
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.ipch
+*.iobj
+*.ipdb
+*.tlog
+*.lastbuildstate
+*.log
+*.recipe
+*.res
+
+# Executables and generated binaries
+*.exe
+*.dll
+*.lib
+*.exp
+
+# Keep committed external static libraries, such as GLFW
+!external/**/*.lib
+
+# Keep committed external dynamic libraries
+!external/**/*.dll
+
+# CMake, if we ever experiment with it later
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
