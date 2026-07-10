@@ -1,21 +1,20 @@
 ///////////////////////////////////////////////////////////////////////////////
-// renderer/render_vertex.h
-// ========================
+// chunk/chunk_sampling.h
+// ======================
 //
-// Declares CPU-side vertex formats used by renderer mesh upload helpers.
+// Declares helpers for sampling density fields into chunks.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <glm/ext/vector_float3.hpp>
+struct Chunk;
+struct DensityField;
 
 /***********************************************************
-* Colored Vertex
+* Chunk Sampling Interface
 ************************************************************/
 
-struct ColoredVertex
-{
-	glm::vec3 position = {};
-	glm::vec3 color = {};
-};
+void sampleChunkDensityField(
+	Chunk& chunk,
+	const DensityField& field);

@@ -102,7 +102,8 @@ bool buildActiveExperimentMeshes(
 
 void renderActiveExperiment(
 	const ActiveExperiment& experiment,
-	Renderer& renderer)
+	Renderer& renderer,
+	const glm::mat4& viewProjection)
 {
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 	(void)experiment;

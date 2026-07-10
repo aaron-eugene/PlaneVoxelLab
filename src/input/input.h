@@ -29,6 +29,8 @@ enum class InputAction : uint8_t
 	SpeedBoost,
 	Quit,
 
+	ToggleCursorLock,
+
 	ToggleSurfaceReference,
 	ToggleActiveExperiment,
 	ToggleVoxelGrid,

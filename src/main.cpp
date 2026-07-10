@@ -70,6 +70,8 @@ namespace
 		DevelopmentCamera developmentCamera = {};
 
 		Lab lab = {};
+
+		bool cursorLocked = true;
 	};
 
 	struct FrameRenderInfo
@@ -116,7 +118,6 @@ static GLFWwindow* createApplicationWindow()
 	}
 
 	glfwMakeContextCurrent(window);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSwapInterval(1);
 
 	return window;
@@ -287,7 +288,6 @@ static void renderDebugUi(ApplicationState& app)
 {
 	ImGui::Begin("Plane Voxel Lab Debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-	ImGui::Text("OpenGL, GLFW, GLAD, GLM, and ImGui are working.");
 	ImGui::Text("OpenGL Version: %s", glGetString(GL_VERSION));
 
 	ImGui::Separator();
@@ -300,7 +300,7 @@ static void renderDebugUi(ApplicationState& app)
 
 	ImGui::Separator();
 
-	renderLabDebugUi(app.lab);
+	renderDebugUiContent(app.lab);
 
 	ImGui::End();
 }
@@ -354,6 +354,24 @@ static void updateFrameTiming(FrameTiming& timing)
 }
 
 /***********************************************************
+* Miscellaneous Helpers
+************************************************************/
+
+static void setApplicationCursorLocked(
+	ApplicationState& app,
+	bool isCursorLocked)
+{
+	assert(app.window != nullptr);
+
+	app.cursorLocked = isCursorLocked;
+
+	glfwSetInputMode(
+		app.window,
+		GLFW_CURSOR,
+		app.cursorLocked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+}
+
+/***********************************************************
 * Application Update
 ************************************************************/
 
@@ -365,12 +383,24 @@ static void updateFrame(ApplicationState& app, float deltaTime)
 		return;
 	}
 
+	if (wasActionPressed(
+		app.input,
+		InputAction::ToggleCursorLock))
+	{
+		setApplicationCursorLocked(
+			app,
+			!app.cursorLocked);
+	}
+
 	DevelopmentCameraControls controls = getDevelopmentCameraControls(app);
 
-	updateDevelopmentCamera(
-		app.developmentCamera,
-		controls,
-		deltaTime);
+	if (app.cursorLocked)
+	{
+		updateDevelopmentCamera(
+			app.developmentCamera,
+			controls,
+			deltaTime);
+	}
 
 	updateLab(
 		app.lab,
@@ -468,6 +498,8 @@ int main()
 	}
 
 	initializeInput(app.input, app.window);
+
+	setApplicationCursorLocked(app, true);
 
 	if (!initializeGlad())
 	{

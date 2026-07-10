@@ -11,7 +11,7 @@
 #include "renderer/gpu_mesh.h"
 #include "renderer/shader.h"
 
-#include <glm/mat4x4.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
 
 /***********************************************************
 * Renderer Shader Types

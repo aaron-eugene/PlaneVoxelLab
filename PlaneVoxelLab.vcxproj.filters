@@ -37,12 +37,33 @@
     <Filter Include="external\ImGui\backends">
       <UniqueIdentifier>{f13a3c5d-94b4-4680-b426-769058210aef}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\fields">
+      <UniqueIdentifier>{b7e7a3bf-e42a-424b-bff5-883262dec181}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\geometry">
+      <UniqueIdentifier>{53e5f243-6b97-4807-b321-c64751f2b27e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\lab_world">
+      <UniqueIdentifier>{a76ce95f-4001-415f-a12e-f40f52d6a9bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\chunk">
+      <UniqueIdentifier>{2b64d6f6-5940-4145-9ad0-8b0f1c0de2f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\surface_ref">
+      <UniqueIdentifier>{a1d4230b-e570-45d8-96a7-7ddc6f560384}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\surface_ref\marching_tetrahedra">
+      <UniqueIdentifier>{64499eeb-4761-4177-8091-25b6554d8bbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\surface">
+      <UniqueIdentifier>{2b85d7ad-6177-4efd-ab6b-7b4e5e1eb7f8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="assets\shaders\debug_color.frag">
+    <None Include="assets\shaders\color.frag">
       <Filter>assets\shaders</Filter>
     </None>
-    <None Include="assets\shaders\debug_color.vert">
+    <None Include="assets\shaders\color.vert">
       <Filter>assets\shaders</Filter>
     </None>
     <None Include="docs\code_conventions.md">
@@ -107,8 +128,32 @@
     <ClCompile Include="src\lab\lab.cpp">
       <Filter>src\lab</Filter>
     </ClCompile>
-    <ClCompile Include="src\lab\lab_world.cpp">
-      <Filter>src\lab</Filter>
+    <ClCompile Include="src\fields\density_field.cpp">
+      <Filter>src\fields</Filter>
+    </ClCompile>
+    <ClCompile Include="src\fields\field_generators.cpp">
+      <Filter>src\fields</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lab_world\lab_world.cpp">
+      <Filter>src\lab_world</Filter>
+    </ClCompile>
+    <ClCompile Include="src\geometry\voxel_topology.cpp">
+      <Filter>src\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="src\chunk\chunk.cpp">
+      <Filter>src\chunk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\chunk\chunk_sampling.cpp">
+      <Filter>src\chunk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.cpp">
+      <Filter>src\surface_ref\marching_tetrahedra</Filter>
+    </ClCompile>
+    <ClCompile Include="src\surface_ref\surface_ref.cpp">
+      <Filter>src\surface_ref</Filter>
+    </ClCompile>
+    <ClCompile Include="src\surface\surface_map.cpp">
+      <Filter>src\surface</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -136,8 +181,44 @@
     <ClInclude Include="src\lab\lab.h">
       <Filter>src\lab</Filter>
     </ClInclude>
-    <ClInclude Include="src\lab\lab_world.h">
-      <Filter>src\lab</Filter>
+    <ClInclude Include="src\renderer\render_vertex.h">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\fields\density_field.h">
+      <Filter>src\fields</Filter>
+    </ClInclude>
+    <ClInclude Include="src\fields\field_generators.h">
+      <Filter>src\fields</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lab_world\lab_world.h">
+      <Filter>src\lab_world</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lab_world\lab_world_constants.h">
+      <Filter>src\lab_world</Filter>
+    </ClInclude>
+    <ClInclude Include="src\geometry\voxel_topology.h">
+      <Filter>src\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lab_world\lab_world_coordinates.h">
+      <Filter>src\lab_world</Filter>
+    </ClInclude>
+    <ClInclude Include="src\chunk\chunk.h">
+      <Filter>src\chunk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\chunk\chunk_sampling.h">
+      <Filter>src\chunk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.h">
+      <Filter>src\surface_ref\marching_tetrahedra</Filter>
+    </ClInclude>
+    <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_tables.h">
+      <Filter>src\surface_ref\marching_tetrahedra</Filter>
+    </ClInclude>
+    <ClInclude Include="src\surface_ref\surface_ref.h">
+      <Filter>src\surface_ref</Filter>
+    </ClInclude>
+    <ClInclude Include="src\surface\surface_map.h">
+      <Filter>src\surface</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -18,10 +18,10 @@
 ************************************************************/
 
 static constexpr const char* COLOR_VERTEX_SHADER_PATH =
-	"assets/shaders/debug_color.vert";
+	"assets/shaders/color.vert";
 
 static constexpr const char* COLOR_FRAGMENT_SHADER_PATH =
-	"assets/shaders/debug_color.frag";
+	"assets/shaders/color.frag";
 
 /***********************************************************
 * Shader Uniform Names
@@ -54,6 +54,13 @@ static GLenum getOpenGlPrimitiveType(GpuPrimitiveType primitiveType)
 		return GL_TRIANGLES;
 	}
 	}
+}
+
+static void shutdownColorShader(ColorShader& shader)
+{
+	destroyShaderProgram(shader.program);
+
+	shader = {};
 }
 
 static bool initializeColorShader(ColorShader& shader)
@@ -98,13 +105,6 @@ static bool initializeColorShader(ColorShader& shader)
 	}
 
 	return true;
-}
-
-static void shutdownColorShader(ColorShader& shader)
-{
-	destroyShaderProgram(shader.program);
-
-	shader = {};
 }
 
 /***********************************************************

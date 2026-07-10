@@ -54,6 +54,9 @@ static int getGlfwKeyForAction(InputAction action)
 	case InputAction::Quit:
 		return GLFW_KEY_ESCAPE;
 
+	case InputAction::ToggleCursorLock:
+		return GLFW_KEY_TAB;
+
 	case InputAction::ToggleSurfaceReference:
 		return GLFW_KEY_1;
 

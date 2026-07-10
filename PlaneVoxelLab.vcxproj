@@ -129,8 +129,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="assets\shaders\debug_color.frag" />
-    <None Include="assets\shaders\debug_color.vert" />
+    <None Include="assets\shaders\color.frag" />
+    <None Include="assets\shaders\color.vert" />
     <None Include="docs\code_conventions.md" />
     <None Include="docs\module_contracts.md" />
     <None Include="docs\todo.md" />
@@ -146,25 +146,45 @@
     <ClCompile Include="external\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\camera\camera_math.cpp" />
     <ClCompile Include="src\camera\dev_camera.cpp" />
+    <ClCompile Include="src\chunk\chunk.cpp" />
+    <ClCompile Include="src\chunk\chunk_sampling.cpp" />
+    <ClCompile Include="src\fields\density_field.cpp" />
+    <ClCompile Include="src\fields\field_generators.cpp" />
+    <ClCompile Include="src\geometry\voxel_topology.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\lab\active_experiment.cpp" />
     <ClCompile Include="src\lab\lab.cpp" />
-    <ClCompile Include="src\lab\lab_world.cpp" />
+    <ClCompile Include="src\lab_world\lab_world.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\renderer\gpu_mesh.cpp" />
     <ClCompile Include="src\renderer\renderer.cpp" />
     <ClCompile Include="src\renderer\shader.cpp" />
+    <ClCompile Include="src\surface\surface_map.cpp" />
+    <ClCompile Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.cpp" />
+    <ClCompile Include="src\surface_ref\surface_ref.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\camera\camera_math.h" />
     <ClInclude Include="src\camera\dev_camera.h" />
+    <ClInclude Include="src\chunk\chunk.h" />
+    <ClInclude Include="src\chunk\chunk_sampling.h" />
+    <ClInclude Include="src\fields\density_field.h" />
+    <ClInclude Include="src\fields\field_generators.h" />
+    <ClInclude Include="src\geometry\voxel_topology.h" />
     <ClInclude Include="src\input\input.h" />
     <ClInclude Include="src\lab\active_experiment.h" />
     <ClInclude Include="src\lab\lab.h" />
-    <ClInclude Include="src\lab\lab_world.h" />
+    <ClInclude Include="src\lab_world\lab_world.h" />
+    <ClInclude Include="src\lab_world\lab_world_constants.h" />
+    <ClInclude Include="src\lab_world\lab_world_coordinates.h" />
     <ClInclude Include="src\renderer\gpu_mesh.h" />
     <ClInclude Include="src\renderer\renderer.h" />
+    <ClInclude Include="src\renderer\render_vertex.h" />
     <ClInclude Include="src\renderer\shader.h" />
+    <ClInclude Include="src\surface\surface_map.h" />
+    <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.h" />
+    <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_tables.h" />
+    <ClInclude Include="src\surface_ref\surface_ref.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

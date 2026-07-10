@@ -12,7 +12,9 @@
 
 #pragma once
 
-#include "lab/lab_world.h"
+#include "lab_world/lab_world.h"
+
+#include <glm/mat4x4.hpp>
 
 #define LAB_EXPERIMENT_NONE 0
 #define LAB_EXPERIMENT_POLYGON_INTERSECTION 1
@@ -77,4 +79,5 @@ bool buildActiveExperimentMeshes(
 
 void renderActiveExperiment(
 	const ActiveExperiment& experiment,
-	Renderer& renderer);
+	Renderer& renderer,
+	const glm::mat4& viewProjection);

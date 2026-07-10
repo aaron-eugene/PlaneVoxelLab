@@ -12,20 +12,27 @@
 
 #pragma once
 
-#include "lab/lab_world.h"
+#include "lab/active_experiment.h"
+#include "lab_world/lab_world.h"
+#include "surface_ref/surface_ref.h"
 
 #include <glm/mat4x4.hpp>
 
 struct InputState;
 struct Renderer;
 
+
+
+
 /***********************************************************
 * Lab State
 ************************************************************/
 
 struct Lab
-{
+{	
 	LabWorld world = {};
+	SurfaceRef surfaceRef = {};
+	ActiveExperiment activeExperiment = {};
 
 	bool showSurfaceReference = true;
 	bool showActiveExperiment = true;
@@ -37,6 +44,7 @@ struct Lab
 ************************************************************/
 
 bool initializeLab(Lab& lab);
+
 void shutdownLab(Lab& lab);
 
 /***********************************************************
@@ -57,8 +65,4 @@ void renderLab(
 	Renderer& renderer,
 	const glm::mat4& viewProjection);
 
-/***********************************************************
-* Lab Debug UI
-************************************************************/
-
-void renderLabDebugUi(Lab& lab);
+void renderDebugUiContent(Lab& lab);
