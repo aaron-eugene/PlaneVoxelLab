@@ -12,6 +12,7 @@
 #include "fields/field_generators.h"
 #include "lab_world/lab_world_constants.h"
 #include "lab_world/lab_world_coordinates.h"
+#include "surface/surface_map.h"
 
 #include <cassert>
 #include <cstdint>
@@ -29,7 +30,7 @@ bool initializeLabWorld(
 
 	world.sphereField.center = glm::dvec3(0.0, 0.0, 0.0);
 	world.sphereField.radius =
-		CHUNK_SIZE_METERS_D * 2.5;
+		CHUNK_SIZE_METERS_D * 1.75;
 
 	world.heightmapField.baseHeight = 0.0;
 	world.heightmapField.amplitude = 8.0;
@@ -37,7 +38,7 @@ bool initializeLabWorld(
 
 	setLabWorldDensityFieldType(
 		world,
-		LabWorldDensityFieldType::Heightmap);
+		LabWorldDensityFieldType::Sphere);
 
 	world.chunks.reserve(CHUNK_LOAD_COUNT);
 

@@ -80,6 +80,8 @@ namespace
 		int framebufferHeight = 0;
 
 		float aspectRatio = 1.0f;
+
+		bool drawable = false;
 	};
 }
 
@@ -210,8 +212,14 @@ static FrameRenderInfo beginAppRenderFrame(GLFWwindow* window)
 		&frameRenderInfo.framebufferWidth,
 		&frameRenderInfo.framebufferHeight);
 
-	assert(frameRenderInfo.framebufferWidth > 0);
-	assert(frameRenderInfo.framebufferHeight > 0);
+	if (frameRenderInfo.framebufferWidth <= 0 ||
+		frameRenderInfo.framebufferHeight <= 0)
+	{
+		frameRenderInfo.drawable = false;
+		return frameRenderInfo;
+	}
+
+	frameRenderInfo.drawable = true;
 
 	frameRenderInfo.aspectRatio =
 		static_cast<float>(frameRenderInfo.framebufferWidth) /
@@ -470,10 +478,21 @@ static void runGameLoop(ApplicationState& app)
 
 		FrameRenderInfo frameRenderInfo = beginAppRenderFrame(app.window);
 
-		renderApp(app, interpolationAlpha, frameRenderInfo);
-		renderDebugUi(app);
+		if (frameRenderInfo.drawable)
+		{
+			renderApp(
+				app,
+				interpolationAlpha,
+				frameRenderInfo);
 
-		endAppRenderFrame(app.window);
+			renderDebugUi(app);
+
+			endAppRenderFrame(app.window);
+		}
+		else
+		{
+			glfwSwapBuffers(app.window);
+		}
 	}
 }
 

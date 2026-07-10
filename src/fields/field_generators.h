@@ -12,6 +12,8 @@
 
 #include <glm/ext/vector_double3.hpp>
 
+#include <cstdint>
+
 /***********************************************************
 * Sphere Density Field
 ************************************************************/
@@ -38,6 +40,12 @@ struct HeightmapDensityField
 	double baseHeight = 0.0;
 	double amplitude = 8.0;
 	double frequency = 0.05;
+
+	uint32_t octaveCount = 5;
+	double persistence = 0.5;
+	double lacunarity = 2.0;
+
+	uint32_t seed = 1337;
 };
 
 DensityField createHeightmapDensityField(
