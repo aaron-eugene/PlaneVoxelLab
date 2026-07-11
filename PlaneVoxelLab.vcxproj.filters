@@ -58,6 +58,9 @@
     <Filter Include="src\surface">
       <UniqueIdentifier>{2b85d7ad-6177-4efd-ab6b-7b4e5e1eb7f8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\math">
+      <UniqueIdentifier>{660d43e1-74da-47bc-9612-0bfd4237c582}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\color.frag">
@@ -155,6 +158,9 @@
     <ClCompile Include="src\surface\surface_map.cpp">
       <Filter>src\surface</Filter>
     </ClCompile>
+    <ClCompile Include="src\math\noise.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">
@@ -219,6 +225,12 @@
     </ClInclude>
     <ClInclude Include="src\surface\surface_map.h">
       <Filter>src\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="src\math\math_utils.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\math\noise.h">
+      <Filter>src\math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

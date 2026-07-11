@@ -8,10 +8,11 @@
 
 #include "fields/field_generators.h"
 
+#include "math/noise.h"
+
 #include <glm/geometric.hpp>
 
 #include <cassert>
-#include <cmath>
 
 /***********************************************************
 * Sphere Density Field
@@ -70,14 +71,27 @@ float sampleHeightmapDensityField(
 	const HeightmapDensityField& heightmap =
 		*static_cast<const HeightmapDensityField*>(userData);
 
-	const double terrainHeight =
+	const float sampleX =
+		static_cast<float>(worldPosition.x) * heightmap.frequency;
+
+	const float sampleZ =
+		static_cast<float>(worldPosition.z) * heightmap.frequency;
+
+	const float noise =
+		sampleFractalValueNoise2d(
+			sampleX,
+			sampleZ,
+			heightmap.octaveCount,
+			heightmap.persistence,
+			heightmap.lacunarity,
+			heightmap.seed);
+
+	const float terrainHeight =
 		heightmap.baseHeight +
-		heightmap.amplitude *
-		std::sin(worldPosition.x * heightmap.frequency) *
-		std::cos(worldPosition.z * heightmap.frequency);
+		noise * heightmap.amplitude;
 
 	const double signedDistance =
-		worldPosition.y - terrainHeight;
+		worldPosition.y - static_cast<double>(terrainHeight);
 
 	return static_cast<float>(signedDistance);
 }

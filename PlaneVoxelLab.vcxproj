@@ -156,6 +156,7 @@
     <ClCompile Include="src\lab\lab.cpp" />
     <ClCompile Include="src\lab_world\lab_world.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\math\noise.cpp" />
     <ClCompile Include="src\renderer\gpu_mesh.cpp" />
     <ClCompile Include="src\renderer\renderer.cpp" />
     <ClCompile Include="src\renderer\shader.cpp" />
@@ -177,6 +178,8 @@
     <ClInclude Include="src\lab_world\lab_world.h" />
     <ClInclude Include="src\lab_world\lab_world_constants.h" />
     <ClInclude Include="src\lab_world\lab_world_coordinates.h" />
+    <ClInclude Include="src\math\math_utils.h" />
+    <ClInclude Include="src\math\noise.h" />
     <ClInclude Include="src\renderer\gpu_mesh.h" />
     <ClInclude Include="src\renderer\renderer.h" />
     <ClInclude Include="src\renderer\render_vertex.h" />
