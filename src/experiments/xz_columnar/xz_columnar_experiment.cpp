@@ -220,9 +220,22 @@ void renderXZColumnarExperimentDebugUiContent(
 		indexCount += mesh.cpuMesh.indices.size();
 	}
 
+	uint64_t pieceCount = 0;
+
+	for (const XZColumnarRenderMesh& mesh : experiment.meshes)
+	{
+		vertexCount += mesh.cpuMesh.vertices.size();
+		indexCount += mesh.cpuMesh.indices.size();
+		pieceCount += mesh.cpuMesh.pieces.size();
+	}
+
 	ImGui::Text(
 		"Experiment chunks: %zu",
 		experiment.meshes.size());
+
+	ImGui::Text(
+		"Experiment pieces: %llu",
+		static_cast<unsigned long long>(pieceCount));
 
 	ImGui::Text(
 		"Experiment vertices: %llu",

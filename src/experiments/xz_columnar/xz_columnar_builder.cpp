@@ -18,6 +18,7 @@
 #include <glm/geometric.hpp>
 #include <glm/vec3.hpp>
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
@@ -58,6 +59,74 @@ struct XZColumnarClipPolygon
 	ColoredVertex vertices[MAX_CLIPPED_POLYGON_VERTICES] = {};
 	uint32_t vertexCount = 0;
 };
+
+/***********************************************************
+* Y-Range Helpers
+************************************************************/
+
+static float getPolygonMinY(
+	const XZColumnarClipPolygon& polygon)
+{
+	assert(polygon.vertexCount > 0);
+
+	float minY =
+		polygon.vertices[0].position.y;
+
+	for (uint32_t vertexIndex = 1;
+		vertexIndex < polygon.vertexCount;
+		++vertexIndex)
+	{
+		minY =
+			std::min(
+				minY,
+				polygon.vertices[vertexIndex].position.y);
+	}
+
+	return minY;
+}
+
+static float getPolygonMaxY(
+	const XZColumnarClipPolygon& polygon)
+{
+	assert(polygon.vertexCount > 0);
+
+	float maxY =
+		polygon.vertices[0].position.y;
+
+	for (uint32_t vertexIndex = 1;
+		vertexIndex < polygon.vertexCount;
+		++vertexIndex)
+	{
+		maxY =
+			std::max(
+				maxY,
+				polygon.vertices[vertexIndex].position.y);
+	}
+
+	return maxY;
+}
+
+static uint32_t getClampedLocalVoxelYFromWorldY(
+	float worldY,
+	float chunkMinY)
+{
+	const float localY =
+		(worldY - chunkMinY) /
+		VOXEL_SIZE_METERS;
+
+	const int32_t unclampedVoxelY =
+		static_cast<int32_t>(
+			std::floor(localY));
+
+	const int32_t clampedVoxelY =
+		std::max(
+			0,
+			std::min(
+				static_cast<int32_t>(CHUNK_SIZE - 1),
+				unclampedVoxelY));
+
+	return static_cast<uint32_t>(clampedVoxelY);
+}
 
 /***********************************************************
 * Height Sampling Helpers
@@ -484,15 +553,21 @@ static XZColumnarClipPolygon clipPolygonToYSlab(
 * Mesh Emission Helpers
 ************************************************************/
 
-static void appendClippedPolygonToMesh(
+static void appendVoxelOwnedPolygonToMesh(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
-	const glm::vec3& chunkWorldMin)
+	const glm::vec3& chunkWorldMin,
+	const VoxelCoord& ownerVoxel)
 {
 	if (polygon.vertexCount < 3)
 	{
 		return;
 	}
+
+	XZColumnarPiece piece = {};
+	piece.ownerVoxel = ownerVoxel;
+	piece.firstIndex =
+		static_cast<uint32_t>(mesh.indices.size());
 
 	const uint32_t baseVertexIndex =
 		static_cast<uint32_t>(mesh.vertices.size());
@@ -517,7 +592,99 @@ static void appendClippedPolygonToMesh(
 		mesh.indices.push_back(baseVertexIndex + vertexIndex);
 		mesh.indices.push_back(baseVertexIndex + vertexIndex + 1);
 	}
+
+	piece.indexCount =
+		static_cast<uint32_t>(mesh.indices.size()) -
+		piece.firstIndex;
+
+	if (piece.indexCount > 0)
+	{
+		mesh.pieces.push_back(piece);
+	}
 }
+
+static void appendVoxelYSlicedPolygonToMesh(
+	XZColumnarMesh& mesh,
+	const XZColumnarClipPolygon& polygon,
+	const glm::vec3& chunkWorldMin,
+	uint32_t localX,
+	uint32_t localZ)
+{
+	if (polygon.vertexCount < 3)
+	{
+		return;
+	}
+
+	const float chunkMinY =
+		chunkWorldMin.y;
+
+	const float chunkMaxY =
+		chunkWorldMin.y + CHUNK_SIZE_METERS_F;
+
+	const XZColumnarClipPolygon chunkClippedPolygon =
+		clipPolygonToYSlab(
+			polygon,
+			chunkMinY,
+			chunkMaxY);
+
+	if (chunkClippedPolygon.vertexCount < 3)
+	{
+		return;
+	}
+
+	const float polygonMinY =
+		getPolygonMinY(chunkClippedPolygon);
+
+	const float polygonMaxY =
+		getPolygonMaxY(chunkClippedPolygon);
+
+	const uint32_t firstLocalY =
+		getClampedLocalVoxelYFromWorldY(
+			polygonMinY,
+			chunkMinY);
+
+	const uint32_t lastLocalY =
+		getClampedLocalVoxelYFromWorldY(
+			polygonMaxY,
+			chunkMinY);
+
+	for (uint32_t localY = firstLocalY;
+		localY <= lastLocalY;
+		++localY)
+	{
+		const float voxelMinY =
+			chunkMinY +
+			static_cast<float>(localY) *
+			VOXEL_SIZE_METERS;
+
+		const float voxelMaxY =
+			voxelMinY + VOXEL_SIZE_METERS;
+
+		const XZColumnarClipPolygon voxelClippedPolygon =
+			clipPolygonToYSlab(
+				chunkClippedPolygon,
+				voxelMinY,
+				voxelMaxY);
+
+		if (voxelClippedPolygon.vertexCount < 3)
+		{
+			continue;
+		}
+
+		VoxelCoord ownerVoxel = {};
+		ownerVoxel.x = localX;
+		ownerVoxel.y = localY;
+		ownerVoxel.z = localZ;
+
+		appendVoxelOwnedPolygonToMesh(
+			mesh,
+			voxelClippedPolygon,
+			chunkWorldMin,
+			ownerVoxel);
+	}
+}
+
+
 
 /***********************************************************
 * Patch Construction Helpers
@@ -657,12 +824,6 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 	const glm::vec3 chunkWorldMin =
 		glm::vec3(chunkWorldMinD);
 
-	const float chunkMinY =
-		chunkWorldMin.y;
-
-	const float chunkMaxY =
-		chunkWorldMin.y + CHUNK_SIZE_METERS_F;
-
 	for (uint32_t localZ = 0;
 		localZ < CHUNK_SIZE;
 		++localZ)
@@ -696,16 +857,12 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 					z1,
 					settings);
 
-			const XZColumnarClipPolygon clippedPolygon =
-				clipPolygonToYSlab(
-					planarQuad,
-					chunkMinY,
-					chunkMaxY);
-
-			appendClippedPolygonToMesh(
+			appendVoxelYSlicedPolygonToMesh(
 				mesh,
-				clippedPolygon,
-				chunkWorldMin);
+				planarQuad,
+				chunkWorldMin,
+				localX,
+				localZ);
 		}
 	}
 

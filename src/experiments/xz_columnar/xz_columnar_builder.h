@@ -28,12 +28,22 @@
 * Columnar Patch Mesh Types
 ************************************************************/
 
+struct XZColumnarPiece
+{
+	VoxelCoord ownerVoxel = {};
+
+	uint32_t firstIndex = 0;
+	uint32_t indexCount = 0;
+};
+
 struct XZColumnarMesh
 {
 	ChunkCoord coord = {};
 
 	std::vector<ColoredVertex> vertices = {};
 	std::vector<uint32_t> indices = {};
+
+	std::vector<XZColumnarPiece> pieces = {};
 };
 
 struct XZColumnarBuildSettings
