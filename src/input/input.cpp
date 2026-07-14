@@ -63,7 +63,7 @@ static int getGlfwKeyForAction(InputAction action)
 	case InputAction::ToggleActiveExperiment:
 		return GLFW_KEY_2;
 
-	case InputAction::ToggleVoxelGrid:
+	case InputAction::ToggleChunkWireframes:
 		return GLFW_KEY_3;
 
 	case InputAction::RebuildMeshes:

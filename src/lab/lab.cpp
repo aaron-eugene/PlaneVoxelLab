@@ -8,7 +8,10 @@
 
 #include "lab/lab.h"
 
+#include <experiments/xz_columnar/xz_columnar_builder.h>
+#include <experiments/xz_columnar/xz_columnar_experiment.h>
 #include "input/input.h"
+#include "lab_debug/surface_chunk_wireframes.h"
 #include "lab_world/lab_world.h"
 #include "renderer/renderer.h"
 #include "surface/surface_map.h"
@@ -49,9 +52,9 @@ bool initializeLab(
 	assert(lab.surfaceRef.chunks.empty());
 
 	lab = {};
-	lab.showSurfaceReference = true;
+	lab.showSurfaceReference = false;
 	lab.showActiveExperiment = true;
-	lab.showVoxelGrid = false;
+	lab.showSurfaceChunkWireframes = false;
 
 	if (!initializeLabWorld(lab.world))
 	{
@@ -62,6 +65,14 @@ bool initializeLab(
 	if (!initializeSurfaceRef(
 		lab.surfaceRef,
 		lab.world.chunks,
+		lab.world.surfaceMap))
+	{
+		shutdownLab(lab);
+		return false;
+	}
+
+	if (!initializeSurfaceChunkWireframes(
+		lab.surfaceChunkWireframes,
 		lab.world.surfaceMap))
 	{
 		shutdownLab(lab);
@@ -83,6 +94,7 @@ void shutdownLab(
 	Lab& lab)
 {
 	shutdownActiveExperiment(lab.activeExperiment);
+	shutdownSurfaceChunkWireframes(lab.surfaceChunkWireframes);
 	shutdownSurfaceRef(lab.surfaceRef);
 	shutdownLabWorld(lab.world);
 
@@ -114,9 +126,9 @@ void updateLab(
 
 	if (wasActionPressed(
 		input,
-		InputAction::ToggleVoxelGrid))
+		InputAction::ToggleChunkWireframes))
 	{
-		lab.showVoxelGrid = !lab.showVoxelGrid;
+		lab.showSurfaceChunkWireframes = !lab.showSurfaceChunkWireframes;
 	}
 
 	if (wasActionPressed(
@@ -159,7 +171,19 @@ void renderLab(
 			renderer,
 			viewProjection);
 	}
+
+	if (lab.showSurfaceChunkWireframes)
+	{
+		renderSurfaceChunkWireframes(
+			lab.surfaceChunkWireframes,
+			renderer,
+			viewProjection);
+	}
 }
+
+/***********************************************************
+* Debug Rendering
+************************************************************/
 
 static const char* getDensityFieldTypeName(
 	LabWorldDensityFieldType fieldType)
@@ -180,6 +204,10 @@ static const char* getDensityFieldTypeName(
 void renderDebugUiContent(
 	Lab& lab)
 {
+	//--------------------------------------------------
+	// Lab Component Toggles (Reference, Experiment...)
+	//--------------------------------------------------
+	
 	ImGui::Checkbox(
 		"Surface Reference",
 		&lab.showSurfaceReference);
@@ -189,18 +217,104 @@ void renderDebugUiContent(
 		&lab.showActiveExperiment);
 
 	ImGui::Checkbox(
-		"Voxel Grid",
-		&lab.showVoxelGrid);
-	/*
-	if (ImGui::Button("Rebuild Surface Reference"))
+		"Surface Chunk Wireframes",
+		&lab.showSurfaceChunkWireframes);
+
+	//--------------------------------------------------
+	// Active Experiment Drop-Down
+	//--------------------------------------------------
 	{
-		rebuildSurfaceRef(
-			lab.surfaceRef,
-			lab.world.chunks);
+		LabWorldDensityFieldType selectedFieldType =
+			lab.world.activeDensityFieldType;
+
+		const char* selectedFieldName =
+			getDensityFieldTypeName(selectedFieldType);
+
+		if (ImGui::BeginCombo(
+			"Density Field",
+			selectedFieldName))
+		{
+			if (ImGui::Selectable(
+				"Sphere",
+				selectedFieldType == LabWorldDensityFieldType::Sphere))
+			{
+				selectedFieldType = LabWorldDensityFieldType::Sphere;
+			}
+
+			if (ImGui::Selectable(
+				"Heightmap",
+				selectedFieldType == LabWorldDensityFieldType::Heightmap))
+			{
+				selectedFieldType = LabWorldDensityFieldType::Heightmap;
+			}
+
+			ImGui::EndCombo();
+		}
+
+		if (selectedFieldType != lab.world.activeDensityFieldType)
+		{
+			setLabWorldDensityFieldType(
+				lab.world,
+				selectedFieldType);
+
+			const bool worldRebuilt =
+				rebuildLabWorldDensityData(lab.world);
+
+			assert(worldRebuilt);
+
+			const bool surfaceRefRebuilt =
+				rebuildSurfaceRef(
+					lab.surfaceRef,
+					lab.world.chunks,
+					lab.world.surfaceMap);
+
+			assert(surfaceRefRebuilt);
+
+			const bool wireframesRebuilt =
+				rebuildSurfaceChunkWireframes(
+					lab.surfaceChunkWireframes,
+					lab.world.surfaceMap);
+
+			assert(wireframesRebuilt);
+
+			const bool activeExperimentRebuilt =
+				rebuildActiveExperiment(
+					lab.activeExperiment,
+					lab.world);
+
+			assert(activeExperimentRebuilt);
+		}
 	}
-	*/
+	
+	ImGui::Separator();
+	
+	//--------------------------------------------------
+	// Chunk Debug Counts
+	//--------------------------------------------------
+	ImGui::Text(
+		"Total Chunks: %zu",
+		lab.world.chunks.size());
+
+	ImGui::Text(
+		"Surface chunks: %zu",
+		lab.world.surfaceMap.chunks.size());
+
+	uint64_t surfaceVoxelCount = 0;
+
+	for (const SurfaceChunk& surfaceChunk : lab.world.surfaceMap.chunks)
+	{
+		surfaceVoxelCount += surfaceChunk.voxels.size();
+	}
+
+	ImGui::Text(
+		"Surface voxels: %llu",
+		static_cast<unsigned long long>(surfaceVoxelCount));
+
 	ImGui::Separator();
 
+	//--------------------------------------------------
+	// Surface Reference Debug Counts
+	//--------------------------------------------------
 	uint64_t referenceVertexCount = 0;
 	uint64_t referenceIndexCount = 0;
 
@@ -208,10 +322,6 @@ void renderDebugUiContent(
 		lab.surfaceRef,
 		referenceVertexCount,
 		referenceIndexCount);
-
-	ImGui::Text(
-		"Chunks: %zu",
-		lab.world.chunks.size());
 
 	ImGui::Text(
 		"Reference chunks: %zu",
@@ -225,65 +335,10 @@ void renderDebugUiContent(
 		"Reference indices: %llu",
 		static_cast<unsigned long long>(referenceIndexCount));
 
-	uint64_t surfaceVoxelCount = 0;
-
-	for (const SurfaceChunk& surfaceChunk : lab.world.surfaceMap.chunks)
-	{
-		surfaceVoxelCount += surfaceChunk.voxels.size();
-	}
-
-	ImGui::Text(
-		"Surface chunks: %zu",
-		lab.world.surfaceMap.chunks.size());
-
-	ImGui::Text(
-		"Surface voxels: %llu",
-		static_cast<unsigned long long>(surfaceVoxelCount));
-
-	LabWorldDensityFieldType selectedFieldType =
-		lab.world.activeDensityFieldType;
-
-	const char* selectedFieldName =
-		getDensityFieldTypeName(selectedFieldType);
-
-	if (ImGui::BeginCombo(
-		"Density Field",
-		selectedFieldName))
-	{
-		if (ImGui::Selectable(
-			"Sphere",
-			selectedFieldType == LabWorldDensityFieldType::Sphere))
-		{
-			selectedFieldType = LabWorldDensityFieldType::Sphere;
-		}
-
-		if (ImGui::Selectable(
-			"Heightmap",
-			selectedFieldType == LabWorldDensityFieldType::Heightmap))
-		{
-			selectedFieldType = LabWorldDensityFieldType::Heightmap;
-		}
-
-		ImGui::EndCombo();
-	}
-
-	if (selectedFieldType != lab.world.activeDensityFieldType)
-	{
-		setLabWorldDensityFieldType(
-			lab.world,
-			selectedFieldType);
-
-		const bool worldRebuilt =
-			rebuildLabWorldDensityData(lab.world);
-
-		assert(worldRebuilt);
-
-		const bool surfaceRefRebuilt =
-			rebuildSurfaceRef(
-				lab.surfaceRef,
-				lab.world.chunks,
-				lab.world.surfaceMap);
-
-		assert(surfaceRefRebuilt);
-	}
+	//--------------------------------------------------
+	// Active Experiment Debug Interface
+	//--------------------------------------------------
+	renderActiveExperimentDebugUiContent(
+		lab.activeExperiment,
+		lab.world);
 }

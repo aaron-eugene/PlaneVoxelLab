@@ -33,7 +33,7 @@ enum class InputAction : uint8_t
 
 	ToggleSurfaceReference,
 	ToggleActiveExperiment,
-	ToggleVoxelGrid,
+	ToggleChunkWireframes,
 	RebuildMeshes,
 
 	Count

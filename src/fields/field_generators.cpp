@@ -49,11 +49,44 @@ float sampleSphereDensityField(
 * Heightmap Density Field
 ************************************************************/
 
+float sampleHeightmapTerrainHeight(
+	const HeightmapDensityField& heightmap,
+	float worldX,
+	float worldZ)
+{
+	assert(heightmap.amplitude >= 0.0f);
+	assert(heightmap.frequency >= 0.0f);
+	assert(heightmap.octaveCount > 0);
+	assert(heightmap.persistence >= 0.0f);
+	assert(heightmap.lacunarity > 0.0f);
+
+	const float sampleX =
+		worldX * heightmap.frequency;
+
+	const float sampleZ =
+		worldZ * heightmap.frequency;
+
+	const float noise =
+		sampleFractalValueNoise2d(
+			sampleX,
+			sampleZ,
+			heightmap.octaveCount,
+			heightmap.persistence,
+			heightmap.lacunarity,
+			heightmap.seed);
+
+	return heightmap.baseHeight +
+		noise * heightmap.amplitude;
+}
+
 DensityField createHeightmapDensityField(
 	const HeightmapDensityField& heightmap)
 {
-	assert(heightmap.amplitude >= 0.0);
-	assert(heightmap.frequency >= 0.0);
+	assert(heightmap.amplitude >= 0.0f);
+	assert(heightmap.frequency >= 0.0f);
+	assert(heightmap.octaveCount > 0);
+	assert(heightmap.persistence >= 0.0f);
+	assert(heightmap.lacunarity > 0.0f);
 
 	DensityField field = {};
 	field.sample = sampleHeightmapDensityField;
@@ -71,24 +104,11 @@ float sampleHeightmapDensityField(
 	const HeightmapDensityField& heightmap =
 		*static_cast<const HeightmapDensityField*>(userData);
 
-	const float sampleX =
-		static_cast<float>(worldPosition.x) * heightmap.frequency;
-
-	const float sampleZ =
-		static_cast<float>(worldPosition.z) * heightmap.frequency;
-
-	const float noise =
-		sampleFractalValueNoise2d(
-			sampleX,
-			sampleZ,
-			heightmap.octaveCount,
-			heightmap.persistence,
-			heightmap.lacunarity,
-			heightmap.seed);
-
 	const float terrainHeight =
-		heightmap.baseHeight +
-		noise * heightmap.amplitude;
+		sampleHeightmapTerrainHeight(
+			heightmap,
+			static_cast<float>(worldPosition.x),
+			static_cast<float>(worldPosition.z));
 
 	const double signedDistance =
 		worldPosition.y - static_cast<double>(terrainHeight);

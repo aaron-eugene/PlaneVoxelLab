@@ -17,11 +17,11 @@
 #include <glm/mat4x4.hpp>
 
 #define LAB_EXPERIMENT_NONE 0
-#define LAB_EXPERIMENT_POLYGON_INTERSECTION 1
-#define LAB_EXPERIMENT_PROXY_TILES 2
-#define LAB_EXPERIMENT_COLUMNAR_PATCH 3
+#define LAB_EXPERIMENT_XZ_COLUMNAR 1	
+#define LAB_EXPERIMENT_POLYGON_INTERSECTION 2
+#define LAB_EXPERIMENT_PROXY_TILES 3
 
-#define LAB_ACTIVE_EXPERIMENT LAB_EXPERIMENT_NONE
+#define LAB_ACTIVE_EXPERIMENT LAB_EXPERIMENT_XZ_COLUMNAR
 
 struct Renderer;
 
@@ -32,17 +32,22 @@ struct EmptyExperiment
 
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 typedef EmptyExperiment ActiveExperiment;
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
+#include "experiments/xz_columnar/xz_columnar_experiment.h"
+typedef XZColumnarExperiment ActiveExperiment;
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
 #include "experiments/polygon_intersection/polygon_intersection_experiment.h"
 typedef PolygonIntersectionExperiment ActiveExperiment;
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
 #include "experiments/proxy_tiles/proxy_tiles_experiment.h"
 typedef ProxyTilesExperiment ActiveExperiment;
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_COLUMNAR_PATCH
-#include "experiments/columnar_patch/columnar_patch_experiment.h"
-typedef ColumnarPatchExperiment ActiveExperiment;
+
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
+
 #endif
 
 /***********************************************************
@@ -69,7 +74,7 @@ void updateActiveExperiment(
 * Active Experiment Mesh Building
 ************************************************************/
 
-bool buildActiveExperimentMeshes(
+bool rebuildActiveExperiment(
 	ActiveExperiment& experiment,
 	const LabWorld& world);
 
@@ -81,3 +86,11 @@ void renderActiveExperiment(
 	const ActiveExperiment& experiment,
 	Renderer& renderer,
 	const glm::mat4& viewProjection);
+
+/***********************************************************
+* Active Experiment Debug UI
+************************************************************/
+
+void renderActiveExperimentDebugUiContent(
+	ActiveExperiment& experiment,
+	const LabWorld& world);

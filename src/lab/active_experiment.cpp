@@ -5,8 +5,25 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lab/active_experiment.h"
+#include "lab_world/lab_world.h"
 
 #include "renderer/renderer.h"
+
+#if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
+#include "experiments/xz_columnar/xz_columnar_experiment.h"
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
+//#include
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
+//#include
+
+#else
+#error Unknown LAB_ACTIVE_EXPERIMENT
+
+#endif
 
 /***********************************************************
 * Active Experiment Lifecycle
@@ -19,16 +36,20 @@ bool initializeActiveExperiment(
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 	(void)experiment;
 	(void)world;
-
 	return true;
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
+	return initializeXZColumnarExperiment(experiment, world);
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
 	return initializePolygonIntersectionExperiment(experiment, world);
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
 	return initializeProxyTilesExperiment(experiment, world);
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_COLUMNAR_PATCH
-	return initializeColumnarPatchExperiment(experiment, world);
+
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
+
 #endif
 }
 
@@ -37,14 +58,19 @@ void shutdownActiveExperiment(
 {
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 	(void)experiment;
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
+	shutdownXZColumnarExperiment(experiment);
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
 	shutdownPolygonIntersectionExperiment(experiment);
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
 	shutdownProxyTilesExperiment(experiment);
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_COLUMNAR_PATCH
-	shutdownColumnarPatchExperiment(experiment);
+
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
+
 #endif
 }
 
@@ -61,38 +87,47 @@ void updateActiveExperiment(
 	(void)experiment;
 	(void)world;
 	(void)deltaTime;
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
+	updateXZColumnarExperiment(experiment, world, deltaTime);
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
 	updatePolygonIntersectionExperiment(experiment, world, deltaTime);
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
 	updateProxyTilesExperiment(experiment, world, deltaTime);
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_COLUMNAR_PATCH
-	updateColumnarPatchExperiment(experiment, world, deltaTime);
+
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
+
 #endif
 }
 
 /***********************************************************
-* Active Experiment Mesh Building
+* Active Experiment Mesh Rebuild
 ************************************************************/
 
-bool buildActiveExperimentMeshes(
+bool rebuildActiveExperiment(
 	ActiveExperiment& experiment,
 	const LabWorld& world)
 {
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 	(void)experiment;
 	(void)world;
-
 	return true;
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
+	return rebuildXZColumnarExperiment(experiment, world);
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
 	return buildPolygonIntersectionExperimentMeshes(experiment, world);
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
 	return buildProxyTilesExperimentMeshes(experiment, world);
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_COLUMNAR_PATCH
-	return buildColumnarPatchExperimentMeshes(experiment, world);
+
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
+
 #endif
 }
 
@@ -108,13 +143,52 @@ void renderActiveExperiment(
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 	(void)experiment;
 	(void)renderer;
+	(void)viewProjection;
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
+	renderXZColumnarExperiment(experiment, renderer, viewProjection);
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
 	renderPolygonIntersectionExperiment(experiment, renderer);
+
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
 	renderProxyTilesExperiment(experiment, renderer);
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_COLUMNAR_PATCH
-	renderColumnarPatchExperiment(experiment, renderer);
+
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
+
+#endif
+}
+
+/***********************************************************
+* Active Experiment Debug UI
+************************************************************/
+
+void renderActiveExperimentDebugUiContent(
+	ActiveExperiment& experiment,
+	const LabWorld& world)
+{
+#if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
+	(void)experiment;
+	(void)world;
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
+	renderXZColumnarExperimentDebugUiContent(
+		experiment,
+		world);
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
+	renderPolygonIntersectionExperimentDebugUiContent(
+		experiment,
+		world);
+
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
+	renderProxyTilesExperimentDebugUiContent(
+		experiment,
+		world);
+
+#else
+#error Unknown LAB_ACTIVE_EXPERIMENT
+
 #endif
 }

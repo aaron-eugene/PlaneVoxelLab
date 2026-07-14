@@ -13,6 +13,7 @@
 #pragma once
 
 #include "lab/active_experiment.h"
+#include "lab_debug/surface_chunk_wireframes.h"
 #include "lab_world/lab_world.h"
 #include "surface_ref/surface_ref.h"
 
@@ -21,9 +22,6 @@
 struct InputState;
 struct Renderer;
 
-
-
-
 /***********************************************************
 * Lab State
 ************************************************************/
@@ -31,12 +29,14 @@ struct Renderer;
 struct Lab
 {	
 	LabWorld world = {};
+
 	SurfaceRef surfaceRef = {};
+	SurfaceChunkWireframes surfaceChunkWireframes = {};
 	ActiveExperiment activeExperiment = {};
 
 	bool showSurfaceReference = true;
 	bool showActiveExperiment = true;
-	bool showVoxelGrid = false;
+	bool showSurfaceChunkWireframes = false;
 };
 
 /***********************************************************
@@ -64,5 +64,9 @@ void renderLab(
 	const Lab& lab,
 	Renderer& renderer,
 	const glm::mat4& viewProjection);
+
+/***********************************************************
+* Debug Rendering
+************************************************************/
 
 void renderDebugUiContent(Lab& lab);

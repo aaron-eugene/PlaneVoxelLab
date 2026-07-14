@@ -98,7 +98,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -113,7 +113,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
@@ -148,12 +148,15 @@
     <ClCompile Include="src\camera\dev_camera.cpp" />
     <ClCompile Include="src\chunk\chunk.cpp" />
     <ClCompile Include="src\chunk\chunk_sampling.cpp" />
+    <ClCompile Include="src\experiments\xz_columnar\xz_columnar_builder.cpp" />
+    <ClCompile Include="src\experiments\xz_columnar\xz_columnar_experiment.cpp" />
     <ClCompile Include="src\fields\density_field.cpp" />
     <ClCompile Include="src\fields\field_generators.cpp" />
     <ClCompile Include="src\geometry\voxel_topology.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\lab\active_experiment.cpp" />
     <ClCompile Include="src\lab\lab.cpp" />
+    <ClCompile Include="src\lab_debug\surface_chunk_wireframes.cpp" />
     <ClCompile Include="src\lab_world\lab_world.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\math\noise.cpp" />
@@ -169,12 +172,15 @@
     <ClInclude Include="src\camera\dev_camera.h" />
     <ClInclude Include="src\chunk\chunk.h" />
     <ClInclude Include="src\chunk\chunk_sampling.h" />
+    <ClInclude Include="src\experiments\xz_columnar\xz_columnar_builder.h" />
+    <ClInclude Include="src\experiments\xz_columnar\xz_columnar_experiment.h" />
     <ClInclude Include="src\fields\density_field.h" />
     <ClInclude Include="src\fields\field_generators.h" />
     <ClInclude Include="src\geometry\voxel_topology.h" />
     <ClInclude Include="src\input\input.h" />
     <ClInclude Include="src\lab\active_experiment.h" />
     <ClInclude Include="src\lab\lab.h" />
+    <ClInclude Include="src\lab_debug\surface_chunk_wireframes.h" />
     <ClInclude Include="src\lab_world\lab_world.h" />
     <ClInclude Include="src\lab_world\lab_world_constants.h" />
     <ClInclude Include="src\lab_world\lab_world_coordinates.h" />

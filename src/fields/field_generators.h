@@ -37,16 +37,21 @@ float sampleSphereDensityField(
 
 struct HeightmapDensityField
 {
-	float baseHeight = 0.0;
-	float amplitude = 8.0;
-	float frequency = 0.05;
+	float baseHeight = 0.0f;
+	float amplitude = 8.0f;
+	float frequency = 0.05f;
 
 	uint32_t octaveCount = 5;
-	float persistence = 0.5;
-	float lacunarity = 2.0;
+	float persistence = 0.5f;
+	float lacunarity = 2.0f;
 
 	uint32_t seed = 1337;
 };
+
+float sampleHeightmapTerrainHeight(
+	const HeightmapDensityField& heightmap,
+	float worldX,
+	float worldZ);
 
 DensityField createHeightmapDensityField(
 	const HeightmapDensityField& heightmap);
