@@ -232,12 +232,23 @@ static FrameRenderInfo beginAppRenderFrame(GLFWwindow* window)
 	return frameRenderInfo;
 }
 
-static void endAppRenderFrame(GLFWwindow* window)
+static void endAppRenderFrame(
+	GLFWwindow* window,
+	const FrameRenderInfo& frameRenderInfo)
 {
-	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	if (frameRenderInfo.drawable)
+	{
+		ImGui::Render();
 
-	endRenderFrame();
+		ImGui_ImplOpenGL3_RenderDrawData(
+			ImGui::GetDrawData());
+
+		endRenderFrame();
+	}
+	else
+	{
+		ImGui::EndFrame();
+	}
 
 	glfwSwapBuffers(window);
 }
@@ -476,7 +487,8 @@ static void runGameLoop(ApplicationState& app)
 
 		beginImGuiFrame();
 
-		FrameRenderInfo frameRenderInfo = beginAppRenderFrame(app.window);
+		const FrameRenderInfo frameRenderInfo =
+			beginAppRenderFrame(app.window);
 
 		if (frameRenderInfo.drawable)
 		{
@@ -486,13 +498,11 @@ static void runGameLoop(ApplicationState& app)
 				frameRenderInfo);
 
 			renderDebugUi(app);
+		}
 
-			endAppRenderFrame(app.window);
-		}
-		else
-		{
-			glfwSwapBuffers(app.window);
-		}
+		endAppRenderFrame(
+			app.window,
+			frameRenderInfo);
 	}
 }
 

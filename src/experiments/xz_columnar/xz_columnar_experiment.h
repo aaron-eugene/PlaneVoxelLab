@@ -79,6 +79,6 @@ void renderXZColumnarExperiment(
 * XZ Columnar Experiment Debug UI
 ************************************************************/
 
-void renderXZColumnarExperimentDebugUiContent(
+bool renderXZColumnarExperimentDebugUiContent(
 	XZColumnarExperiment& experiment,
 	const LabWorld& world);

@@ -91,6 +91,6 @@ void renderActiveExperiment(
 * Active Experiment Debug UI
 ************************************************************/
 
-void renderActiveExperimentDebugUiContent(
+bool renderActiveExperimentDebugUiContent(
 	ActiveExperiment& experiment,
 	const LabWorld& world);

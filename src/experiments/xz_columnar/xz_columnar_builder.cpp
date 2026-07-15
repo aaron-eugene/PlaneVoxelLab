@@ -61,6 +61,68 @@ struct XZColumnarClipPolygon
 };
 
 /***********************************************************
+* Colorization Helpers
+************************************************************/
+
+static glm::vec3 getNormalColor(
+	float gradientX,
+	float gradientZ)
+{
+	const glm::vec3 normal =
+		glm::normalize(
+			glm::vec3(
+				-gradientX,
+				1.0f,
+				-gradientZ));
+
+	const glm::vec3 absoluteNormal =
+		glm::abs(normal);
+
+	return glm::vec3(
+		0.55f + 0.25f * absoluteNormal.x,
+		0.55f + 0.25f * absoluteNormal.y,
+		0.55f + 0.25f * absoluteNormal.z);
+}
+
+static glm::vec3 getOwnerVoxelYColor(
+	uint32_t localY)
+{
+	const float t =
+		static_cast<float>(localY % 8) / 7.0f;
+
+	return glm::vec3(
+		0.35f + 0.45f * t,
+		0.75f - 0.35f * t,
+		0.55f + 0.25f * (1.0f - t));
+}
+
+static glm::vec3 getColumnarPieceColor(
+	const XZColumnarClipPolygon& polygon,
+	const XZColumnarBuildSettings& settings,
+	const VoxelCoord& ownerVoxel)
+{
+	switch (settings.colorization)
+	{
+	case XZColumnarColorization::Normal:
+	{
+		assert(polygon.vertexCount > 0);
+		return polygon.vertices[0].color;
+	} break;
+
+	case XZColumnarColorization::OwnerVoxelY:
+	{
+		return getOwnerVoxelYColor(ownerVoxel.y);
+	} break;
+
+	default:
+	{
+		assert(false);
+		return glm::vec3(1.0f);
+	} break;
+	}
+}
+
+/***********************************************************
 * Y-Range Helpers
 ************************************************************/
 
@@ -373,26 +435,6 @@ static float evaluateTangentPlaneHeight(
 * Polygon Clipping Helpers
 ************************************************************/
 
-static glm::vec3 getColumnarColor(
-	float gradientX,
-	float gradientZ)
-{
-	const glm::vec3 normal =
-		glm::normalize(
-			glm::vec3(
-				-gradientX,
-				1.0f,
-				-gradientZ));
-
-	const glm::vec3 absoluteNormal =
-		glm::abs(normal);
-
-	return glm::vec3(
-		0.55f + 0.25f * absoluteNormal.x,
-		0.55f + 0.25f * absoluteNormal.y,
-		0.55f + 0.25f * absoluteNormal.z);
-}
-
 static void appendClipVertex(
 	XZColumnarClipPolygon& polygon,
 	const ColoredVertex& vertex)
@@ -557,7 +599,8 @@ static void appendVoxelOwnedPolygonToMesh(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
 	const glm::vec3& chunkWorldMin,
-	const VoxelCoord& ownerVoxel)
+	const VoxelCoord& ownerVoxel,
+	const XZColumnarBuildSettings& settings)
 {
 	if (polygon.vertexCount < 3)
 	{
@@ -572,6 +615,12 @@ static void appendVoxelOwnedPolygonToMesh(
 	const uint32_t baseVertexIndex =
 		static_cast<uint32_t>(mesh.vertices.size());
 
+	const glm::vec3 pieceColor =
+		getColumnarPieceColor(
+			polygon,
+			settings,
+			ownerVoxel);
+
 	for (uint32_t vertexIndex = 0;
 		vertexIndex < polygon.vertexCount;
 		++vertexIndex)
@@ -580,6 +629,7 @@ static void appendVoxelOwnedPolygonToMesh(
 			polygon.vertices[vertexIndex];
 
 		localVertex.position -= chunkWorldMin;
+		localVertex.color = pieceColor;
 
 		mesh.vertices.push_back(localVertex);
 	}
@@ -608,7 +658,8 @@ static void appendVoxelYSlicedPolygonToMesh(
 	const XZColumnarClipPolygon& polygon,
 	const glm::vec3& chunkWorldMin,
 	uint32_t localX,
-	uint32_t localZ)
+	uint32_t localZ,
+	const XZColumnarBuildSettings& settings)
 {
 	if (polygon.vertexCount < 3)
 	{
@@ -680,11 +731,10 @@ static void appendVoxelYSlicedPolygonToMesh(
 			mesh,
 			voxelClippedPolygon,
 			chunkWorldMin,
-			ownerVoxel);
+			ownerVoxel,
+			settings);
 	}
 }
-
-
 
 /***********************************************************
 * Patch Construction Helpers
@@ -740,7 +790,7 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 		(z0 + z1) * 0.5f;
 
 	const glm::vec3 color =
-		getColumnarColor(
+		getNormalColor(
 			center.gradientX,
 			center.gradientZ);
 
@@ -862,7 +912,8 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 				planarQuad,
 				chunkWorldMin,
 				localX,
-				localZ);
+				localZ,
+				settings);
 		}
 	}
 

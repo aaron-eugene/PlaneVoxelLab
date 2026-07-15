@@ -83,6 +83,29 @@ static bool uploadXZColumnarRenderMesh(
 	return true;
 }
 
+static const char* getCurrentColorizationDebugName(
+	const XZColumnarExperiment& experiment)
+{
+	switch (experiment.buildSettings.colorization)
+	{
+	case XZColumnarColorization::Normal:
+	{
+		return "Normal";
+	} break;
+
+	case XZColumnarColorization::OwnerVoxelY:
+	{
+		return "Owner Voxel Y";
+	} break;
+
+	default:
+	{
+		assert(false);
+		return "Unknown";
+	} break;
+	}
+}
+
 /***********************************************************
 * XZ Columnar Experiment Lifecycle
 ************************************************************/
@@ -101,13 +124,21 @@ bool initializeXZColumnarExperiment(
 		world);
 }
 
-void shutdownXZColumnarExperiment(
+static void destroyXZColumnarExperimentMeshes(
 	XZColumnarExperiment& experiment)
 {
 	for (XZColumnarRenderMesh& renderMesh : experiment.meshes)
 	{
 		destroyXZColumnarRenderMesh(renderMesh);
 	}
+
+	experiment.meshes.clear();
+}
+
+void shutdownXZColumnarExperiment(
+	XZColumnarExperiment& experiment)
+{
+	destroyXZColumnarExperimentMeshes(experiment);
 
 	experiment = {};
 }
@@ -116,10 +147,8 @@ bool rebuildXZColumnarExperiment(
 	XZColumnarExperiment& experiment,
 	const LabWorld& world)
 {
-	shutdownXZColumnarExperiment(experiment);
+	destroyXZColumnarExperimentMeshes(experiment);
 
-	// The first version of this experiment only supports the heightmap-backed
-	// density field. Other fields can still be shown by the reference surface.
 	if (world.activeDensityFieldType != LabWorldDensityFieldType::Heightmap)
 	{
 		return true;
@@ -147,7 +176,7 @@ bool rebuildXZColumnarExperiment(
 		if (!uploadXZColumnarRenderMesh(renderMesh))
 		{
 			destroyXZColumnarRenderMesh(renderMesh);
-			shutdownXZColumnarExperiment(experiment);
+			destroyXZColumnarExperimentMeshes(experiment);
 			return false;
 		}
 
@@ -203,23 +232,18 @@ void renderXZColumnarExperiment(
 * XZ Columnar Experiment Debug UI
 ************************************************************/
 
-void renderXZColumnarExperimentDebugUiContent(
+bool renderXZColumnarExperimentDebugUiContent(
 	XZColumnarExperiment& experiment,
 	const LabWorld& world)
 {
 	(void)world;
 
+	bool needsRebuild = false;
+
 	ImGui::SeparatorText("XZ Columnar Experiment");
 
 	uint64_t vertexCount = 0;
 	uint64_t indexCount = 0;
-
-	for (const XZColumnarRenderMesh& mesh : experiment.meshes)
-	{
-		vertexCount += mesh.cpuMesh.vertices.size();
-		indexCount += mesh.cpuMesh.indices.size();
-	}
-
 	uint64_t pieceCount = 0;
 
 	for (const XZColumnarRenderMesh& mesh : experiment.meshes)
@@ -248,4 +272,58 @@ void renderXZColumnarExperimentDebugUiContent(
 	ImGui::Text(
 		"Derivative step: %.3f",
 		experiment.buildSettings.derivativeStepMeters);
+
+	const char* colorizationName = "Unknown";
+
+	switch (experiment.buildSettings.colorization)
+	{
+	case XZColumnarColorization::Normal:
+	{
+		colorizationName = "Normal";
+	} break;
+
+	case XZColumnarColorization::OwnerVoxelY:
+	{
+		colorizationName = "Owner Voxel Y";
+	} break;
+
+	default:
+	{
+		assert(false);
+	} break;
+	}
+
+	ImGui::Text(
+		"Colorization: %s",
+		colorizationName);
+
+	if (ImGui::Button("Cycle Colorization"))
+	{
+		switch (experiment.buildSettings.colorization)
+		{
+		case XZColumnarColorization::Normal:
+		{
+			experiment.buildSettings.colorization =
+				XZColumnarColorization::OwnerVoxelY;
+		} break;
+
+		case XZColumnarColorization::OwnerVoxelY:
+		{
+			experiment.buildSettings.colorization =
+				XZColumnarColorization::Normal;
+		} break;
+
+		default:
+		{
+			assert(false);
+
+			experiment.buildSettings.colorization =
+				XZColumnarColorization::Normal;
+		} break;
+		}
+
+		needsRebuild = true;
+	}
+
+	return needsRebuild;
 }

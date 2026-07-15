@@ -338,7 +338,18 @@ void renderDebugUiContent(
 	//--------------------------------------------------
 	// Active Experiment Debug Interface
 	//--------------------------------------------------
-	renderActiveExperimentDebugUiContent(
-		lab.activeExperiment,
-		lab.world);
+	const bool activeExperimentNeedsRebuild =
+		renderActiveExperimentDebugUiContent(
+			lab.activeExperiment,
+			lab.world);
+
+	if (activeExperimentNeedsRebuild)
+	{
+		const bool activeExperimentRebuilt =
+			rebuildActiveExperiment(
+				lab.activeExperiment,
+				lab.world);
+
+		assert(activeExperimentRebuilt);
+	}
 }

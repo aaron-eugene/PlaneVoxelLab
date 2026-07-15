@@ -164,26 +164,27 @@ void renderActiveExperiment(
 * Active Experiment Debug UI
 ************************************************************/
 
-void renderActiveExperimentDebugUiContent(
+bool renderActiveExperimentDebugUiContent(
 	ActiveExperiment& experiment,
 	const LabWorld& world)
 {
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 	(void)experiment;
 	(void)world;
+	return true;
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
-	renderXZColumnarExperimentDebugUiContent(
+	return renderXZColumnarExperimentDebugUiContent(
 		experiment,
 		world);
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
-	renderPolygonIntersectionExperimentDebugUiContent(
+	return renderPolygonIntersectionExperimentDebugUiContent(
 		experiment,
 		world);
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
-	renderProxyTilesExperimentDebugUiContent(
+	return renderProxyTilesExperimentDebugUiContent(
 		experiment,
 		world);
 

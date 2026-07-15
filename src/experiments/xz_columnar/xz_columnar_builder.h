@@ -25,6 +25,16 @@
 #include <vector>
 
 /***********************************************************
+* Columnar Patch Colorization
+************************************************************/
+
+enum class XZColumnarColorization
+{
+	Normal,
+	OwnerVoxelY,
+};
+
+/***********************************************************
 * Columnar Patch Mesh Types
 ************************************************************/
 
@@ -46,9 +56,16 @@ struct XZColumnarMesh
 	std::vector<XZColumnarPiece> pieces = {};
 };
 
+/***********************************************************
+* Columnar Patch Builder Settings
+************************************************************/
+
 struct XZColumnarBuildSettings
 {
 	float derivativeStepMeters = 1.0f;
+
+	XZColumnarColorization colorization =
+		XZColumnarColorization::Normal;
 };
 
 /***********************************************************
