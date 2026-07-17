@@ -35,6 +35,19 @@ static constexpr uint32_t MAX_CLIPPED_POLYGON_VERTICES = 8;
 * File-Local Types
 ************************************************************/
 
+struct XZColumnarPlanarCell
+{
+	uint32_t localX = 0;
+	uint32_t localZ = 0;
+
+	glm::vec3 p00 = {}; // min X, min Z
+	glm::vec3 p01 = {}; // min X, max Z
+	glm::vec3 p11 = {}; // max X, max Z
+	glm::vec3 p10 = {}; // max X, min Z
+
+	glm::vec3 color = {};
+};
+
 struct XZColumnarClipVertex
 {
 	glm::vec3 position = {};
@@ -356,6 +369,30 @@ static XZColumnarClipPolygon clipPolygonToYSlab(
 	return clippedMax;
 }
 
+static XZColumnarClipPolygon getPlanarCellTopPolygon(
+	const XZColumnarPlanarCell& cell)
+{
+	XZColumnarClipPolygon polygon = {};
+
+	appendClipVertex(
+		polygon,
+		{ cell.p00, cell.color });
+
+	appendClipVertex(
+		polygon,
+		{ cell.p01, cell.color });
+
+	appendClipVertex(
+		polygon,
+		{ cell.p11, cell.color });
+
+	appendClipVertex(
+		polygon,
+		{ cell.p10, cell.color });
+
+	return polygon;
+}
+
 /***********************************************************
 * Mesh Emission Helpers
 ************************************************************/
@@ -545,8 +582,10 @@ static void appendVoxelYSlicedPolygonToMesh(
 * Patch Construction Helpers
 ************************************************************/
 
-static XZColumnarClipPolygon buildPlanarColumnarQuad(
+static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 	const HeightmapDensityField& heightmap,
+	uint32_t localX,
+	uint32_t localZ,
 	float x0,
 	float x1,
 	float z0,
@@ -568,12 +607,16 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 	const float centerZ =
 		(z0 + z1) * 0.5f;
 
-	const glm::vec3 color =
+	XZColumnarPlanarCell cell = {};
+	cell.localX = localX;
+	cell.localZ = localZ;
+
+	cell.color =
 		getNormalColor(
 			patchSample.gradientX,
 			patchSample.gradientZ);
 
-	const glm::vec3 p00 =
+	cell.p00 =
 		glm::vec3(
 			x0,
 			evaluateTangentPlaneHeight(
@@ -584,7 +627,7 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 				patchSample),
 			z0);
 
-	const glm::vec3 p01 =
+	cell.p01 =
 		glm::vec3(
 			x0,
 			evaluateTangentPlaneHeight(
@@ -595,7 +638,7 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 				patchSample),
 			z1);
 
-	const glm::vec3 p11 =
+	cell.p11 =
 		glm::vec3(
 			x1,
 			evaluateTangentPlaneHeight(
@@ -606,7 +649,7 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 				patchSample),
 			z1);
 
-	const glm::vec3 p10 =
+	cell.p10 =
 		glm::vec3(
 			x1,
 			evaluateTangentPlaneHeight(
@@ -617,25 +660,7 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 				patchSample),
 			z0);
 
-	XZColumnarClipPolygon polygon = {};
-
-	appendClipVertex(
-		polygon,
-		{ p00, color });
-
-	appendClipVertex(
-		polygon,
-		{ p01, color });
-
-	appendClipVertex(
-		polygon,
-		{ p11, color });
-
-	appendClipVertex(
-		polygon,
-		{ p10, color });
-
-	return polygon;
+	return cell;
 }
 
 static bool buildXZColumnarMeshForSurfaceChunk(
@@ -677,21 +702,27 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 			const float z1 =
 				z0 + VOXEL_SIZE_METERS;
 
-			const XZColumnarClipPolygon planarQuad =
-				buildPlanarColumnarQuad(
+			const XZColumnarPlanarCell planarCell =
+				buildXZColumnarPlanarCell(
 					heightmap,
+					localX,
+					localZ,
 					x0,
 					x1,
 					z0,
 					z1,
 					settings);
 
+			const XZColumnarClipPolygon topPolygon =
+				getPlanarCellTopPolygon(
+					planarCell);
+
 			appendVoxelYSlicedPolygonToMesh(
 				mesh,
-				planarQuad,
+				topPolygon,
 				chunkWorldMin,
-				localX,
-				localZ,
+				planarCell.localX,
+				planarCell.localZ,
 				settings);
 		}
 	}
