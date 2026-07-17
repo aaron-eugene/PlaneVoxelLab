@@ -38,7 +38,7 @@ enum class XZColumnarColorization
 * Columnar Patch Mesh Types
 ************************************************************/
 
-struct XZColumnarPiece
+struct XZColumnarTopPiece
 {
 	VoxelCoord ownerVoxel = {};
 
@@ -53,7 +53,7 @@ struct XZColumnarMesh
 	std::vector<ColoredVertex> vertices = {};
 	std::vector<uint32_t> indices = {};
 
-	std::vector<XZColumnarPiece> pieces = {};
+	std::vector<XZColumnarTopPiece> topPieces = {};
 };
 
 /***********************************************************

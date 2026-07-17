@@ -250,7 +250,7 @@ bool renderXZColumnarExperimentDebugUiContent(
 	{
 		vertexCount += mesh.cpuMesh.vertices.size();
 		indexCount += mesh.cpuMesh.indices.size();
-		pieceCount += mesh.cpuMesh.pieces.size();
+		pieceCount += mesh.cpuMesh.topPieces.size();
 	}
 
 	ImGui::Text(
@@ -258,15 +258,15 @@ bool renderXZColumnarExperimentDebugUiContent(
 		experiment.meshes.size());
 
 	ImGui::Text(
-		"Experiment pieces: %llu",
+		"Experiment top pieces: %llu",
 		static_cast<unsigned long long>(pieceCount));
 
 	ImGui::Text(
-		"Experiment vertices: %llu",
+		"Experiment mesh vertices: %llu",
 		static_cast<unsigned long long>(vertexCount));
 
 	ImGui::Text(
-		"Experiment indices: %llu",
+		"Experiment mesh indices: %llu",
 		static_cast<unsigned long long>(indexCount));
 
 	ImGui::Text(

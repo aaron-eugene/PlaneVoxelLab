@@ -8,6 +8,7 @@
 
 #include "experiments/xz_columnar/xz_columnar_builder.h"
 
+#include "experiments/xz_columnar/xz_columnar_patch.h"
 #include "fields/field_generators.h"
 #include "lab_world/lab_world_constants.h"
 #include "lab_world/lab_world_coordinates.h"
@@ -24,7 +25,7 @@
 #include <cstdint>
 
 /***********************************************************
-* Constants
+* Clipping Constants
 ************************************************************/
 
 static constexpr float XZ_COLUMNAR_EPSILON = 0.00001f;
@@ -34,29 +35,15 @@ static constexpr uint32_t MAX_CLIPPED_POLYGON_VERTICES = 8;
 * File-Local Types
 ************************************************************/
 
-struct XZColumnarPatchCorner
+struct XZColumnarClipVertex
 {
-	float x = 0.0f;
-	float z = 0.0f;
-
-	float height = 0.0f;
-
-	float gradientX = 0.0f;
-	float gradientZ = 0.0f;
-	float gradientXZ = 0.0f;
-};
-
-struct XZColumnarPatchCenter
-{
-	float height = 0.0f;
-
-	float gradientX = 0.0f;
-	float gradientZ = 0.0f;
+	glm::vec3 position = {};
+	glm::vec3 color = {};
 };
 
 struct XZColumnarClipPolygon
 {
-	ColoredVertex vertices[MAX_CLIPPED_POLYGON_VERTICES] = {};
+	XZColumnarClipVertex vertices[MAX_CLIPPED_POLYGON_VERTICES] = {};
 	uint32_t vertexCount = 0;
 };
 
@@ -191,244 +178,19 @@ static uint32_t getClampedLocalVoxelYFromWorldY(
 }
 
 /***********************************************************
-* Height Sampling Helpers
+* Tangent Plane Helpers
 ************************************************************/
-
-static float sampleHeight(
-	const HeightmapDensityField& heightmap,
-	float x,
-	float z)
-{
-	return sampleHeightmapTerrainHeight(
-		heightmap,
-		x,
-		z);
-}
-
-static XZColumnarPatchCorner samplePatchCorner(
-	const HeightmapDensityField& heightmap,
-	float x,
-	float z,
-	float derivativeStepMeters)
-{
-	assert(derivativeStepMeters > 0.0f);
-
-	XZColumnarPatchCorner corner = {};
-	corner.x = x;
-	corner.z = z;
-
-	corner.height =
-		sampleHeight(
-			heightmap,
-			x,
-			z);
-
-	const float step =
-		derivativeStepMeters;
-
-	const float heightX0 =
-		sampleHeight(
-			heightmap,
-			x - step,
-			z);
-
-	const float heightX1 =
-		sampleHeight(
-			heightmap,
-			x + step,
-			z);
-
-	const float heightZ0 =
-		sampleHeight(
-			heightmap,
-			x,
-			z - step);
-
-	const float heightZ1 =
-		sampleHeight(
-			heightmap,
-			x,
-			z + step);
-
-	corner.gradientX =
-		(heightX1 - heightX0) /
-		(2.0f * step);
-
-	corner.gradientZ =
-		(heightZ1 - heightZ0) /
-		(2.0f * step);
-
-	const float heightX0Z0 =
-		sampleHeight(
-			heightmap,
-			x - step,
-			z - step);
-
-	const float heightX0Z1 =
-		sampleHeight(
-			heightmap,
-			x - step,
-			z + step);
-
-	const float heightX1Z0 =
-		sampleHeight(
-			heightmap,
-			x + step,
-			z - step);
-
-	const float heightX1Z1 =
-		sampleHeight(
-			heightmap,
-			x + step,
-			z + step);
-
-	corner.gradientXZ =
-		(heightX1Z1 -
-			heightX1Z0 -
-			heightX0Z1 +
-			heightX0Z0) /
-		(4.0f * step * step);
-
-	return corner;
-}
-
-/***********************************************************
-* Bicubic Patch Helpers
-************************************************************/
-
-static void evaluateHermiteBasis(
-	float t,
-	float basis[4],
-	float derivativeBasis[4])
-{
-	const float t2 = t * t;
-	const float t3 = t2 * t;
-
-	basis[0] = 2.0f * t3 - 3.0f * t2 + 1.0f;
-	basis[1] = -2.0f * t3 + 3.0f * t2;
-	basis[2] = t3 - 2.0f * t2 + t;
-	basis[3] = t3 - t2;
-
-	derivativeBasis[0] = 6.0f * t2 - 6.0f * t;
-	derivativeBasis[1] = -6.0f * t2 + 6.0f * t;
-	derivativeBasis[2] = 3.0f * t2 - 4.0f * t + 1.0f;
-	derivativeBasis[3] = 3.0f * t2 - 2.0f * t;
-}
-
-static XZColumnarPatchCenter evaluateBicubicPatchCenter(
-	const XZColumnarPatchCorner& corner00,
-	const XZColumnarPatchCorner& corner10,
-	const XZColumnarPatchCorner& corner01,
-	const XZColumnarPatchCorner& corner11)
-{
-	const float cellSizeX =
-		corner10.x - corner00.x;
-
-	const float cellSizeZ =
-		corner01.z - corner00.z;
-
-	assert(cellSizeX > 0.0f);
-	assert(cellSizeZ > 0.0f);
-
-	float basisU[4] = {};
-	float derivativeBasisU[4] = {};
-	float basisV[4] = {};
-	float derivativeBasisV[4] = {};
-
-	evaluateHermiteBasis(
-		0.5f,
-		basisU,
-		derivativeBasisU);
-
-	evaluateHermiteBasis(
-		0.5f,
-		basisV,
-		derivativeBasisV);
-
-	// Bicubic Hermite data matrix:
-	// [ h00, h01, hz00, hz01 ]
-	// [ h10, h11, hz10, hz11 ]
-	// [ hx00, hx01, hxz00, hxz01 ]
-	// [ hx10, hx11, hxz10, hxz11 ]
-	float patchData[4][4] = {};
-
-	patchData[0][0] = corner00.height;
-	patchData[1][0] = corner10.height;
-	patchData[0][1] = corner01.height;
-	patchData[1][1] = corner11.height;
-
-	patchData[2][0] = corner00.gradientX * cellSizeX;
-	patchData[3][0] = corner10.gradientX * cellSizeX;
-	patchData[2][1] = corner01.gradientX * cellSizeX;
-	patchData[3][1] = corner11.gradientX * cellSizeX;
-
-	patchData[0][2] = corner00.gradientZ * cellSizeZ;
-	patchData[1][2] = corner10.gradientZ * cellSizeZ;
-	patchData[0][3] = corner01.gradientZ * cellSizeZ;
-	patchData[1][3] = corner11.gradientZ * cellSizeZ;
-
-	patchData[2][2] =
-		corner00.gradientXZ * cellSizeX * cellSizeZ;
-
-	patchData[3][2] =
-		corner10.gradientXZ * cellSizeX * cellSizeZ;
-
-	patchData[2][3] =
-		corner01.gradientXZ * cellSizeX * cellSizeZ;
-
-	patchData[3][3] =
-		corner11.gradientXZ * cellSizeX * cellSizeZ;
-
-	float height = 0.0f;
-	float derivativeU = 0.0f;
-	float derivativeV = 0.0f;
-
-	for (uint32_t uIndex = 0;
-		uIndex < 4;
-		++uIndex)
-	{
-		for (uint32_t vIndex = 0;
-			vIndex < 4;
-			++vIndex)
-		{
-			const float value =
-				patchData[uIndex][vIndex];
-
-			height +=
-				basisU[uIndex] *
-				basisV[vIndex] *
-				value;
-
-			derivativeU +=
-				derivativeBasisU[uIndex] *
-				basisV[vIndex] *
-				value;
-
-			derivativeV +=
-				basisU[uIndex] *
-				derivativeBasisV[vIndex] *
-				value;
-		}
-	}
-
-	XZColumnarPatchCenter center = {};
-	center.height = height;
-	center.gradientX = derivativeU / cellSizeX;
-	center.gradientZ = derivativeV / cellSizeZ;
-
-	return center;
-}
 
 static float evaluateTangentPlaneHeight(
 	float x,
 	float z,
 	float centerX,
 	float centerZ,
-	const XZColumnarPatchCenter& center)
+	const XZColumnarPatchSample& sample)
 {
-	return center.height +
-		center.gradientX * (x - centerX) +
-		center.gradientZ * (z - centerZ);
+	return sample.height +
+		sample.gradientX * (x - centerX) +
+		sample.gradientZ * (z - centerZ);
 }
 
 /***********************************************************
@@ -437,7 +199,7 @@ static float evaluateTangentPlaneHeight(
 
 static void appendClipVertex(
 	XZColumnarClipPolygon& polygon,
-	const ColoredVertex& vertex)
+	const XZColumnarClipVertex& vertex)
 {
 	assert(polygon.vertexCount < MAX_CLIPPED_POLYGON_VERTICES);
 
@@ -445,9 +207,9 @@ static void appendClipVertex(
 	++polygon.vertexCount;
 }
 
-static ColoredVertex interpolateClipVertexAtY(
-	const ColoredVertex& a,
-	const ColoredVertex& b,
+static XZColumnarClipVertex interpolateClipVertexAtY(
+	const XZColumnarClipVertex& a,
+	const XZColumnarClipVertex& b,
 	float planeY)
 {
 	const float deltaY =
@@ -458,7 +220,8 @@ static ColoredVertex interpolateClipVertexAtY(
 	const float t =
 		(planeY - a.position.y) / deltaY;
 
-	ColoredVertex result = {};
+	XZColumnarClipVertex result = {};
+
 	result.position =
 		a.position +
 		(b.position - a.position) * t;
@@ -486,10 +249,10 @@ static void clipPolygonMinY(
 		vertexIndex < input.vertexCount;
 		++vertexIndex)
 	{
-		const ColoredVertex& current =
+		const XZColumnarClipVertex& current =
 			input.vertices[vertexIndex];
 
-		const ColoredVertex& previous =
+		const XZColumnarClipVertex& previous =
 			input.vertices[
 				(vertexIndex + input.vertexCount - 1) %
 					input.vertexCount];
@@ -535,19 +298,21 @@ static void clipPolygonMaxY(
 		vertexIndex < input.vertexCount;
 		++vertexIndex)
 	{
-		const ColoredVertex& current =
+		const XZColumnarClipVertex& current =
 			input.vertices[vertexIndex];
 
-		const ColoredVertex& previous =
+		const XZColumnarClipVertex& previous =
 			input.vertices[
 				(vertexIndex + input.vertexCount - 1) %
 					input.vertexCount];
 
 		const bool currentInside =
-			current.position.y <= maxY + XZ_COLUMNAR_EPSILON;
+			current.position.y <=
+			maxY + XZ_COLUMNAR_EPSILON;
 
 		const bool previousInside =
-			previous.position.y <= maxY + XZ_COLUMNAR_EPSILON;
+			previous.position.y <=
+			maxY + XZ_COLUMNAR_EPSILON;
 
 		if (currentInside != previousInside)
 		{
@@ -595,6 +360,40 @@ static XZColumnarClipPolygon clipPolygonToYSlab(
 * Mesh Emission Helpers
 ************************************************************/
 
+static uint32_t appendColoredVertexToMesh(
+	XZColumnarMesh& mesh,
+	const glm::vec3& worldPosition,
+	const glm::vec3& chunkWorldMin,
+	const glm::vec3& color)
+{
+	ColoredVertex vertex = {};
+	vertex.position =
+		worldPosition -
+		chunkWorldMin;
+
+	vertex.color =
+		color;
+
+	const uint32_t vertexIndex =
+		static_cast<uint32_t>(
+			mesh.vertices.size());
+
+	mesh.vertices.push_back(vertex);
+
+	return vertexIndex;
+}
+
+static void appendTriangleToMesh(
+	XZColumnarMesh& mesh,
+	uint32_t index0,
+	uint32_t index1,
+	uint32_t index2)
+{
+	mesh.indices.push_back(index0);
+	mesh.indices.push_back(index1);
+	mesh.indices.push_back(index2);
+}
+
 static void appendVoxelOwnedPolygonToMesh(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
@@ -607,13 +406,11 @@ static void appendVoxelOwnedPolygonToMesh(
 		return;
 	}
 
-	XZColumnarPiece piece = {};
-	piece.ownerVoxel = ownerVoxel;
-	piece.firstIndex =
-		static_cast<uint32_t>(mesh.indices.size());
-
-	const uint32_t baseVertexIndex =
-		static_cast<uint32_t>(mesh.vertices.size());
+	XZColumnarTopPiece topPiece = {};
+	topPiece.ownerVoxel = ownerVoxel;
+	topPiece.firstIndex =
+		static_cast<uint32_t>(
+			mesh.indices.size());
 
 	const glm::vec3 pieceColor =
 		getColumnarPieceColor(
@@ -621,35 +418,43 @@ static void appendVoxelOwnedPolygonToMesh(
 			settings,
 			ownerVoxel);
 
+	const uint32_t baseVertexIndex =
+		static_cast<uint32_t>(
+			mesh.vertices.size());
+
 	for (uint32_t vertexIndex = 0;
 		vertexIndex < polygon.vertexCount;
 		++vertexIndex)
 	{
-		ColoredVertex localVertex =
+		const XZColumnarClipVertex& clipVertex =
 			polygon.vertices[vertexIndex];
 
-		localVertex.position -= chunkWorldMin;
-		localVertex.color = pieceColor;
-
-		mesh.vertices.push_back(localVertex);
+		appendColoredVertexToMesh(
+			mesh,
+			clipVertex.position,
+			chunkWorldMin,
+			pieceColor);
 	}
 
 	for (uint32_t vertexIndex = 1;
 		vertexIndex + 1 < polygon.vertexCount;
 		++vertexIndex)
 	{
-		mesh.indices.push_back(baseVertexIndex);
-		mesh.indices.push_back(baseVertexIndex + vertexIndex);
-		mesh.indices.push_back(baseVertexIndex + vertexIndex + 1);
+		appendTriangleToMesh(
+			mesh,
+			baseVertexIndex,
+			baseVertexIndex + vertexIndex,
+			baseVertexIndex + vertexIndex + 1);
 	}
 
-	piece.indexCount =
-		static_cast<uint32_t>(mesh.indices.size()) -
-		piece.firstIndex;
+	topPiece.indexCount =
+		static_cast<uint32_t>(
+			mesh.indices.size()) -
+		topPiece.firstIndex;
 
-	if (piece.indexCount > 0)
+	if (topPiece.indexCount > 0)
 	{
-		mesh.pieces.push_back(piece);
+		mesh.topPieces.push_back(topPiece);
 	}
 }
 
@@ -748,40 +553,14 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 	float z1,
 	const XZColumnarBuildSettings& settings)
 {
-	const XZColumnarPatchCorner corner00 =
-		samplePatchCorner(
+	const XZColumnarPatchSample patchSample =
+		sampleXZColumnarPatchCenter(
 			heightmap,
 			x0,
-			z0,
-			settings.derivativeStepMeters);
-
-	const XZColumnarPatchCorner corner10 =
-		samplePatchCorner(
-			heightmap,
 			x1,
 			z0,
-			settings.derivativeStepMeters);
-
-	const XZColumnarPatchCorner corner01 =
-		samplePatchCorner(
-			heightmap,
-			x0,
 			z1,
 			settings.derivativeStepMeters);
-
-	const XZColumnarPatchCorner corner11 =
-		samplePatchCorner(
-			heightmap,
-			x1,
-			z1,
-			settings.derivativeStepMeters);
-
-	const XZColumnarPatchCenter center =
-		evaluateBicubicPatchCenter(
-			corner00,
-			corner10,
-			corner01,
-			corner11);
 
 	const float centerX =
 		(x0 + x1) * 0.5f;
@@ -791,8 +570,8 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 
 	const glm::vec3 color =
 		getNormalColor(
-			center.gradientX,
-			center.gradientZ);
+			patchSample.gradientX,
+			patchSample.gradientZ);
 
 	const glm::vec3 p00 =
 		glm::vec3(
@@ -802,7 +581,7 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 				z0,
 				centerX,
 				centerZ,
-				center),
+				patchSample),
 			z0);
 
 	const glm::vec3 p01 =
@@ -813,7 +592,7 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 				z1,
 				centerX,
 				centerZ,
-				center),
+				patchSample),
 			z1);
 
 	const glm::vec3 p11 =
@@ -824,7 +603,7 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 				z1,
 				centerX,
 				centerZ,
-				center),
+				patchSample),
 			z1);
 
 	const glm::vec3 p10 =
@@ -835,7 +614,7 @@ static XZColumnarClipPolygon buildPlanarColumnarQuad(
 				z0,
 				centerX,
 				centerZ,
-				center),
+				patchSample),
 			z0);
 
 	XZColumnarClipPolygon polygon = {};

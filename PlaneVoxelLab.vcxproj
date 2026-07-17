@@ -150,6 +150,7 @@
     <ClCompile Include="src\chunk\chunk_sampling.cpp" />
     <ClCompile Include="src\experiments\xz_columnar\xz_columnar_builder.cpp" />
     <ClCompile Include="src\experiments\xz_columnar\xz_columnar_experiment.cpp" />
+    <ClCompile Include="src\experiments\xz_columnar\xz_columnar_patch.cpp" />
     <ClCompile Include="src\fields\density_field.cpp" />
     <ClCompile Include="src\fields\field_generators.cpp" />
     <ClCompile Include="src\geometry\voxel_topology.cpp" />
@@ -174,6 +175,7 @@
     <ClInclude Include="src\chunk\chunk_sampling.h" />
     <ClInclude Include="src\experiments\xz_columnar\xz_columnar_builder.h" />
     <ClInclude Include="src\experiments\xz_columnar\xz_columnar_experiment.h" />
+    <ClInclude Include="src\experiments\xz_columnar\xz_columnar_patch.h" />
     <ClInclude Include="src\fields\density_field.h" />
     <ClInclude Include="src\fields\field_generators.h" />
     <ClInclude Include="src\geometry\voxel_topology.h" />
