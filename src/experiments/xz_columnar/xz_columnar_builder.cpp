@@ -78,8 +78,6 @@ struct XZColumnarSideRegion
 
 	XZColumnarSide ownerSide =
 		XZColumnarSide::PositiveX;
-
-	glm::vec3 ownerColor = {};
 };
 
 /***********************************************************
@@ -148,6 +146,52 @@ static glm::vec3 getColumnarSideColor(
 	const glm::vec3& topColor)
 {
 	return topColor * 0.75f;
+}
+
+static glm::vec3 getColumnarSideNormal(
+	XZColumnarSide side)
+{
+	switch (side)
+	{
+	case XZColumnarSide::NegativeX:
+		return glm::vec3(-1.0f, 0.0f, 0.0f);
+
+	case XZColumnarSide::PositiveX:
+		return glm::vec3(1.0f, 0.0f, 0.0f);
+
+	case XZColumnarSide::NegativeZ:
+		return glm::vec3(0.0f, 0.0f, -1.0f);
+
+	case XZColumnarSide::PositiveZ:
+		return glm::vec3(0.0f, 0.0f, 1.0f);
+
+	default:
+		assert(false);
+		return glm::vec3(0.0f, 1.0f, 0.0f);
+	}
+}
+
+static glm::vec3 getSignedNormalColor(
+	const glm::vec3& normal)
+{
+	const glm::vec3 normalizedNormal =
+		glm::normalize(normal);
+
+	return glm::vec3(0.5f) +
+		normalizedNormal * 0.5f;
+}
+
+static void setClipPolygonColor(
+	XZColumnarClipPolygon& polygon,
+	const glm::vec3& color)
+{
+	for (uint32_t vertexIndex = 0;
+		vertexIndex < polygon.vertexCount;
+		++vertexIndex)
+	{
+		polygon.vertices[vertexIndex].color =
+			color;
+	}
 }
 
 /***********************************************************
@@ -467,6 +511,46 @@ static void removeClosingDuplicateClipVertex(
 	{
 		--polygon.vertexCount;
 	}
+}
+
+static glm::vec3 getClipPolygonNormal(
+	const XZColumnarClipPolygon& polygon)
+{
+	assert(polygon.vertexCount >= 3);
+
+	for (uint32_t vertexIndex = 1;
+		vertexIndex + 1 < polygon.vertexCount;
+		++vertexIndex)
+	{
+		const glm::vec3 edgeA =
+			polygon.vertices[vertexIndex].position -
+			polygon.vertices[0].position;
+
+		const glm::vec3 edgeB =
+			polygon.vertices[vertexIndex + 1].position -
+			polygon.vertices[0].position;
+
+		const glm::vec3 crossProduct =
+			glm::cross(
+				edgeA,
+				edgeB);
+
+		const float lengthSquared =
+			glm::dot(
+				crossProduct,
+				crossProduct);
+
+		if (lengthSquared >
+			XZ_COLUMNAR_EPSILON *
+			XZ_COLUMNAR_EPSILON)
+		{
+			return glm::normalize(
+				crossProduct);
+		}
+	}
+
+	assert(false);
+	return glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
 /***********************************************************
@@ -826,9 +910,6 @@ static XZColumnarSideRegion buildSideRegion(
 
 		region.ownerSide =
 			sideA;
-
-		region.ownerColor =
-			cellA.color;
 	}
 	else
 	{
@@ -860,9 +941,6 @@ static XZColumnarSideRegion buildSideRegion(
 
 		region.ownerSide =
 			sideB;
-
-		region.ownerColor =
-			cellB.color;
 	}
 
 	return region;
@@ -958,60 +1036,80 @@ static XZColumnarClipPolygon getSideRegionPolygon(
 {
 	XZColumnarClipPolygon polygon = {};
 
-	const glm::vec3 color =
-		getColumnarSideColor(
-			region.ownerColor);
-
 	switch (region.ownerSide)
 	{
-	case XZColumnarSide::PositiveX:
-	case XZColumnarSide::NegativeZ:
-	{
-		appendClipVertex(
-			polygon,
-			{ region.upper.start, color });
-
-		appendClipVertex(
-			polygon,
-			{ region.lower.start, color });
-
-		appendClipVertex(
-			polygon,
-			{ region.lower.end, color });
-
-		appendClipVertex(
-			polygon,
-			{ region.upper.end, color });
-	} break;
-
 	case XZColumnarSide::NegativeX:
 	case XZColumnarSide::PositiveZ:
 	{
 		appendClipVertex(
 			polygon,
-			{ region.upper.start, color });
+			{ region.upper.start, {} });
 
 		appendClipVertex(
 			polygon,
-			{ region.upper.end, color });
+			{ region.lower.start, {} });
 
 		appendClipVertex(
 			polygon,
-			{ region.lower.end, color });
+			{ region.lower.end, {} });
 
 		appendClipVertex(
 			polygon,
-			{ region.lower.start, color });
+			{ region.upper.end, {} });
+	} break;
+
+	case XZColumnarSide::PositiveX:
+	case XZColumnarSide::NegativeZ:
+	{
+		appendClipVertex(
+			polygon,
+			{ region.upper.start, {} });
+
+		appendClipVertex(
+			polygon,
+			{ region.upper.end, {} });
+
+		appendClipVertex(
+			polygon,
+			{ region.lower.end, {} });
+
+		appendClipVertex(
+			polygon,
+			{ region.lower.start, {} });
 	} break;
 
 	default:
 	{
 		assert(false);
+		return {};
 	} break;
 	}
 
 	removeClosingDuplicateClipVertex(
 		polygon);
+
+	if (polygon.vertexCount < 3)
+	{
+		return {};
+	}
+
+	const glm::vec3 polygonNormal =
+		getClipPolygonNormal(
+			polygon);
+
+	const glm::vec3 expectedNormal =
+		getColumnarSideNormal(
+			region.ownerSide);
+
+	assert(
+		glm::dot(
+			polygonNormal,
+			expectedNormal) > 0.0f);
+
+	setClipPolygonColor(
+		polygon,
+		getSignedNormalColor(
+			polygonNormal));
 
 	return polygon;
 }
