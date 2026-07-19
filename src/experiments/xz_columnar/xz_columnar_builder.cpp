@@ -8,6 +8,7 @@
 
 #include "experiments/xz_columnar/xz_columnar_builder.h"
 
+#include "experiments/xz_columnar/xz_columnar_clipping.h"
 #include "experiments/xz_columnar/xz_columnar_patch.h"
 #include "fields/field_generators.h"
 #include "lab_world/lab_world_constants.h"
@@ -29,7 +30,7 @@
 ************************************************************/
 
 static constexpr float XZ_COLUMNAR_EPSILON = 0.00001f;
-static constexpr uint32_t MAX_CLIPPED_POLYGON_VERTICES = 8;
+
 
 /***********************************************************
 * File-Local Types
@@ -47,18 +48,6 @@ struct XZColumnarPlanarCell
 	glm::vec3 p10 = {}; // max X, min Z
 
 	glm::vec3 color = {};
-};
-
-struct XZColumnarClipVertex
-{
-	glm::vec3 position = {};
-	glm::vec3 color = {};
-};
-
-struct XZColumnarClipPolygon
-{
-	XZColumnarClipVertex vertices[MAX_CLIPPED_POLYGON_VERTICES] = {};
-	uint32_t vertexCount = 0;
 };
 
 // One edge (line segment) of a planar top
@@ -142,12 +131,6 @@ static glm::vec3 getColumnarPieceColor(
 	}
 }
 
-static glm::vec3 getColumnarSideColor(
-	const glm::vec3& topColor)
-{
-	return topColor * 0.75f;
-}
-
 static glm::vec3 getColumnarSideNormal(
 	XZColumnarSide side)
 {
@@ -181,64 +164,9 @@ static glm::vec3 getSignedNormalColor(
 		normalizedNormal * 0.5f;
 }
 
-static void setClipPolygonColor(
-	XZColumnarClipPolygon& polygon,
-	const glm::vec3& color)
-{
-	for (uint32_t vertexIndex = 0;
-		vertexIndex < polygon.vertexCount;
-		++vertexIndex)
-	{
-		polygon.vertices[vertexIndex].color =
-			color;
-	}
-}
-
 /***********************************************************
 * Y-Range Helpers
 ************************************************************/
-
-static float getPolygonMinY(
-	const XZColumnarClipPolygon& polygon)
-{
-	assert(polygon.vertexCount > 0);
-
-	float minY =
-		polygon.vertices[0].position.y;
-
-	for (uint32_t vertexIndex = 1;
-		vertexIndex < polygon.vertexCount;
-		++vertexIndex)
-	{
-		minY =
-			std::min(
-				minY,
-				polygon.vertices[vertexIndex].position.y);
-	}
-
-	return minY;
-}
-
-static float getPolygonMaxY(
-	const XZColumnarClipPolygon& polygon)
-{
-	assert(polygon.vertexCount > 0);
-
-	float maxY =
-		polygon.vertices[0].position.y;
-
-	for (uint32_t vertexIndex = 1;
-		vertexIndex < polygon.vertexCount;
-		++vertexIndex)
-	{
-		maxY =
-			std::max(
-				maxY,
-				polygon.vertices[vertexIndex].position.y);
-	}
-
-	return maxY;
-}
 
 static uint32_t getClampedLocalVoxelYFromWorldY(
 	float worldY,
@@ -278,279 +206,28 @@ static float evaluateTangentPlaneHeight(
 		sample.gradientZ * (z - centerZ);
 }
 
-/***********************************************************
-* Polygon Clipping Helpers
-************************************************************/
-
-static bool clipVertexPositionsNearlyEqual(
-	const XZColumnarClipVertex& a,
-	const XZColumnarClipVertex& b)
-{
-	return
-		std::abs(a.position.x - b.position.x) <=
-		XZ_COLUMNAR_EPSILON &&
-		std::abs(a.position.y - b.position.y) <=
-		XZ_COLUMNAR_EPSILON &&
-		std::abs(a.position.z - b.position.z) <=
-		XZ_COLUMNAR_EPSILON;
-}
-
-static void appendClipVertex(
-	XZColumnarClipPolygon& polygon,
-	const XZColumnarClipVertex& vertex)
-{
-	if (polygon.vertexCount > 0)
-	{
-		const XZColumnarClipVertex& previous =
-			polygon.vertices[
-				polygon.vertexCount - 1];
-
-		if (clipVertexPositionsNearlyEqual(
-			previous,
-			vertex))
-		{
-			return;
-		}
-	}
-
-	assert(
-		polygon.vertexCount <
-		MAX_CLIPPED_POLYGON_VERTICES);
-
-	polygon.vertices[polygon.vertexCount] =
-		vertex;
-
-	++polygon.vertexCount;
-}
-
-static XZColumnarClipVertex interpolateClipVertexAtY(
-	const XZColumnarClipVertex& a,
-	const XZColumnarClipVertex& b,
-	float planeY)
-{
-	const float deltaY =
-		b.position.y - a.position.y;
-
-	assert(std::abs(deltaY) > XZ_COLUMNAR_EPSILON);
-
-	const float t =
-		(planeY - a.position.y) / deltaY;
-
-	XZColumnarClipVertex result = {};
-
-	result.position =
-		a.position +
-		(b.position - a.position) * t;
-
-	result.color =
-		a.color +
-		(b.color - a.color) * t;
-
-	return result;
-}
-
-static void clipPolygonMinY(
-	const XZColumnarClipPolygon& input,
-	XZColumnarClipPolygon& output,
-	float minY)
-{
-	output = {};
-
-	if (input.vertexCount == 0)
-	{
-		return;
-	}
-
-	for (uint32_t vertexIndex = 0;
-		vertexIndex < input.vertexCount;
-		++vertexIndex)
-	{
-		const XZColumnarClipVertex& current =
-			input.vertices[vertexIndex];
-
-		const XZColumnarClipVertex& previous =
-			input.vertices[
-				(vertexIndex + input.vertexCount - 1) %
-					input.vertexCount];
-
-		const bool currentInside =
-			current.position.y >= minY - XZ_COLUMNAR_EPSILON;
-
-		const bool previousInside =
-			previous.position.y >= minY - XZ_COLUMNAR_EPSILON;
-
-		if (currentInside != previousInside)
-		{
-			appendClipVertex(
-				output,
-				interpolateClipVertexAtY(
-					previous,
-					current,
-					minY));
-		}
-
-		if (currentInside)
-		{
-			appendClipVertex(
-				output,
-				current);
-		}
-	}
-}
-
-static void clipPolygonMaxY(
-	const XZColumnarClipPolygon& input,
-	XZColumnarClipPolygon& output,
-	float maxY)
-{
-	output = {};
-
-	if (input.vertexCount == 0)
-	{
-		return;
-	}
-
-	for (uint32_t vertexIndex = 0;
-		vertexIndex < input.vertexCount;
-		++vertexIndex)
-	{
-		const XZColumnarClipVertex& current =
-			input.vertices[vertexIndex];
-
-		const XZColumnarClipVertex& previous =
-			input.vertices[
-				(vertexIndex + input.vertexCount - 1) %
-					input.vertexCount];
-
-		const bool currentInside =
-			current.position.y <=
-			maxY + XZ_COLUMNAR_EPSILON;
-
-		const bool previousInside =
-			previous.position.y <=
-			maxY + XZ_COLUMNAR_EPSILON;
-
-		if (currentInside != previousInside)
-		{
-			appendClipVertex(
-				output,
-				interpolateClipVertexAtY(
-					previous,
-					current,
-					maxY));
-		}
-
-		if (currentInside)
-		{
-			appendClipVertex(
-				output,
-				current);
-		}
-	}
-}
-
-static XZColumnarClipPolygon clipPolygonToYSlab(
-	const XZColumnarClipPolygon& polygon,
-	float minY,
-	float maxY)
-{
-	assert(maxY > minY);
-
-	XZColumnarClipPolygon clippedMin = {};
-	XZColumnarClipPolygon clippedMax = {};
-
-	clipPolygonMinY(
-		polygon,
-		clippedMin,
-		minY);
-
-	clipPolygonMaxY(
-		clippedMin,
-		clippedMax,
-		maxY);
-
-	return clippedMax;
-}
-
 static XZColumnarClipPolygon getPlanarCellTopPolygon(
 	const XZColumnarPlanarCell& cell)
 {
 	XZColumnarClipPolygon polygon = {};
 
-	appendClipVertex(
+	appendXZColumnarClipVertex(
 		polygon,
 		{ cell.p00, cell.color });
 
-	appendClipVertex(
+	appendXZColumnarClipVertex(
 		polygon,
 		{ cell.p01, cell.color });
 
-	appendClipVertex(
+	appendXZColumnarClipVertex(
 		polygon,
 		{ cell.p11, cell.color });
 
-	appendClipVertex(
+	appendXZColumnarClipVertex(
 		polygon,
 		{ cell.p10, cell.color });
 
 	return polygon;
-}
-
-static void removeClosingDuplicateClipVertex(
-	XZColumnarClipPolygon& polygon)
-{
-	if (polygon.vertexCount < 2)
-	{
-		return;
-	}
-
-	if (clipVertexPositionsNearlyEqual(
-		polygon.vertices[0],
-		polygon.vertices[
-			polygon.vertexCount - 1]))
-	{
-		--polygon.vertexCount;
-	}
-}
-
-static glm::vec3 getClipPolygonNormal(
-	const XZColumnarClipPolygon& polygon)
-{
-	assert(polygon.vertexCount >= 3);
-
-	for (uint32_t vertexIndex = 1;
-		vertexIndex + 1 < polygon.vertexCount;
-		++vertexIndex)
-	{
-		const glm::vec3 edgeA =
-			polygon.vertices[vertexIndex].position -
-			polygon.vertices[0].position;
-
-		const glm::vec3 edgeB =
-			polygon.vertices[vertexIndex + 1].position -
-			polygon.vertices[0].position;
-
-		const glm::vec3 crossProduct =
-			glm::cross(
-				edgeA,
-				edgeB);
-
-		const float lengthSquared =
-			glm::dot(
-				crossProduct,
-				crossProduct);
-
-		if (lengthSquared >
-			XZ_COLUMNAR_EPSILON *
-			XZ_COLUMNAR_EPSILON)
-		{
-			return glm::normalize(
-				crossProduct);
-		}
-	}
-
-	assert(false);
-	return glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
 /***********************************************************
@@ -675,7 +352,7 @@ static void appendVoxelYSlicedPolygonToMesh(
 		chunkWorldMin.y + CHUNK_SIZE_METERS_F;
 
 	const XZColumnarClipPolygon chunkClippedPolygon =
-		clipPolygonToYSlab(
+		clipXZColumnarPolygonToYSlab(
 			polygon,
 			chunkMinY,
 			chunkMaxY);
@@ -686,10 +363,10 @@ static void appendVoxelYSlicedPolygonToMesh(
 	}
 
 	const float polygonMinY =
-		getPolygonMinY(chunkClippedPolygon);
+		getXZColumnarPolygonMinY(chunkClippedPolygon);
 
 	const float polygonMaxY =
-		getPolygonMaxY(chunkClippedPolygon);
+		getXZColumnarPolygonMaxY(chunkClippedPolygon);
 
 	const uint32_t firstLocalY =
 		getClampedLocalVoxelYFromWorldY(
@@ -714,7 +391,7 @@ static void appendVoxelYSlicedPolygonToMesh(
 			voxelMinY + VOXEL_SIZE_METERS;
 
 		const XZColumnarClipPolygon voxelClippedPolygon =
-			clipPolygonToYSlab(
+			clipXZColumnarPolygonToYSlab(
 				chunkClippedPolygon,
 				voxelMinY,
 				voxelMaxY);
@@ -1041,19 +718,19 @@ static XZColumnarClipPolygon getSideRegionPolygon(
 	case XZColumnarSide::NegativeX:
 	case XZColumnarSide::PositiveZ:
 	{
-		appendClipVertex(
+		appendXZColumnarClipVertex(
 			polygon,
 			{ region.upper.start, {} });
 
-		appendClipVertex(
+		appendXZColumnarClipVertex(
 			polygon,
 			{ region.lower.start, {} });
 
-		appendClipVertex(
+		appendXZColumnarClipVertex(
 			polygon,
 			{ region.lower.end, {} });
 
-		appendClipVertex(
+		appendXZColumnarClipVertex(
 			polygon,
 			{ region.upper.end, {} });
 	} break;
@@ -1061,19 +738,19 @@ static XZColumnarClipPolygon getSideRegionPolygon(
 	case XZColumnarSide::PositiveX:
 	case XZColumnarSide::NegativeZ:
 	{
-		appendClipVertex(
+		appendXZColumnarClipVertex(
 			polygon,
 			{ region.upper.start, {} });
 
-		appendClipVertex(
+		appendXZColumnarClipVertex(
 			polygon,
 			{ region.upper.end, {} });
 
-		appendClipVertex(
+		appendXZColumnarClipVertex(
 			polygon,
 			{ region.lower.end, {} });
 
-		appendClipVertex(
+		appendXZColumnarClipVertex(
 			polygon,
 			{ region.lower.start, {} });
 	} break;
@@ -1085,7 +762,7 @@ static XZColumnarClipPolygon getSideRegionPolygon(
 	} break;
 	}
 
-	removeClosingDuplicateClipVertex(
+	removeClosingDuplicateXZColumnarClipVertex(
 		polygon);
 
 	if (polygon.vertexCount < 3)
@@ -1094,7 +771,7 @@ static XZColumnarClipPolygon getSideRegionPolygon(
 	}
 
 	const glm::vec3 polygonNormal =
-		getClipPolygonNormal(
+		getXZColumnarClipPolygonNormal(
 			polygon);
 
 	const glm::vec3 expectedNormal =
@@ -1106,7 +783,7 @@ static XZColumnarClipPolygon getSideRegionPolygon(
 			polygonNormal,
 			expectedNormal) > 0.0f);
 
-	setClipPolygonColor(
+	setXZColumnarClipPolygonColor(
 		polygon,
 		getSignedNormalColor(
 			polygonNormal));
@@ -1214,7 +891,7 @@ static void appendOwnedSideRegionToMesh(
 		CHUNK_SIZE_METERS_F;
 
 	const XZColumnarClipPolygon chunkClippedPolygon =
-		clipPolygonToYSlab(
+		clipXZColumnarPolygonToYSlab(
 			sidePolygon,
 			chunkMinY,
 			chunkMaxY);
@@ -1226,13 +903,13 @@ static void appendOwnedSideRegionToMesh(
 
 	const uint32_t firstLocalY =
 		getClampedLocalVoxelYFromWorldY(
-			getPolygonMinY(
+			getXZColumnarPolygonMinY(
 				chunkClippedPolygon),
 			chunkMinY);
 
 	const uint32_t lastLocalY =
 		getClampedLocalVoxelYFromWorldY(
-			getPolygonMaxY(
+			getXZColumnarPolygonMaxY(
 				chunkClippedPolygon),
 			chunkMinY);
 
@@ -1251,7 +928,7 @@ static void appendOwnedSideRegionToMesh(
 
 		const XZColumnarClipPolygon
 			voxelClippedPolygon =
-			clipPolygonToYSlab(
+			clipXZColumnarPolygonToYSlab(
 				chunkClippedPolygon,
 				voxelMinY,
 				voxelMaxY);
