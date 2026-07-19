@@ -35,10 +35,11 @@ static constexpr uint32_t MAX_CLIPPED_POLYGON_VERTICES = 8;
 * File-Local Types
 ************************************************************/
 
+// Cached planar top for one XZ cell
 struct XZColumnarPlanarCell
 {
-	uint32_t localX = 0;
-	uint32_t localZ = 0;
+	int32_t relativeX = -1; // -1 to CHUNK_SIZE (for halo)
+	int32_t relativeZ = -1; // -1 to CHUNK_SIZE (for halo)
 
 	glm::vec3 p00 = {}; // min X, min Z
 	glm::vec3 p01 = {}; // min X, max Z
@@ -58,6 +59,27 @@ struct XZColumnarClipPolygon
 {
 	XZColumnarClipVertex vertices[MAX_CLIPPED_POLYGON_VERTICES] = {};
 	uint32_t vertexCount = 0;
+};
+
+// One edge (line segment) of a planar top
+struct XZColumnarEdgeProfile
+{
+	glm::vec3 start = {};
+	glm::vec3 end = {};
+};
+
+struct XZColumnarSideRegion
+{
+	XZColumnarEdgeProfile upper = {};
+	XZColumnarEdgeProfile lower = {};
+
+	int32_t ownerRelativeX = 0;
+	int32_t ownerRelativeZ = 0;
+
+	XZColumnarSide ownerSide =
+		XZColumnarSide::PositiveX;
+
+	glm::vec3 ownerColor = {};
 };
 
 /***********************************************************
@@ -120,6 +142,12 @@ static glm::vec3 getColumnarPieceColor(
 		return glm::vec3(1.0f);
 	} break;
 	}
+}
+
+static glm::vec3 getColumnarSideColor(
+	const glm::vec3& topColor)
+{
+	return topColor * 0.75f;
 }
 
 /***********************************************************
@@ -210,13 +238,44 @@ static float evaluateTangentPlaneHeight(
 * Polygon Clipping Helpers
 ************************************************************/
 
+static bool clipVertexPositionsNearlyEqual(
+	const XZColumnarClipVertex& a,
+	const XZColumnarClipVertex& b)
+{
+	return
+		std::abs(a.position.x - b.position.x) <=
+		XZ_COLUMNAR_EPSILON &&
+		std::abs(a.position.y - b.position.y) <=
+		XZ_COLUMNAR_EPSILON &&
+		std::abs(a.position.z - b.position.z) <=
+		XZ_COLUMNAR_EPSILON;
+}
+
 static void appendClipVertex(
 	XZColumnarClipPolygon& polygon,
 	const XZColumnarClipVertex& vertex)
 {
-	assert(polygon.vertexCount < MAX_CLIPPED_POLYGON_VERTICES);
+	if (polygon.vertexCount > 0)
+	{
+		const XZColumnarClipVertex& previous =
+			polygon.vertices[
+				polygon.vertexCount - 1];
 
-	polygon.vertices[polygon.vertexCount] = vertex;
+		if (clipVertexPositionsNearlyEqual(
+			previous,
+			vertex))
+		{
+			return;
+		}
+	}
+
+	assert(
+		polygon.vertexCount <
+		MAX_CLIPPED_POLYGON_VERTICES);
+
+	polygon.vertices[polygon.vertexCount] =
+		vertex;
+
 	++polygon.vertexCount;
 }
 
@@ -391,6 +450,23 @@ static XZColumnarClipPolygon getPlanarCellTopPolygon(
 		{ cell.p10, cell.color });
 
 	return polygon;
+}
+
+static void removeClosingDuplicateClipVertex(
+	XZColumnarClipPolygon& polygon)
+{
+	if (polygon.vertexCount < 2)
+	{
+		return;
+	}
+
+	if (clipVertexPositionsNearlyEqual(
+		polygon.vertices[0],
+		polygon.vertices[
+			polygon.vertexCount - 1]))
+	{
+		--polygon.vertexCount;
+	}
 }
 
 /***********************************************************
@@ -579,13 +655,544 @@ static void appendVoxelYSlicedPolygonToMesh(
 }
 
 /***********************************************************
+* Halo-Grid Helpers
+************************************************************/
+
+static constexpr uint32_t XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE =
+CHUNK_SIZE + 2;
+
+static uint32_t getPlanarCellGridIndex(
+	int32_t relativeX,
+	int32_t relativeZ)
+{
+	assert(relativeX >= -1);
+	assert(
+		relativeX <=
+		static_cast<int32_t>(CHUNK_SIZE));
+
+	assert(relativeZ >= -1);
+	assert(
+		relativeZ <=
+		static_cast<int32_t>(CHUNK_SIZE));
+
+	const uint32_t gridX =
+		static_cast<uint32_t>(
+			relativeX + 1);
+
+	const uint32_t gridZ =
+		static_cast<uint32_t>(
+			relativeZ + 1);
+
+	return gridX +
+		gridZ *
+		XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE;
+}
+
+static const XZColumnarPlanarCell& getPlanarCell(
+	const std::vector<XZColumnarPlanarCell>& planarCells,
+	int32_t relativeX,
+	int32_t relativeZ)
+{
+	const uint32_t index =
+		getPlanarCellGridIndex(
+			relativeX,
+			relativeZ);
+
+	assert(index < planarCells.size());
+
+	return planarCells[index];
+}
+
+static bool isCellCoordinateOwnedByCurrentChunk(
+	int32_t relativeX,
+	int32_t relativeZ)
+{
+	return
+		relativeX >= 0 &&
+		relativeX <
+		static_cast<int32_t>(CHUNK_SIZE) &&
+		relativeZ >= 0 &&
+		relativeZ <
+		static_cast<int32_t>(CHUNK_SIZE);
+}
+
+/***********************************************************
+* Planar Cell Edge Helpers
+************************************************************/
+
+static XZColumnarEdgeProfile getNegativeXEdge(
+	const XZColumnarPlanarCell& cell)
+{
+	return {
+		cell.p00,
+		cell.p01
+	};
+}
+
+static XZColumnarEdgeProfile getPositiveXEdge(
+	const XZColumnarPlanarCell& cell)
+{
+	return {
+		cell.p10,
+		cell.p11
+	};
+}
+
+static XZColumnarEdgeProfile getNegativeZEdge(
+	const XZColumnarPlanarCell& cell)
+{
+	return {
+		cell.p00,
+		cell.p10
+	};
+}
+
+static XZColumnarEdgeProfile getPositiveZEdge(
+	const XZColumnarPlanarCell& cell)
+{
+	return {
+		cell.p01,
+		cell.p11
+	};
+}
+
+static glm::vec3 interpolateEdgeProfile(
+	const XZColumnarEdgeProfile& profile,
+	float t)
+{
+	assert(t >= 0.0f);
+	assert(t <= 1.0f);
+
+	return profile.start +
+		(profile.end - profile.start) * t;
+}
+
+static XZColumnarSideRegion buildSideRegion(
+	const XZColumnarPlanarCell& cellA,
+	const XZColumnarEdgeProfile& profileA,
+	XZColumnarSide sideA,
+	const XZColumnarPlanarCell& cellB,
+	const XZColumnarEdgeProfile& profileB,
+	XZColumnarSide sideB,
+	float startT,
+	float endT)
+{
+	assert(startT >= 0.0f);
+	assert(endT <= 1.0f);
+	assert(endT > startT);
+
+	const float sampleT =
+		(startT + endT) * 0.5f;
+
+	const glm::vec3 sampleA =
+		interpolateEdgeProfile(
+			profileA,
+			sampleT);
+
+	const glm::vec3 sampleB =
+		interpolateEdgeProfile(
+			profileB,
+			sampleT);
+
+	XZColumnarSideRegion region = {};
+
+	if (sampleA.y > sampleB.y)
+	{
+		region.upper.start =
+			interpolateEdgeProfile(
+				profileA,
+				startT);
+
+		region.upper.end =
+			interpolateEdgeProfile(
+				profileA,
+				endT);
+
+		region.lower.start =
+			interpolateEdgeProfile(
+				profileB,
+				startT);
+
+		region.lower.end =
+			interpolateEdgeProfile(
+				profileB,
+				endT);
+
+		region.ownerRelativeX =
+			cellA.relativeX;
+
+		region.ownerRelativeZ =
+			cellA.relativeZ;
+
+		region.ownerSide =
+			sideA;
+
+		region.ownerColor =
+			cellA.color;
+	}
+	else
+	{
+		region.upper.start =
+			interpolateEdgeProfile(
+				profileB,
+				startT);
+
+		region.upper.end =
+			interpolateEdgeProfile(
+				profileB,
+				endT);
+
+		region.lower.start =
+			interpolateEdgeProfile(
+				profileA,
+				startT);
+
+		region.lower.end =
+			interpolateEdgeProfile(
+				profileA,
+				endT);
+
+		region.ownerRelativeX =
+			cellB.relativeX;
+
+		region.ownerRelativeZ =
+			cellB.relativeZ;
+
+		region.ownerSide =
+			sideB;
+
+		region.ownerColor =
+			cellB.color;
+	}
+
+	return region;
+}
+
+static uint32_t buildSharedEdgeSideRegions(
+	XZColumnarSideRegion regions[2],
+	const XZColumnarPlanarCell& cellA,
+	const XZColumnarEdgeProfile& profileA,
+	XZColumnarSide sideA,
+	const XZColumnarPlanarCell& cellB,
+	const XZColumnarEdgeProfile& profileB,
+	XZColumnarSide sideB)
+{
+	const float startDifference =
+		profileA.start.y -
+		profileB.start.y;
+
+	const float endDifference =
+		profileA.end.y -
+		profileB.end.y;
+
+	const bool startEqual =
+		std::abs(startDifference) <=
+		XZ_COLUMNAR_EPSILON;
+
+	const bool endEqual =
+		std::abs(endDifference) <=
+		XZ_COLUMNAR_EPSILON;
+
+	if (startEqual &&
+		endEqual)
+	{
+		return 0;
+	}
+
+	const bool crosses =
+		!startEqual &&
+		!endEqual &&
+		((startDifference < 0.0f) !=
+			(endDifference < 0.0f));
+
+	if (!crosses)
+	{
+		regions[0] =
+			buildSideRegion(
+				cellA,
+				profileA,
+				sideA,
+				cellB,
+				profileB,
+				sideB,
+				0.0f,
+				1.0f);
+
+		return 1;
+	}
+
+	const float crossingT =
+		startDifference /
+		(startDifference - endDifference);
+
+	assert(crossingT > 0.0f);
+	assert(crossingT < 1.0f);
+
+	regions[0] =
+		buildSideRegion(
+			cellA,
+			profileA,
+			sideA,
+			cellB,
+			profileB,
+			sideB,
+			0.0f,
+			crossingT);
+
+	regions[1] =
+		buildSideRegion(
+			cellA,
+			profileA,
+			sideA,
+			cellB,
+			profileB,
+			sideB,
+			crossingT,
+			1.0f);
+
+	return 2;
+}
+
+static XZColumnarClipPolygon getSideRegionPolygon(
+	const XZColumnarSideRegion& region)
+{
+	XZColumnarClipPolygon polygon = {};
+
+	const glm::vec3 color =
+		getColumnarSideColor(
+			region.ownerColor);
+
+	switch (region.ownerSide)
+	{
+	case XZColumnarSide::PositiveX:
+	case XZColumnarSide::NegativeZ:
+	{
+		appendClipVertex(
+			polygon,
+			{ region.upper.start, color });
+
+		appendClipVertex(
+			polygon,
+			{ region.lower.start, color });
+
+		appendClipVertex(
+			polygon,
+			{ region.lower.end, color });
+
+		appendClipVertex(
+			polygon,
+			{ region.upper.end, color });
+	} break;
+
+	case XZColumnarSide::NegativeX:
+	case XZColumnarSide::PositiveZ:
+	{
+		appendClipVertex(
+			polygon,
+			{ region.upper.start, color });
+
+		appendClipVertex(
+			polygon,
+			{ region.upper.end, color });
+
+		appendClipVertex(
+			polygon,
+			{ region.lower.end, color });
+
+		appendClipVertex(
+			polygon,
+			{ region.lower.start, color });
+	} break;
+
+	default:
+	{
+		assert(false);
+	} break;
+	}
+
+	removeClosingDuplicateClipVertex(
+		polygon);
+
+	return polygon;
+}
+
+static void appendVoxelOwnedSidePolygonToMesh(
+	XZColumnarMesh& mesh,
+	const XZColumnarClipPolygon& polygon,
+	const glm::vec3& chunkWorldMin,
+	const VoxelCoord& ownerVoxel,
+	XZColumnarSide side,
+	const XZColumnarBuildSettings& settings)
+{
+	if (polygon.vertexCount < 3)
+	{
+		return;
+	}
+
+	XZColumnarSideFragment fragment = {};
+	fragment.ownerVoxel = ownerVoxel;
+	fragment.side = side;
+	fragment.firstIndex =
+		static_cast<uint32_t>(
+			mesh.indices.size());
+
+	glm::vec3 fragmentColor =
+		polygon.vertices[0].color;
+
+	if (settings.colorization ==
+		XZColumnarColorization::OwnerVoxelY)
+	{
+		fragmentColor =
+			getOwnerVoxelYColor(
+				ownerVoxel.y);
+	}
+
+	const uint32_t baseVertexIndex =
+		static_cast<uint32_t>(
+			mesh.vertices.size());
+
+	for (uint32_t vertexIndex = 0;
+		vertexIndex < polygon.vertexCount;
+		++vertexIndex)
+	{
+		appendColoredVertexToMesh(
+			mesh,
+			polygon.vertices[
+				vertexIndex].position,
+				chunkWorldMin,
+				fragmentColor);
+	}
+
+	for (uint32_t vertexIndex = 1;
+		vertexIndex + 1 < polygon.vertexCount;
+		++vertexIndex)
+	{
+		appendTriangleToMesh(
+			mesh,
+			baseVertexIndex,
+			baseVertexIndex + vertexIndex,
+			baseVertexIndex + vertexIndex + 1);
+	}
+
+	fragment.indexCount =
+		static_cast<uint32_t>(
+			mesh.indices.size()) -
+		fragment.firstIndex;
+
+	if (fragment.indexCount > 0)
+	{
+		mesh.sideFragments.push_back(
+			fragment);
+	}
+}
+
+static void appendOwnedSideRegionToMesh(
+	XZColumnarMesh& mesh,
+	const XZColumnarSideRegion& region,
+	const glm::vec3& chunkWorldMin,
+	const XZColumnarBuildSettings& settings)
+{
+	if (!isCellCoordinateOwnedByCurrentChunk(
+		region.ownerRelativeX,
+		region.ownerRelativeZ))
+	{
+		return;
+	}
+
+	const XZColumnarClipPolygon sidePolygon =
+		getSideRegionPolygon(
+			region);
+
+	if (sidePolygon.vertexCount < 3)
+	{
+		return;
+	}
+
+	const float chunkMinY =
+		chunkWorldMin.y;
+
+	const float chunkMaxY =
+		chunkMinY +
+		CHUNK_SIZE_METERS_F;
+
+	const XZColumnarClipPolygon chunkClippedPolygon =
+		clipPolygonToYSlab(
+			sidePolygon,
+			chunkMinY,
+			chunkMaxY);
+
+	if (chunkClippedPolygon.vertexCount < 3)
+	{
+		return;
+	}
+
+	const uint32_t firstLocalY =
+		getClampedLocalVoxelYFromWorldY(
+			getPolygonMinY(
+				chunkClippedPolygon),
+			chunkMinY);
+
+	const uint32_t lastLocalY =
+		getClampedLocalVoxelYFromWorldY(
+			getPolygonMaxY(
+				chunkClippedPolygon),
+			chunkMinY);
+
+	for (uint32_t localY = firstLocalY;
+		localY <= lastLocalY;
+		++localY)
+	{
+		const float voxelMinY =
+			chunkMinY +
+			static_cast<float>(localY) *
+			VOXEL_SIZE_METERS;
+
+		const float voxelMaxY =
+			voxelMinY +
+			VOXEL_SIZE_METERS;
+
+		const XZColumnarClipPolygon
+			voxelClippedPolygon =
+			clipPolygonToYSlab(
+				chunkClippedPolygon,
+				voxelMinY,
+				voxelMaxY);
+
+		if (voxelClippedPolygon.vertexCount < 3)
+		{
+			continue;
+		}
+
+		VoxelCoord ownerVoxel = {};
+		ownerVoxel.x =
+			static_cast<uint32_t>(
+				region.ownerRelativeX);
+
+		ownerVoxel.y =
+			localY;
+
+		ownerVoxel.z =
+			static_cast<uint32_t>(
+				region.ownerRelativeZ);
+
+		appendVoxelOwnedSidePolygonToMesh(
+			mesh,
+			voxelClippedPolygon,
+			chunkWorldMin,
+			ownerVoxel,
+			region.ownerSide,
+			settings);
+	}
+}
+
+/***********************************************************
 * Patch Construction Helpers
 ************************************************************/
 
 static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 	const HeightmapDensityField& heightmap,
-	uint32_t localX,
-	uint32_t localZ,
+	int32_t relativeX,
+	int32_t relativeZ,
 	float x0,
 	float x1,
 	float z0,
@@ -608,8 +1215,8 @@ static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 		(z0 + z1) * 0.5f;
 
 	XZColumnarPlanarCell cell = {};
-	cell.localX = localX;
-	cell.localZ = localZ;
+	cell.relativeX = relativeX;
+	cell.relativeZ = relativeZ;
 
 	cell.color =
 		getNormalColor(
@@ -665,19 +1272,74 @@ static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 
 static bool buildXZColumnarMeshForSurfaceChunk(
 	XZColumnarMesh& mesh,
+	std::vector<XZColumnarPlanarCell>& planarCells,
 	const HeightmapDensityField& heightmap,
 	const SurfaceChunk& surfaceChunk,
 	const XZColumnarBuildSettings& settings)
 {
+	assert(
+		planarCells.size() ==
+		XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE *
+		XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE);
+
 	mesh = {};
 	mesh.coord = surfaceChunk.coord;
 
 	const glm::dvec3 chunkWorldMinD =
-		getChunkWorldMin(surfaceChunk.coord);
+		getChunkWorldMin(
+			surfaceChunk.coord);
 
 	const glm::vec3 chunkWorldMin =
 		glm::vec3(chunkWorldMinD);
 
+	//--------------------------------------------------
+	// Build Planar Cell Grid
+	//--------------------------------------------------
+	for (int32_t relativeZ = -1;
+		relativeZ <= static_cast<int32_t>(CHUNK_SIZE);
+		++relativeZ)
+	{
+		for (int32_t relativeX = -1;
+			relativeX <= static_cast<int32_t>(CHUNK_SIZE);
+			++relativeX)
+		{
+			const float x0 =
+				chunkWorldMin.x +
+				static_cast<float>(relativeX) *
+				VOXEL_SIZE_METERS;
+
+			const float x1 =
+				x0 + VOXEL_SIZE_METERS;
+
+			const float z0 =
+				chunkWorldMin.z +
+				static_cast<float>(relativeZ) *
+				VOXEL_SIZE_METERS;
+
+			const float z1 =
+				z0 + VOXEL_SIZE_METERS;
+
+			const uint32_t cellIndex =
+				getPlanarCellGridIndex(
+					relativeX,
+					relativeZ);
+
+			planarCells[cellIndex] =
+				buildXZColumnarPlanarCell(
+					heightmap,
+					relativeX,
+					relativeZ,
+					x0,
+					x1,
+					z0,
+					z1,
+					settings);
+		}
+	}
+
+	//--------------------------------------------------
+	// Emit Owned Top Pieces
+	//--------------------------------------------------
 	for (uint32_t localZ = 0;
 		localZ < CHUNK_SIZE;
 		++localZ)
@@ -686,32 +1348,11 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 			localX < CHUNK_SIZE;
 			++localX)
 		{
-			const float x0 =
-				chunkWorldMin.x +
-				static_cast<float>(localX) *
-				VOXEL_SIZE_METERS;
-
-			const float x1 =
-				x0 + VOXEL_SIZE_METERS;
-
-			const float z0 =
-				chunkWorldMin.z +
-				static_cast<float>(localZ) *
-				VOXEL_SIZE_METERS;
-
-			const float z1 =
-				z0 + VOXEL_SIZE_METERS;
-
-			const XZColumnarPlanarCell planarCell =
-				buildXZColumnarPlanarCell(
-					heightmap,
-					localX,
-					localZ,
-					x0,
-					x1,
-					z0,
-					z1,
-					settings);
+			const XZColumnarPlanarCell& planarCell =
+				getPlanarCell(
+					planarCells,
+					static_cast<int32_t>(localX),
+					static_cast<int32_t>(localZ));
 
 			const XZColumnarClipPolygon topPolygon =
 				getPlanarCellTopPolygon(
@@ -721,11 +1362,114 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 				mesh,
 				topPolygon,
 				chunkWorldMin,
-				planarCell.localX,
-				planarCell.localZ,
+				localX,
+				localZ,
 				settings);
 		}
 	}
+
+	//--------------------------------------------------
+	// Discover X Side Regions
+	//--------------------------------------------------
+	for (int32_t relativeZ = 0;
+		relativeZ < static_cast<int32_t>(CHUNK_SIZE);
+		++relativeZ)
+	{
+		for (int32_t negativeX = -1;
+			negativeX < static_cast<int32_t>(CHUNK_SIZE);
+			++negativeX)
+		{
+			const int32_t positiveX =
+				negativeX + 1;
+
+			const XZColumnarPlanarCell& negativeXCell =
+				getPlanarCell(
+					planarCells,
+					negativeX,
+					relativeZ);
+
+			const XZColumnarPlanarCell& positiveXCell =
+				getPlanarCell(
+					planarCells,
+					positiveX,
+					relativeZ);
+
+			XZColumnarSideRegion regions[2] = {};
+
+			const uint32_t regionCount =
+				buildSharedEdgeSideRegions(
+					regions,
+					negativeXCell,
+					getPositiveXEdge(negativeXCell),
+					XZColumnarSide::PositiveX,
+					positiveXCell,
+					getNegativeXEdge(positiveXCell),
+					XZColumnarSide::NegativeX);
+
+			for (uint32_t regionIndex = 0;
+				regionIndex < regionCount;
+				++regionIndex)
+			{
+				appendOwnedSideRegionToMesh(
+					mesh,
+					regions[regionIndex],
+					chunkWorldMin,
+					settings);
+			}
+		}
+	}
+
+	//--------------------------------------------------
+	// Discover Z Side Regions
+	//--------------------------------------------------
+	for (int32_t relativeX = 0;
+		relativeX < static_cast<int32_t>(CHUNK_SIZE);
+		++relativeX)
+	{
+		for (int32_t negativeZ = -1;
+			negativeZ < static_cast<int32_t>(CHUNK_SIZE);
+			++negativeZ)
+		{
+			const int32_t positiveZ =
+				negativeZ + 1;
+
+			const XZColumnarPlanarCell& negativeZCell =
+				getPlanarCell(
+					planarCells,
+					relativeX,
+					negativeZ);
+
+			const XZColumnarPlanarCell& positiveZCell =
+				getPlanarCell(
+					planarCells,
+					relativeX,
+					positiveZ);
+
+			XZColumnarSideRegion regions[2] = {};
+
+			const uint32_t regionCount =
+				buildSharedEdgeSideRegions(
+					regions,
+					negativeZCell,
+					getPositiveZEdge(negativeZCell),
+					XZColumnarSide::PositiveZ,
+					positiveZCell,
+					getNegativeZEdge(positiveZCell),
+					XZColumnarSide::NegativeZ);
+
+			for (uint32_t regionIndex = 0;
+				regionIndex < regionCount;
+				++regionIndex)
+			{
+				appendOwnedSideRegionToMesh(
+					mesh,
+					regions[regionIndex],
+					chunkWorldMin,
+					settings);
+			}
+		}
+	}
+	
 
 	return true;
 }
@@ -756,12 +1500,21 @@ bool buildXZColumnarMeshes(
 
 	meshes.reserve(surfaceMap.chunks.size());
 
+	const size_t planarCellCount =
+		static_cast<size_t>(
+			XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE) *
+			XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE;
+
+	std::vector<XZColumnarPlanarCell> planarCells(
+		planarCellCount);
+
 	for (const SurfaceChunk& surfaceChunk : surfaceMap.chunks)
 	{
 		XZColumnarMesh mesh = {};
 
 		if (!buildXZColumnarMeshForSurfaceChunk(
 			mesh,
+			planarCells,
 			heightmap,
 			surfaceChunk,
 			settings))

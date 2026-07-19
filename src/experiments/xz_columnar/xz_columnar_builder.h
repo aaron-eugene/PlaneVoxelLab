@@ -46,6 +46,25 @@ struct XZColumnarTopPiece
 	uint32_t indexCount = 0;
 };
 
+enum class XZColumnarSide
+{
+	NegativeX,
+	PositiveX,
+	NegativeZ,
+	PositiveZ,
+};
+
+struct XZColumnarSideFragment
+{
+	VoxelCoord ownerVoxel = {};
+
+	XZColumnarSide side =
+		XZColumnarSide::PositiveX;
+
+	uint32_t firstIndex = 0;
+	uint32_t indexCount = 0;
+};
+
 struct XZColumnarMesh
 {
 	ChunkCoord coord = {};
@@ -54,6 +73,7 @@ struct XZColumnarMesh
 	std::vector<uint32_t> indices = {};
 
 	std::vector<XZColumnarTopPiece> topPieces = {};
+	std::vector<XZColumnarSideFragment> sideFragments = {};
 };
 
 /***********************************************************
