@@ -21,10 +21,10 @@
 * XZ Columnar Clipping Constants
 ************************************************************/
 
-constexpr float XZ_COLUMNAR_CLIPPING_EPSILON =
+inline constexpr float XZ_COLUMNAR_CLIPPING_EPSILON =
 	0.00001f;
 
-constexpr uint32_t
+inline constexpr uint32_t
 	MAX_XZ_COLUMNAR_CLIPPED_POLYGON_VERTICES = 8;
 
 /***********************************************************

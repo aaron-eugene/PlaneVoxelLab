@@ -90,13 +90,6 @@ static bool isDensityInside(
 	return density < SURFACE_DENSITY;
 }
 
-static bool doesEdgeCrossSurface(
-	float densityA,
-	float densityB)
-{
-	return isDensityInside(densityA) != isDensityInside(densityB);
-}
-
 /***********************************************************
 * Mesh Helpers
 ************************************************************/

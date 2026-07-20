@@ -233,46 +233,6 @@ XZColumnarClipPolygon clipXZColumnarPolygonToYSlab(
 	return clippedMax;
 }
 
-glm::vec3 getXZColumnarClipPolygonNormal(
-	const XZColumnarClipPolygon& polygon)
-{
-	assert(polygon.vertexCount >= 3);
-
-	for (uint32_t vertexIndex = 1;
-		vertexIndex + 1 < polygon.vertexCount;
-		++vertexIndex)
-	{
-		const glm::vec3 edgeA =
-			polygon.vertices[vertexIndex].position -
-			polygon.vertices[0].position;
-
-		const glm::vec3 edgeB =
-			polygon.vertices[vertexIndex + 1].position -
-			polygon.vertices[0].position;
-
-		const glm::vec3 crossProduct =
-			glm::cross(
-				edgeA,
-				edgeB);
-
-		const float lengthSquared =
-			glm::dot(
-				crossProduct,
-				crossProduct);
-
-		if (lengthSquared >
-			XZ_COLUMNAR_CLIPPING_EPSILON *
-			XZ_COLUMNAR_CLIPPING_EPSILON)
-		{
-			return glm::normalize(
-				crossProduct);
-		}
-	}
-
-	assert(false);
-	return glm::vec3(0.0f, 1.0f, 0.0f);
-}
-
 float getXZColumnarPolygonMinY(
 	const XZColumnarClipPolygon& polygon)
 {
@@ -313,6 +273,46 @@ float getXZColumnarPolygonMaxY(
 	}
 
 	return maxY;
+}
+
+glm::vec3 getXZColumnarClipPolygonNormal(
+	const XZColumnarClipPolygon& polygon)
+{
+	assert(polygon.vertexCount >= 3);
+
+	for (uint32_t vertexIndex = 1;
+		vertexIndex + 1 < polygon.vertexCount;
+		++vertexIndex)
+	{
+		const glm::vec3 edgeA =
+			polygon.vertices[vertexIndex].position -
+			polygon.vertices[0].position;
+
+		const glm::vec3 edgeB =
+			polygon.vertices[vertexIndex + 1].position -
+			polygon.vertices[0].position;
+
+		const glm::vec3 crossProduct =
+			glm::cross(
+				edgeA,
+				edgeB);
+
+		const float lengthSquared =
+			glm::dot(
+				crossProduct,
+				crossProduct);
+
+		if (lengthSquared >
+			XZ_COLUMNAR_CLIPPING_EPSILON *
+			XZ_COLUMNAR_CLIPPING_EPSILON)
+		{
+			return glm::normalize(
+				crossProduct);
+		}
+	}
+
+	assert(false);
+	return glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
 void setXZColumnarClipPolygonColor(

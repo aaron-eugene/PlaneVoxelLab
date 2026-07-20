@@ -29,7 +29,7 @@
 * Clipping Constants
 ************************************************************/
 
-static constexpr float XZ_COLUMNAR_EPSILON = 0.00001f;
+static constexpr float XZ_COLUMNAR_SIDE_EPSILON = 0.00001f;
 
 
 /***********************************************************
@@ -642,11 +642,11 @@ static uint32_t buildSharedEdgeSideRegions(
 
 	const bool startEqual =
 		std::abs(startDifference) <=
-		XZ_COLUMNAR_EPSILON;
+		XZ_COLUMNAR_SIDE_EPSILON;
 
 	const bool endEqual =
 		std::abs(endDifference) <=
-		XZ_COLUMNAR_EPSILON;
+		XZ_COLUMNAR_SIDE_EPSILON;
 
 	if (startEqual &&
 		endEqual)

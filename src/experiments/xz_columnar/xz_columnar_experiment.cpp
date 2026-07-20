@@ -83,29 +83,6 @@ static bool uploadXZColumnarRenderMesh(
 	return true;
 }
 
-static const char* getCurrentColorizationDebugName(
-	const XZColumnarExperiment& experiment)
-{
-	switch (experiment.buildSettings.colorization)
-	{
-	case XZColumnarColorization::Normal:
-	{
-		return "Normal";
-	} break;
-
-	case XZColumnarColorization::OwnerVoxelY:
-	{
-		return "Owner Voxel Y";
-	} break;
-
-	default:
-	{
-		assert(false);
-		return "Unknown";
-	} break;
-	}
-}
-
 /***********************************************************
 * XZ Columnar Experiment Lifecycle
 ************************************************************/
