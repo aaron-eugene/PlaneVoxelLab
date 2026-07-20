@@ -18,7 +18,6 @@
 #pragma once
 
 #include "experiments/xz_columnar/xz_columnar_clipping.h"
-#include "experiments/xz_columnar/xz_columnar_patch.h"
 #include "fields/field_generators.h"
 #include "lab_world/lab_world_coordinates.h"
 
@@ -57,28 +56,17 @@ struct XZColumnarPlanarCellGrid
 };
 
 /***********************************************************
-* XZ Columnar Planar Cell Grid Lifecycle
+* XZ Columnar Planar Cell Interface
 ************************************************************/
 
 void initializeXZColumnarPlanarCellGrid(
 	XZColumnarPlanarCellGrid& grid);
-
-void clearXZColumnarPlanarCellGrid(
-	XZColumnarPlanarCellGrid& grid);
-
-/***********************************************************
-* XZ Columnar Planar Cell Grid Building
-************************************************************/
 
 void buildXZColumnarPlanarCellGrid(
 	XZColumnarPlanarCellGrid& grid,
 	const HeightmapDensityField& heightmap,
 	const ChunkCoord& chunkCoord,
 	float derivativeStepMeters);
-
-/***********************************************************
-* XZ Columnar Planar Cell Grid Queries
-************************************************************/
 
 const XZColumnarPlanarCell& getXZColumnarPlanarCell(
 	const XZColumnarPlanarCellGrid& grid,
@@ -88,10 +76,6 @@ const XZColumnarPlanarCell& getXZColumnarPlanarCell(
 bool isXZColumnarPlanarCellCoordinateOwned(
 	int32_t relativeX,
 	int32_t relativeZ);
-
-/***********************************************************
-* XZ Columnar Planar Cell Polygon Construction
-************************************************************/
 
 XZColumnarClipPolygon getXZColumnarPlanarCellTopPolygon(
 	const XZColumnarPlanarCell& cell);

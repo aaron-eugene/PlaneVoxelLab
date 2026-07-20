@@ -95,10 +95,6 @@ struct XZColumnarBuildSettings
 void clearXZColumnarMeshes(
 	std::vector<XZColumnarMesh>& meshes);
 
-/***********************************************************
-* Columnar Patch Mesh Building
-************************************************************/
-
 bool buildXZColumnarMeshes(
 	std::vector<XZColumnarMesh>& meshes,
 	const HeightmapDensityField& heightmap,
