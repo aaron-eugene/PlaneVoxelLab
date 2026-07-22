@@ -188,6 +188,9 @@
     <ClCompile Include="src\experiments\xz_columnar\xz_columnar_planar_cell.cpp">
       <Filter>src\experiments\xz_columnar</Filter>
     </ClCompile>
+    <ClCompile Include="src\experiments\xz_columnar\xz_columnar_side_region.cpp">
+      <Filter>src\experiments\xz_columnar</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">
@@ -275,6 +278,9 @@
       <Filter>src\experiments\xz_columnar</Filter>
     </ClInclude>
     <ClInclude Include="src\experiments\xz_columnar\xz_columnar_planar_cell.h">
+      <Filter>src\experiments\xz_columnar</Filter>
+    </ClInclude>
+    <ClInclude Include="src\experiments\xz_columnar\xz_columnar_side_region.h">
       <Filter>src\experiments\xz_columnar</Filter>
     </ClInclude>
   </ItemGroup>

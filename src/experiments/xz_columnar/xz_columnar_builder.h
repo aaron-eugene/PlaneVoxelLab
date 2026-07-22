@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "experiments/xz_columnar/xz_columnar_side_region.h"
 #include "fields/field_generators.h"
 #include "lab_world/lab_world_coordinates.h"
 #include "renderer/render_vertex.h"
@@ -44,14 +45,6 @@ struct XZColumnarTopPiece
 
 	uint32_t firstIndex = 0;
 	uint32_t indexCount = 0;
-};
-
-enum class XZColumnarSide
-{
-	NegativeX,
-	PositiveX,
-	NegativeZ,
-	PositiveZ,
 };
 
 struct XZColumnarSideFragment
