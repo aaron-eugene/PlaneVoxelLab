@@ -11,11 +11,18 @@
 #include <glm/ext/vector_float3.hpp>
 
 /***********************************************************
-* Colored Vertex
+* Render Vertex Types
 ************************************************************/
 
 struct ColoredVertex
 {
 	glm::vec3 position = {};
+	glm::vec3 color = {};
+};
+
+struct SurfaceVertex
+{
+	glm::vec3 position = {};
+	glm::vec3 normal = {};
 	glm::vec3 color = {};
 };

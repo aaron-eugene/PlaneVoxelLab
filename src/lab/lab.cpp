@@ -8,8 +8,6 @@
 
 #include "lab/lab.h"
 
-#include <experiments/xz_columnar/xz_columnar_builder.h>
-#include <experiments/xz_columnar/xz_columnar_experiment.h>
 #include "input/input.h"
 #include "lab_debug/surface_chunk_wireframes.h"
 #include "lab_world/lab_world.h"

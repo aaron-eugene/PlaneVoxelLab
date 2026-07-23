@@ -221,13 +221,19 @@ bool renderXZColumnarExperimentDebugUiContent(
 
 	uint64_t vertexCount = 0;
 	uint64_t indexCount = 0;
-	uint64_t pieceCount = 0;
+	uint64_t topPieceCount = 0;
+	uint64_t sideFragmentCount = 0;
+
 
 	for (const XZColumnarRenderMesh& mesh : experiment.meshes)
 	{
 		vertexCount += mesh.cpuMesh.vertices.size();
 		indexCount += mesh.cpuMesh.indices.size();
-		pieceCount += mesh.cpuMesh.topPieces.size();
+		
+		topPieceCount += mesh.cpuMesh.topPieces.size();
+	
+		sideFragmentCount +=
+			mesh.cpuMesh.sideFragments.size();
 	}
 
 	ImGui::Text(
@@ -236,7 +242,7 @@ bool renderXZColumnarExperimentDebugUiContent(
 
 	ImGui::Text(
 		"Experiment top pieces: %llu",
-		static_cast<unsigned long long>(pieceCount));
+		static_cast<unsigned long long>(topPieceCount));
 
 	ImGui::Text(
 		"Experiment mesh vertices: %llu",
@@ -245,6 +251,10 @@ bool renderXZColumnarExperimentDebugUiContent(
 	ImGui::Text(
 		"Experiment mesh indices: %llu",
 		static_cast<unsigned long long>(indexCount));
+
+	ImGui::Text(
+		"Experiment side fragments: %llu",
+		static_cast<unsigned long long>(sideFragmentCount));
 
 	ImGui::Text(
 		"Derivative step: %.3f",
