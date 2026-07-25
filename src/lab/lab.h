@@ -22,6 +22,8 @@
 struct InputState;
 struct Renderer;
 
+
+
 /***********************************************************
 * Lab State
 ************************************************************/
@@ -62,7 +64,7 @@ void updateLab(
 
 void renderLab(
 	const Lab& lab,
-	Renderer& renderer,
+	const Renderer& renderer,
 	const glm::mat4& viewProjection);
 
 /***********************************************************

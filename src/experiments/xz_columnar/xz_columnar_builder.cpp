@@ -23,6 +23,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 /***********************************************************
@@ -653,7 +654,7 @@ bool buildXZColumnarMeshes(
 			continue;
 		}
 
-		meshes.push_back(mesh);
+		meshes.push_back(std::move(mesh));
 	}
 
 	return true;

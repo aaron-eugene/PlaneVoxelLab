@@ -84,7 +84,7 @@ bool rebuildActiveExperiment(
 
 void renderActiveExperiment(
 	const ActiveExperiment& experiment,
-	Renderer& renderer,
+	const Renderer& renderer,
 	const glm::mat4& viewProjection);
 
 /***********************************************************

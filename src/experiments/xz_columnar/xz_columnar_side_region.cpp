@@ -44,29 +44,6 @@ static bool areOpposingColumnarSides(
 			sideB == XZColumnarSide::NegativeZ);
 }
 
-static glm::vec3 getColumnarSideNormal(
-	XZColumnarSide side)
-{
-	switch (side)
-	{
-	case XZColumnarSide::NegativeX:
-		return glm::vec3(-1.0f, 0.0f, 0.0f);
-
-	case XZColumnarSide::PositiveX:
-		return glm::vec3(1.0f, 0.0f, 0.0f);
-
-	case XZColumnarSide::NegativeZ:
-		return glm::vec3(0.0f, 0.0f, -1.0f);
-
-	case XZColumnarSide::PositiveZ:
-		return glm::vec3(0.0f, 0.0f, 1.0f);
-
-	default:
-		assert(false);
-		return glm::vec3(0.0f, 1.0f, 0.0f);
-	}
-}
-
 /***********************************************************
 * Side Colorization Helpers
 ************************************************************/
@@ -241,6 +218,29 @@ static XZColumnarEdgeProfile getPlanarCellEdge(
 * XZ Columnar Side Region Interface
 ************************************************************/
 
+glm::vec3 getXZColumnarSideNormal(
+	XZColumnarSide side)
+{
+	switch (side)
+	{
+	case XZColumnarSide::NegativeX:
+		return glm::vec3(-1.0f, 0.0f, 0.0f);
+
+	case XZColumnarSide::PositiveX:
+		return glm::vec3(1.0f, 0.0f, 0.0f);
+
+	case XZColumnarSide::NegativeZ:
+		return glm::vec3(0.0f, 0.0f, -1.0f);
+
+	case XZColumnarSide::PositiveZ:
+		return glm::vec3(0.0f, 0.0f, 1.0f);
+
+	default:
+		assert(false);
+		return glm::vec3(0.0f, 1.0f, 0.0f);
+	}
+}
+
 uint32_t buildXZColumnarSharedEdgeSideRegions(
 	XZColumnarSideRegion regions[
 		MAX_XZ_COLUMNAR_SHARED_EDGE_REGIONS],
@@ -407,7 +407,7 @@ XZColumnarClipPolygon getXZColumnarSideRegionPolygon(
 			polygon);
 
 	const glm::vec3 expectedNormal =
-		getColumnarSideNormal(
+		getXZColumnarSideNormal(
 			region.ownerSide);
 
 	assert(

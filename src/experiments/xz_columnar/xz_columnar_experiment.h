@@ -72,7 +72,7 @@ void updateXZColumnarExperiment(
 
 void renderXZColumnarExperiment(
 	const XZColumnarExperiment& experiment,
-	Renderer& renderer,
+	const Renderer& renderer,
 	const glm::mat4& viewProjection);
 
 /***********************************************************

@@ -39,9 +39,17 @@ struct GpuMesh
 * GPU Mesh Interface
 ************************************************************/
 
-bool createGpuMesh(
+bool createColoredGpuMesh(
 	GpuMesh& mesh,
 	const ColoredVertex* vertices,
+	uint32_t vertexCount,
+	const uint32_t* indices,
+	uint32_t indexCount,
+	GpuPrimitiveType primitiveType);
+
+bool createSurfaceGpuMesh(
+	GpuMesh& mesh,
+	const SurfaceVertex* vertices,
 	uint32_t vertexCount,
 	const uint32_t* indices,
 	uint32_t indexCount,

@@ -64,6 +64,9 @@ struct XZColumnarSideRegion
 * XZ Columnar Side Region Interface
 ************************************************************/
 
+glm::vec3 getXZColumnarSideNormal(
+	XZColumnarSide side);
+
 uint32_t buildXZColumnarSharedEdgeSideRegions(
 	XZColumnarSideRegion regions[
 		MAX_XZ_COLUMNAR_SHARED_EDGE_REGIONS],

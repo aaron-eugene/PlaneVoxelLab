@@ -25,13 +25,27 @@ struct ColorShader
 	int viewProjectionLocation = -1;
 };
 
+struct SurfaceShader
+{
+	ShaderProgram program = {};
+
+	int modelLocation = -1;
+	int viewProjectionLocation = -1;
+
+	int shadingModeLocation = -1;
+	int lightDirectionLocation = -1;
+	int ambientStrengthLocation = -1;
+	int diffuseStrengthLocation = -1;
+};
+
 /***********************************************************
-* Renderer Types
+* Renderer
 ************************************************************/
 
 struct Renderer
 {
 	ColorShader colorShader = {};
+	SurfaceShader surfaceShader = {};
 };
 
 /***********************************************************
@@ -56,7 +70,7 @@ void endRenderFrame();
 * Renderer Drawing
 ************************************************************/
 
-void renderMesh(
+void renderColoredMesh(
 	const GpuMesh& mesh,
 	const ColorShader& shader,
 	const glm::mat4& model,

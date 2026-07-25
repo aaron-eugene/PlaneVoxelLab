@@ -137,7 +137,7 @@ bool rebuildActiveExperiment(
 
 void renderActiveExperiment(
 	const ActiveExperiment& experiment,
-	Renderer& renderer,
+	const Renderer& renderer,
 	const glm::mat4& viewProjection)
 {
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE

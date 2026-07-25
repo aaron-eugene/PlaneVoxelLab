@@ -39,6 +39,8 @@ inline constexpr uint32_t
 
 struct XZColumnarPlanarCell
 {
+	glm::vec3 normal = {};
+	
 	int32_t relativeX = -1;
 	int32_t relativeZ = -1;
 

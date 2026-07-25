@@ -27,29 +27,26 @@
 * Local Planar Cell Constants
 ************************************************************/
 
+static constexpr int32_t XZ_COLUMNAR_PLANAR_CELL_MIN_COORD = -1;
+
+static constexpr int32_t XZ_COLUMNAR_PLANAR_CELL_MAX_COORD =
+	static_cast<int32_t>(CHUNK_SIZE);
+
 static constexpr uint32_t XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE =
-	CHUNK_SIZE + 2;
+	CHUNK_SIZE + (2 * XZ_COLUMNAR_PLANAR_CELL_HALO_SIZE);
 
 static constexpr size_t XZ_COLUMNAR_PLANAR_CELL_COUNT =
-static_cast<size_t>(
-	XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE) *
-	XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE;
+	static_cast<size_t>(
+		XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE) *
+		XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE;
 
 /***********************************************************
 * Colorization Helpers
 ************************************************************/
 
 static glm::vec3 getNormalColor(
-	float gradientX,
-	float gradientZ)
+	const glm::vec3& normal)
 {
-	const glm::vec3 normal =
-		glm::normalize(
-			glm::vec3(
-				-gradientX,
-				1.0f,
-				-gradientZ));
-
 	const glm::vec3 absoluteNormal =
 		glm::abs(normal);
 
@@ -67,15 +64,11 @@ static uint32_t getPlanarCellGridIndex(
 	int32_t relativeX,
 	int32_t relativeZ)
 {
-	assert(relativeX >= -1);
-	assert(
-		relativeX <=
-		static_cast<int32_t>(CHUNK_SIZE));
+	assert(relativeX >= XZ_COLUMNAR_PLANAR_CELL_MIN_COORD);
+	assert(relativeX <= XZ_COLUMNAR_PLANAR_CELL_MAX_COORD);
 
-	assert(relativeZ >= -1);
-	assert(
-		relativeZ <=
-		static_cast<int32_t>(CHUNK_SIZE));
+	assert(relativeZ >= XZ_COLUMNAR_PLANAR_CELL_MIN_COORD);
+	assert(relativeZ <= XZ_COLUMNAR_PLANAR_CELL_MAX_COORD);
 
 	const uint32_t gridX =
 		static_cast<uint32_t>(
@@ -85,9 +78,7 @@ static uint32_t getPlanarCellGridIndex(
 		static_cast<uint32_t>(
 			relativeZ + 1);
 
-	return gridX +
-		gridZ *
-		XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE;
+	return gridX + (gridZ * XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE);
 }
 
 /***********************************************************
@@ -134,13 +125,19 @@ static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 		(z0 + z1) * 0.5f;
 
 	XZColumnarPlanarCell cell = {};
+	
+	cell.normal =
+		glm::normalize(glm::vec3(
+			-patchSample.gradientX,
+			1.0f,
+			-patchSample.gradientZ));
+
 	cell.relativeX = relativeX;
 	cell.relativeZ = relativeZ;
 
 	cell.color =
 		getNormalColor(
-			patchSample.gradientX,
-			patchSample.gradientZ);
+			cell.normal);
 
 	cell.p00 =
 		glm::vec3(
@@ -218,12 +215,12 @@ void buildXZColumnarPlanarCellGrid(
 			getChunkWorldMin(
 				chunkCoord));
 	
-	for (int32_t relativeZ = -1;
-		relativeZ <= static_cast<int32_t>(CHUNK_SIZE);
+	for (int32_t relativeZ = XZ_COLUMNAR_PLANAR_CELL_MIN_COORD;
+		relativeZ <= XZ_COLUMNAR_PLANAR_CELL_MAX_COORD;
 		++relativeZ)
 	{
-		for (int32_t relativeX = -1;
-			relativeX <= static_cast<int32_t>(CHUNK_SIZE);
+		for (int32_t relativeX = XZ_COLUMNAR_PLANAR_CELL_MIN_COORD;
+			relativeX <= XZ_COLUMNAR_PLANAR_CELL_MAX_COORD;
 			++relativeX)
 		{
 			const float x0 =
@@ -266,8 +263,7 @@ const XZColumnarPlanarCell& getXZColumnarPlanarCell(
 	int32_t relativeX,
 	int32_t relativeZ)
 {
-	assert(
-		grid.cells.size() ==
+	assert(grid.cells.size() ==
 		XZ_COLUMNAR_PLANAR_CELL_COUNT);
 	
 	const uint32_t index =

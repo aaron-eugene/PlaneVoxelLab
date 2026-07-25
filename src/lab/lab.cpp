@@ -151,7 +151,7 @@ void updateLab(
 
 void renderLab(
 	const Lab& lab,
-	Renderer& renderer,
+	const Renderer& renderer,
 	const glm::mat4& viewProjection)
 {
 	if (lab.showSurfaceReference)
@@ -219,7 +219,7 @@ void renderDebugUiContent(
 		&lab.showSurfaceChunkWireframes);
 
 	//--------------------------------------------------
-	// Active Experiment Drop-Down
+	// Density Field Selection
 	//--------------------------------------------------
 	{
 		LabWorldDensityFieldType selectedFieldType =

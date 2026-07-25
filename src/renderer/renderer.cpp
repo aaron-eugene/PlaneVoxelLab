@@ -159,7 +159,7 @@ void endRenderFrame()
 * Renderer Drawing
 ************************************************************/
 
-void renderMesh(
+void renderColoredMesh(
 	const GpuMesh& mesh,
 	const ColorShader& shader,
 	const glm::mat4& model,

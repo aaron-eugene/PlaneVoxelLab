@@ -60,5 +60,5 @@ bool rebuildSurfaceChunkWireframes(
 
 void renderSurfaceChunkWireframes(
 	const SurfaceChunkWireframes& wireframes,
-	Renderer& renderer,
+	const Renderer& renderer,
 	const glm::mat4& viewProjection);

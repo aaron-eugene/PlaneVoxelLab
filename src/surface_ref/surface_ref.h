@@ -71,5 +71,5 @@ bool rebuildSurfaceRef(
 
 void renderSurfaceRef(
 	const SurfaceRef& surfaceRef,
-	Renderer& renderer,
+	const Renderer& renderer,
 	const glm::mat4& viewProjection);

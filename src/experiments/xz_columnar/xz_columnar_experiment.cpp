@@ -68,7 +68,7 @@ static bool uploadXZColumnarRenderMesh(
 	const uint32_t indexCount =
 		static_cast<uint32_t>(renderMesh.cpuMesh.indices.size());
 
-	if (!createGpuMesh(
+	if (!createColoredGpuMesh(
 		renderMesh.gpuMesh,
 		renderMesh.cpuMesh.vertices.data(),
 		vertexCount,
@@ -183,7 +183,7 @@ void updateXZColumnarExperiment(
 
 void renderXZColumnarExperiment(
 	const XZColumnarExperiment& experiment,
-	Renderer& renderer,
+	const Renderer& renderer,
 	const glm::mat4& viewProjection)
 {
 	for (const XZColumnarRenderMesh& columnarMesh : experiment.meshes)
@@ -197,7 +197,7 @@ void renderXZColumnarExperiment(
 		const glm::mat4 model =
 			getChunkModelMatrix(columnarMesh.coord);
 
-		renderMesh(
+		renderColoredMesh(
 			columnarMesh.gpuMesh,
 			renderer.colorShader,
 			model,

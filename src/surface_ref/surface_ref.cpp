@@ -20,6 +20,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <utility>
 
 /***********************************************************
 * File-Local Helpers
@@ -79,7 +80,7 @@ static bool rebuildSurfaceRefChunk(
 	const uint32_t indexCount =
 		static_cast<uint32_t>(surfaceRefChunk.cpuMesh.indices.size());
 
-	if (!createGpuMesh(
+	if (!createColoredGpuMesh(
 		surfaceRefChunk.gpuMesh,
 		surfaceRefChunk.cpuMesh.vertices.data(),
 		vertexCount,
@@ -162,7 +163,7 @@ bool rebuildSurfaceRef(
 		// Keep a SurfaceRefChunk even if the sparse chunk unexpectedly produces
 		// no triangles. That preserves one-to-one correspondence with the
 		// surface map for debugging.
-		surfaceRef.chunks.push_back(surfaceRefChunk);
+		surfaceRef.chunks.push_back(std::move(surfaceRefChunk));
 	}
 
 	return true;
@@ -174,7 +175,7 @@ bool rebuildSurfaceRef(
 
 void renderSurfaceRef(
 	const SurfaceRef& surfaceRef,
-	Renderer& renderer,
+	const Renderer& renderer,
 	const glm::mat4& viewProjection)
 {
 	for (const SurfaceRefChunk& surfaceRefChunk : surfaceRef.chunks)
@@ -188,7 +189,7 @@ void renderSurfaceRef(
 		const glm::mat4 model =
 			getChunkModelMatrix(surfaceRefChunk.coord);
 
-		renderMesh(
+		renderColoredMesh(
 			surfaceRefChunk.gpuMesh,
 			renderer.colorShader,
 			model,

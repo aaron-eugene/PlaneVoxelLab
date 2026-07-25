@@ -122,7 +122,7 @@ static bool createChunkWireframeMesh(
 		vertices,
 		indices);
 
-	if (!createGpuMesh(
+	if (!createColoredGpuMesh(
 		mesh,
 		vertices.data(),
 		static_cast<uint32_t>(vertices.size()),
@@ -211,7 +211,7 @@ bool rebuildSurfaceChunkWireframes(
 
 void renderSurfaceChunkWireframes(
 	const SurfaceChunkWireframes& wireframes,
-	Renderer& renderer,
+	const Renderer& renderer,
 	const glm::mat4& viewProjection)
 {
 	if (wireframes.chunkWireframeMesh.vertexArray == 0 ||
@@ -225,7 +225,7 @@ void renderSurfaceChunkWireframes(
 		const glm::mat4 model =
 			getChunkModelMatrix(chunkCoord);
 
-		renderMesh(
+		renderColoredMesh(
 			wireframes.chunkWireframeMesh,
 			renderer.colorShader,
 			model,
