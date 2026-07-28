@@ -13,6 +13,8 @@
 
 #include <glm/ext/matrix_float4x4.hpp>
 
+struct StandardRenderSettings;
+
 /***********************************************************
 * Renderer Shader Types
 ************************************************************/
@@ -25,7 +27,7 @@ struct ColorShader
 	int viewProjectionLocation = -1;
 };
 
-struct SurfaceShader
+struct StandardShader
 {
 	ShaderProgram program = {};
 
@@ -45,7 +47,7 @@ struct SurfaceShader
 struct Renderer
 {
 	ColorShader colorShader = {};
-	SurfaceShader surfaceShader = {};
+	StandardShader standardShader = {};
 };
 
 /***********************************************************
@@ -73,5 +75,12 @@ void endRenderFrame();
 void renderColoredMesh(
 	const GpuMesh& mesh,
 	const ColorShader& shader,
+	const glm::mat4& model,
+	const glm::mat4& viewProjection);
+
+void renderStandardMesh(
+	const GpuMesh& mesh,
+	const StandardShader& shader,
+	const StandardRenderSettings& settings,
 	const glm::mat4& model,
 	const glm::mat4& viewProjection);

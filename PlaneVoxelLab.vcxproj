@@ -133,6 +133,8 @@
   <ItemGroup>
     <None Include="assets\shaders\color.frag" />
     <None Include="assets\shaders\color.vert" />
+    <None Include="assets\shaders\standard.frag" />
+    <None Include="assets\shaders\standard.vert" />
     <None Include="docs\code_conventions.md" />
     <None Include="docs\module_contracts.md" />
     <None Include="docs\todo.md" />
@@ -200,6 +202,7 @@
     <ClInclude Include="src\renderer\renderer.h" />
     <ClInclude Include="src\renderer\render_vertex.h" />
     <ClInclude Include="src\renderer\shader.h" />
+    <ClInclude Include="src\renderer\standard_render_settings.h" />
     <ClInclude Include="src\surface\surface_map.h" />
     <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.h" />
     <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_tables.h" />

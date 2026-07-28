@@ -21,10 +21,13 @@ struct ColoredVertex
 	glm::vec3 color = {};
 };
 
-struct SurfaceVertex
+struct StandardVertex
 {
 	glm::vec3 position = {};
 	glm::vec3 normal = {};
 	glm::vec3 color = {};
 	glm::vec2 tileUv = {};
 };
+
+// Possible future work:
+// struct MaterialVertex

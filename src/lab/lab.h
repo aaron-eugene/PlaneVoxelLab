@@ -15,14 +15,13 @@
 #include "lab/active_experiment.h"
 #include "lab_debug/surface_chunk_wireframes.h"
 #include "lab_world/lab_world.h"
+#include "renderer/standard_render_settings.h"
 #include "surface_ref/surface_ref.h"
 
 #include <glm/mat4x4.hpp>
 
 struct InputState;
 struct Renderer;
-
-
 
 /***********************************************************
 * Lab State
@@ -35,6 +34,8 @@ struct Lab
 	SurfaceRef surfaceRef = {};
 	SurfaceChunkWireframes surfaceChunkWireframes = {};
 	ActiveExperiment activeExperiment = {};
+
+	StandardRenderSettings surfaceRenderSettings = {};
 
 	bool showSurfaceReference = true;
 	bool showActiveExperiment = true;

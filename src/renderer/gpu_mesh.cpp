@@ -186,7 +186,7 @@ static void configureSurfaceVertexLayout(
 		3,
 		static_cast<uint32_t>(
 			offsetof(
-				SurfaceVertex,
+				StandardVertex,
 				position)));
 
 	configureFloatVertexAttribute(
@@ -195,7 +195,7 @@ static void configureSurfaceVertexLayout(
 		3,
 		static_cast<uint32_t>(
 			offsetof(
-				SurfaceVertex,
+				StandardVertex,
 				normal)));
 
 	configureFloatVertexAttribute(
@@ -204,7 +204,7 @@ static void configureSurfaceVertexLayout(
 		3,
 		static_cast<uint32_t>(
 			offsetof(
-				SurfaceVertex,
+				StandardVertex,
 				color)));
 
 	configureFloatVertexAttribute(
@@ -213,7 +213,7 @@ static void configureSurfaceVertexLayout(
 		2,
 		static_cast<uint32_t>(
 			offsetof(
-				SurfaceVertex,
+				StandardVertex,
 				tileUv)));
 }
 
@@ -246,7 +246,7 @@ bool createColoredGpuMesh(
 
 bool createSurfaceGpuMesh(
 	GpuMesh& mesh,
-	const SurfaceVertex* vertices,
+	const StandardVertex* vertices,
 	uint32_t vertexCount,
 	const uint32_t* indices,
 	uint32_t indexCount,
@@ -257,7 +257,7 @@ bool createSurfaceGpuMesh(
 		vertices,
 		vertexCount,
 		static_cast<uint32_t>(
-			sizeof(SurfaceVertex)),
+			sizeof(StandardVertex)),
 		indices,
 		indexCount,
 		primitiveType);

@@ -47,9 +47,9 @@ bool createColoredGpuMesh(
 	uint32_t indexCount,
 	GpuPrimitiveType primitiveType);
 
-bool createSurfaceGpuMesh(
+bool createStandardGpuMesh(
 	GpuMesh& mesh,
-	const SurfaceVertex* vertices,
+	const StandardVertex* vertices,
 	uint32_t vertexCount,
 	const uint32_t* indices,
 	uint32_t indexCount,
