@@ -621,41 +621,98 @@ bool buildXZColumnarMeshes(
 
 	clearXZColumnarMeshes(meshes);
 
-	meshes.reserve(surfaceMap.chunks.size());
+	meshes.reserve(
+		surfaceMap.chunks.size());
 
 	XZColumnarPlanarCellGrid planarCellGrid = {};
 
 	initializeXZColumnarPlanarCellGrid(
 		planarCellGrid);
 
-	for (const SurfaceChunk& surfaceChunk : surfaceMap.chunks)
+	uint32_t expectedSurfaceChunkIndex = 0;
+
+	for (const SurfaceChunkColumn& column :
+		surfaceMap.columns)
 	{
+		assert(column.surfaceChunkCount > 0);
+
+		assert(
+			column.firstSurfaceChunkIndex ==
+			expectedSurfaceChunkIndex);
+
+		const uint32_t columnEndIndex =
+			column.firstSurfaceChunkIndex +
+			column.surfaceChunkCount;
+
+		assert(
+			columnEndIndex <=
+			surfaceMap.chunks.size());
+
+		const SurfaceChunk& firstSurfaceChunk =
+			surfaceMap.chunks[
+				column.firstSurfaceChunkIndex];
+
+		assert(
+			firstSurfaceChunk.coord.x ==
+			column.chunkX);
+
+		assert(
+			firstSurfaceChunk.coord.z ==
+			column.chunkZ);
+
 		buildXZColumnarPlanarCellGrid(
 			planarCellGrid,
 			heightmap,
-			surfaceChunk.coord,
+			column.chunkX,
+			column.chunkZ,
 			settings.derivativeStepMeters);
-		
-		XZColumnarMesh mesh = {};
 
-		if (!buildXZColumnarMeshForSurfaceChunk(
-			mesh,
-			planarCellGrid,
-			surfaceChunk,
-			settings))
+		for (uint32_t surfaceChunkIndex =
+			column.firstSurfaceChunkIndex;
+			surfaceChunkIndex < columnEndIndex;
+			++surfaceChunkIndex)
 		{
-			clearXZColumnarMeshes(meshes);
-			return false;
+			const SurfaceChunk& surfaceChunk =
+				surfaceMap.chunks[
+					surfaceChunkIndex];
+
+			assert(
+				surfaceChunk.coord.x ==
+				column.chunkX);
+
+			assert(
+				surfaceChunk.coord.z ==
+				column.chunkZ);
+
+			XZColumnarMesh mesh = {};
+
+			if (!buildXZColumnarMeshForSurfaceChunk(
+				mesh,
+				planarCellGrid,
+				surfaceChunk,
+				settings))
+			{
+				clearXZColumnarMeshes(meshes);
+				return false;
+			}
+
+			if (mesh.vertices.empty() ||
+				mesh.indices.empty())
+			{
+				continue;
+			}
+
+			meshes.push_back(
+				std::move(mesh));
 		}
 
-		if (mesh.vertices.empty() ||
-			mesh.indices.empty())
-		{
-			continue;
-		}
-
-		meshes.push_back(std::move(mesh));
+		expectedSurfaceChunkIndex =
+			columnEndIndex;
 	}
+
+	assert(
+		expectedSurfaceChunkIndex ==
+		surfaceMap.chunks.size());
 
 	return true;
 }

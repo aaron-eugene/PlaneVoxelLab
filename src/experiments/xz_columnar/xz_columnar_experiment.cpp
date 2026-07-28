@@ -124,40 +124,57 @@ bool rebuildXZColumnarExperiment(
 	XZColumnarExperiment& experiment,
 	const LabWorld& world)
 {
-	destroyXZColumnarExperimentMeshes(experiment);
+	destroyXZColumnarExperimentMeshes(
+		experiment);
 
-	if (world.activeDensityFieldType != LabWorldDensityFieldType::Heightmap)
+	if (world.activeDensityFieldType !=
+		LabWorldDensityFieldType::Heightmap)
 	{
 		return true;
 	}
 
 	std::vector<XZColumnarMesh> cpuMeshes = {};
 
-	if (!buildXZColumnarMeshes(
-		cpuMeshes,
-		world.heightmapField,
-		world.surfaceMap,
-		experiment.buildSettings))
+	const bool meshesBuilt =
+		buildXZColumnarMeshes(
+			cpuMeshes,
+			world.heightmapField,
+			world.surfaceMap,
+			experiment.buildSettings);
+
+	if (!meshesBuilt)
 	{
 		return false;
 	}
 
-	experiment.meshes.reserve(cpuMeshes.size());
+	experiment.meshes.reserve(
+		cpuMeshes.size());
 
-	for (XZColumnarMesh& cpuMesh : cpuMeshes)
+	for (XZColumnarMesh& cpuMesh :
+		cpuMeshes)
 	{
 		XZColumnarRenderMesh renderMesh = {};
-		renderMesh.coord = cpuMesh.coord;
-		renderMesh.cpuMesh = std::move(cpuMesh);
 
-		if (!uploadXZColumnarRenderMesh(renderMesh))
+		renderMesh.coord =
+			cpuMesh.coord;
+
+		renderMesh.cpuMesh =
+			std::move(cpuMesh);
+
+		if (!uploadXZColumnarRenderMesh(
+			renderMesh))
 		{
-			destroyXZColumnarRenderMesh(renderMesh);
-			destroyXZColumnarExperimentMeshes(experiment);
+			destroyXZColumnarRenderMesh(
+				renderMesh);
+
+			destroyXZColumnarExperimentMeshes(
+				experiment);
+
 			return false;
 		}
 
-		experiment.meshes.push_back(std::move(renderMesh));
+		experiment.meshes.push_back(
+			std::move(renderMesh));
 	}
 
 	return true;

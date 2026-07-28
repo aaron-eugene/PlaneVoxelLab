@@ -7,6 +7,9 @@
 // A surface map identifies which loaded chunks contain surface-crossing voxels,
 // and which voxels inside those chunks contain a density sign crossing.
 //
+// Surface chunks are stored contiguously by X/Z chunk column. Surface column
+// records describe the corresponding ranges in SurfaceMap::chunks.
+//
 // This module does not own chunks, density fields, render resources, or active
 // experiment state.
 //
