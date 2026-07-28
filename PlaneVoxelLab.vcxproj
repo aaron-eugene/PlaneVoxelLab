@@ -193,6 +193,7 @@
     <ClInclude Include="src\lab\active_experiment.h" />
     <ClInclude Include="src\lab\lab.h" />
     <ClInclude Include="src\lab_debug\surface_chunk_wireframes.h" />
+    <ClInclude Include="src\lab_debug\timing.h" />
     <ClInclude Include="src\lab_world\lab_world.h" />
     <ClInclude Include="src\lab_world\lab_world_constants.h" />
     <ClInclude Include="src\lab_world\lab_world_coordinates.h" />

@@ -201,7 +201,8 @@ void initializeXZColumnarPlanarCellGrid(
 void buildXZColumnarPlanarCellGrid(
 	XZColumnarPlanarCellGrid& grid,
 	const HeightmapDensityField& heightmap,
-	const ChunkCoord& chunkCoord,
+	int32_t chunkX,
+	int32_t chunkZ,
 	float derivativeStepMeters)
 {
 	assert(
@@ -210,10 +211,13 @@ void buildXZColumnarPlanarCellGrid(
 
 	assert(derivativeStepMeters > 0.0f);
 
-	const glm::vec3 chunkWorldMin =
-		glm::vec3(
-			getChunkWorldMin(
-				chunkCoord));
+	const float chunkWorldMinX =
+		static_cast<float>(chunkX) *
+		CHUNK_SIZE_METERS_F;
+
+	const float chunkWorldMinZ =
+		static_cast<float>(chunkZ) *
+		CHUNK_SIZE_METERS_F;
 	
 	for (int32_t relativeZ = XZ_COLUMNAR_PLANAR_CELL_MIN_COORD;
 		relativeZ <= XZ_COLUMNAR_PLANAR_CELL_MAX_COORD;
@@ -224,7 +228,7 @@ void buildXZColumnarPlanarCellGrid(
 			++relativeX)
 		{
 			const float x0 =
-				chunkWorldMin.x +
+				chunkWorldMinX +
 				static_cast<float>(relativeX) *
 				VOXEL_SIZE_METERS;
 
@@ -232,7 +236,7 @@ void buildXZColumnarPlanarCellGrid(
 				x0 + VOXEL_SIZE_METERS;
 
 			const float z0 =
-				chunkWorldMin.z +
+				chunkWorldMinZ +
 				static_cast<float>(relativeZ) *
 				VOXEL_SIZE_METERS;
 

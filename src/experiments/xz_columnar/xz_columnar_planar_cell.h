@@ -67,7 +67,8 @@ void initializeXZColumnarPlanarCellGrid(
 void buildXZColumnarPlanarCellGrid(
 	XZColumnarPlanarCellGrid& grid,
 	const HeightmapDensityField& heightmap,
-	const ChunkCoord& chunkCoord,
+	int32_t chunkX,
+	int32_t chunkZ,
 	float derivativeStepMeters);
 
 const XZColumnarPlanarCell& getXZColumnarPlanarCell(

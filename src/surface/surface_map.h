@@ -38,9 +38,19 @@ struct SurfaceChunk
 	std::vector<SurfaceVoxel> voxels = {};
 };
 
+struct SurfaceChunkColumn
+{
+	int32_t chunkX = 0;
+	int32_t chunkZ = 0;
+
+	uint32_t firstSurfaceChunkIndex = 0;
+	uint32_t surfaceChunkCount = 0;
+};
+
 struct SurfaceMap
 {
 	std::vector<SurfaceChunk> chunks = {};
+	std::vector<SurfaceChunkColumn> columns = {};
 };
 
 /***********************************************************

@@ -59,7 +59,7 @@ bool initializeLab(
 		shutdownLab(lab);
 		return false;
 	}
-
+	
 	if (!initializeSurfaceRef(
 		lab.surfaceRef,
 		lab.world.chunks,
@@ -76,7 +76,7 @@ bool initializeLab(
 		shutdownLab(lab);
 		return false;
 	}
-
+	
 	if (!initializeActiveExperiment(
 		lab.activeExperiment,
 		lab.world))
