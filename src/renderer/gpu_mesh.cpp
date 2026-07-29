@@ -244,7 +244,7 @@ bool createColoredGpuMesh(
 	return true;
 }
 
-bool createSurfaceGpuMesh(
+bool createStandardGpuMesh(
 	GpuMesh& mesh,
 	const StandardVertex* vertices,
 	uint32_t vertexCount,

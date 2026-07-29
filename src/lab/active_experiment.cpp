@@ -8,6 +8,7 @@
 #include "lab_world/lab_world.h"
 
 #include "renderer/renderer.h"
+#include "renderer/standard_render_settings.h"
 
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 
@@ -138,15 +139,18 @@ bool rebuildActiveExperiment(
 void renderActiveExperiment(
 	const ActiveExperiment& experiment,
 	const Renderer& renderer,
+	const StandardRenderSettings& renderSettings,
 	const glm::mat4& viewProjection)
 {
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 	(void)experiment;
 	(void)renderer;
+	(void)renderSettings;
 	(void)viewProjection;
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
-	renderXZColumnarExperiment(experiment, renderer, viewProjection);
+	renderXZColumnarExperiment(experiment, renderer, renderSettings,
+		viewProjection);
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
 	renderPolygonIntersectionExperiment(experiment, renderer);

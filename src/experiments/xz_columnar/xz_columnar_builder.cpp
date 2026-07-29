@@ -98,25 +98,33 @@ static uint32_t getClampedLocalVoxelYFromWorldY(
 * Mesh Emission Helpers
 ************************************************************/
 
-static uint32_t appendColoredVertexToMesh(
+static uint32_t appendStandardVertexToMesh(
 	XZColumnarMesh& mesh,
 	const glm::vec3& worldPosition,
 	const glm::vec3& chunkWorldMin,
+	const glm::vec3& normal,
 	const glm::vec3& color)
 {
-	ColoredVertex vertex = {};
+	StandardVertex vertex = {};
+
 	vertex.position =
 		worldPosition -
 		chunkWorldMin;
 
+	vertex.normal =
+		normal;
+
 	vertex.color =
 		color;
+
+	vertex.tileUv = {};
 
 	const uint32_t vertexIndex =
 		static_cast<uint32_t>(
 			mesh.vertices.size());
 
-	mesh.vertices.push_back(vertex);
+	mesh.vertices.push_back(
+		vertex);
 
 	return vertexIndex;
 }
@@ -136,6 +144,7 @@ static void appendVoxelOwnedPolygonToMesh(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
 	const glm::vec3& chunkWorldMin,
+	const glm::vec3& normal,
 	const VoxelCoord& ownerVoxel,
 	const XZColumnarBuildSettings& settings)
 {
@@ -167,10 +176,11 @@ static void appendVoxelOwnedPolygonToMesh(
 		const XZColumnarClipVertex& clipVertex =
 			polygon.vertices[vertexIndex];
 
-		appendColoredVertexToMesh(
+		appendStandardVertexToMesh(
 			mesh,
 			clipVertex.position,
 			chunkWorldMin,
+			normal,
 			pieceColor);
 	}
 
@@ -200,6 +210,7 @@ static void appendVoxelYSlicedPolygonToMesh(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
 	const glm::vec3& chunkWorldMin,
+	const glm::vec3& normal,
 	uint32_t localX,
 	uint32_t localZ,
 	const XZColumnarBuildSettings& settings)
@@ -274,6 +285,7 @@ static void appendVoxelYSlicedPolygonToMesh(
 			mesh,
 			voxelClippedPolygon,
 			chunkWorldMin,
+			normal,
 			ownerVoxel,
 			settings);
 	}
@@ -299,6 +311,10 @@ static void appendVoxelOwnedSidePolygonToMesh(
 		static_cast<uint32_t>(
 			mesh.indices.size());
 
+	const glm::vec3 fragmentNormal =
+		getXZColumnarSideNormal(
+			side);
+
 	glm::vec3 fragmentColor =
 		polygon.vertices[0].color;
 
@@ -318,11 +334,12 @@ static void appendVoxelOwnedSidePolygonToMesh(
 		vertexIndex < polygon.vertexCount;
 		++vertexIndex)
 	{
-		appendColoredVertexToMesh(
+		appendStandardVertexToMesh(
 			mesh,
 			polygon.vertices[
 				vertexIndex].position,
 				chunkWorldMin,
+				fragmentNormal,
 				fragmentColor);
 	}
 
@@ -493,6 +510,7 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 				mesh,
 				topPolygon,
 				chunkWorldMin,
+				planarCell.normal,
 				localX,
 				localZ,
 				settings);

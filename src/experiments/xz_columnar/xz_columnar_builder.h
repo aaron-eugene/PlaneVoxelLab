@@ -62,7 +62,7 @@ struct XZColumnarMesh
 {
 	ChunkCoord coord = {};
 
-	std::vector<ColoredVertex> vertices = {};
+	std::vector<StandardVertex> vertices = {};
 	std::vector<uint32_t> indices = {};
 
 	std::vector<XZColumnarTopPiece> topPieces = {};

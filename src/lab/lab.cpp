@@ -9,6 +9,7 @@
 #include "lab/lab.h"
 
 #include "input/input.h"
+#include "lab/active_experiment.h"
 #include "lab_debug/surface_chunk_wireframes.h"
 #include "lab_world/lab_world.h"
 #include "renderer/renderer.h"
@@ -167,6 +168,7 @@ void renderLab(
 		renderActiveExperiment(
 			lab.activeExperiment,
 			renderer,
+			lab.standardRenderSettings,
 			viewProjection);
 	}
 
@@ -180,7 +182,7 @@ void renderLab(
 }
 
 /***********************************************************
-* Debug Rendering
+* Debug Helpers
 ************************************************************/
 
 static const char* getDensityFieldTypeName(
@@ -199,13 +201,163 @@ static const char* getDensityFieldTypeName(
 	}
 }
 
-void renderDebugUiContent(
+static const char* getStandardShadingModeName(
+	StandardShadingMode shadingMode)
+{
+	switch (shadingMode)
+	{
+	case StandardShadingMode::UnlitVertexColor:
+	{
+		return "Unlit Vertex Color";
+	}
+
+	case StandardShadingMode::LitVertexColor:
+	{
+		return "Lit Vertex Color";
+	}
+
+	case StandardShadingMode::NormalVisualization:
+	{
+		return "Normal Visualization";
+	}
+
+	default:
+	{
+		assert(false);
+		return "Unknown";
+	}
+	}
+}
+
+static void renderStandardRenderSettingsDebugUi(
+	StandardRenderSettings& settings)
+{
+	ImGui::SeparatorText(
+		"Standard Rendering");
+
+	const char* selectedModeName =
+		getStandardShadingModeName(
+			settings.shadingMode);
+
+	if (ImGui::BeginCombo(
+		"Shading Mode",
+		selectedModeName))
+	{
+		const bool unlitSelected =
+			settings.shadingMode ==
+			StandardShadingMode::UnlitVertexColor;
+
+		if (ImGui::Selectable(
+			"Unlit Vertex Color",
+			unlitSelected))
+		{
+			settings.shadingMode =
+				StandardShadingMode::UnlitVertexColor;
+		}
+
+		const bool litSelected =
+			settings.shadingMode ==
+			StandardShadingMode::LitVertexColor;
+
+		if (ImGui::Selectable(
+			"Lit Vertex Color",
+			litSelected))
+		{
+			settings.shadingMode =
+				StandardShadingMode::LitVertexColor;
+		}
+
+		const bool normalSelected =
+			settings.shadingMode ==
+			StandardShadingMode::NormalVisualization;
+
+		if (ImGui::Selectable(
+			"Normal Visualization",
+			normalSelected))
+		{
+			settings.shadingMode =
+				StandardShadingMode::NormalVisualization;
+		}
+
+		ImGui::EndCombo();
+	}
+}
+
+static uint64_t getSurfaceVoxelCount(
+	const SurfaceMap& surfaceMap)
+{
+	uint64_t surfaceVoxelCount = 0;
+
+	for (const SurfaceChunk& surfaceChunk :
+		surfaceMap.chunks)
+	{
+		surfaceVoxelCount +=
+			surfaceChunk.voxels.size();
+	}
+
+	return surfaceVoxelCount;
+}
+
+static void renderLabWorldStatistics(
+	const LabWorld& world)
+{
+	ImGui::SeparatorText(
+		"Lab World");
+
+	ImGui::Text(
+		"Total chunks: %zu",
+		world.chunks.size());
+
+	ImGui::Text(
+		"Surface columns: %zu",
+		world.surfaceMap.columns.size());
+
+	ImGui::Text(
+		"Surface chunks: %zu",
+		world.surfaceMap.chunks.size());
+
+	ImGui::Text(
+		"Surface voxels: %llu",
+		static_cast<unsigned long long>(
+			getSurfaceVoxelCount(
+				world.surfaceMap)));
+}
+
+static void renderSurfaceReferenceStatistics(
+	const SurfaceRef& surfaceRef)
+{
+	uint64_t vertexCount = 0;
+	uint64_t indexCount = 0;
+
+	getSurfaceRefMeshCounts(
+		surfaceRef,
+		vertexCount,
+		indexCount);
+
+	ImGui::SeparatorText(
+		"Surface Reference");
+
+	ImGui::Text(
+		"Reference chunks: %zu",
+		surfaceRef.chunks.size());
+
+	ImGui::Text(
+		"Reference vertices: %llu",
+		static_cast<unsigned long long>(
+			vertexCount));
+
+	ImGui::Text(
+		"Reference indices: %llu",
+		static_cast<unsigned long long>(
+			indexCount));
+}
+
+static void renderLabComponentToggles(
 	Lab& lab)
 {
-	//--------------------------------------------------
-	// Lab Component Toggles (Reference, Experiment...)
-	//--------------------------------------------------
-	
+	ImGui::SeparatorText(
+		"Visibility");
+
 	ImGui::Checkbox(
 		"Surface Reference",
 		&lab.showSurfaceReference);
@@ -217,125 +369,139 @@ void renderDebugUiContent(
 	ImGui::Checkbox(
 		"Surface Chunk Wireframes",
 		&lab.showSurfaceChunkWireframes);
+}
 
-	//--------------------------------------------------
-	// Density Field Selection
-	//--------------------------------------------------
+static bool renderDensityFieldSelection(
+	LabWorldDensityFieldType& selectedFieldType)
+{
+	const LabWorldDensityFieldType originalFieldType =
+		selectedFieldType;
+
+	const char* selectedFieldName =
+		getDensityFieldTypeName(
+			selectedFieldType);
+
+	if (ImGui::BeginCombo(
+		"Density Field",
+		selectedFieldName))
 	{
-		LabWorldDensityFieldType selectedFieldType =
-			lab.world.activeDensityFieldType;
-
-		const char* selectedFieldName =
-			getDensityFieldTypeName(selectedFieldType);
-
-		if (ImGui::BeginCombo(
-			"Density Field",
-			selectedFieldName))
+		if (ImGui::Selectable(
+			"Sphere",
+			selectedFieldType ==
+			LabWorldDensityFieldType::Sphere))
 		{
-			if (ImGui::Selectable(
-				"Sphere",
-				selectedFieldType == LabWorldDensityFieldType::Sphere))
-			{
-				selectedFieldType = LabWorldDensityFieldType::Sphere;
-			}
-
-			if (ImGui::Selectable(
-				"Heightmap",
-				selectedFieldType == LabWorldDensityFieldType::Heightmap))
-			{
-				selectedFieldType = LabWorldDensityFieldType::Heightmap;
-			}
-
-			ImGui::EndCombo();
+			selectedFieldType =
+				LabWorldDensityFieldType::Sphere;
 		}
 
-		if (selectedFieldType != lab.world.activeDensityFieldType)
+		if (ImGui::Selectable(
+			"Heightmap",
+			selectedFieldType ==
+			LabWorldDensityFieldType::Heightmap))
 		{
-			setLabWorldDensityFieldType(
-				lab.world,
+			selectedFieldType =
+				LabWorldDensityFieldType::Heightmap;
+		}
+
+		ImGui::EndCombo();
+	}
+
+	return
+		selectedFieldType !=
+		originalFieldType;
+}
+
+static bool rebuildLabDensityData(
+	Lab& lab,
+	LabWorldDensityFieldType fieldType)
+{
+	setLabWorldDensityFieldType(
+		lab.world,
+		fieldType);
+
+	if (!rebuildLabWorldDensityData(
+		lab.world))
+	{
+		return false;
+	}
+
+	if (!rebuildSurfaceRef(
+		lab.surfaceRef,
+		lab.world.chunks,
+		lab.world.surfaceMap))
+	{
+		return false;
+	}
+
+	if (!rebuildSurfaceChunkWireframes(
+		lab.surfaceChunkWireframes,
+		lab.world.surfaceMap))
+	{
+		return false;
+	}
+
+	if (!rebuildActiveExperiment(
+		lab.activeExperiment,
+		lab.world))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+/***********************************************************
+* Debug Rendering
+************************************************************/
+
+void renderDebugUiContent(
+	Lab& lab)
+{
+	renderLabComponentToggles(
+		lab);
+
+	//--------------------------------------------------
+	// Density Field
+	//--------------------------------------------------
+
+	ImGui::SeparatorText(
+		"Density Field");
+
+	LabWorldDensityFieldType selectedFieldType =
+		lab.world.activeDensityFieldType;
+
+	if (renderDensityFieldSelection(
+		selectedFieldType))
+	{
+		const bool rebuilt =
+			rebuildLabDensityData(
+				lab,
 				selectedFieldType);
 
-			const bool worldRebuilt =
-				rebuildLabWorldDensityData(lab.world);
-
-			assert(worldRebuilt);
-
-			const bool surfaceRefRebuilt =
-				rebuildSurfaceRef(
-					lab.surfaceRef,
-					lab.world.chunks,
-					lab.world.surfaceMap);
-
-			assert(surfaceRefRebuilt);
-
-			const bool wireframesRebuilt =
-				rebuildSurfaceChunkWireframes(
-					lab.surfaceChunkWireframes,
-					lab.world.surfaceMap);
-
-			assert(wireframesRebuilt);
-
-			const bool activeExperimentRebuilt =
-				rebuildActiveExperiment(
-					lab.activeExperiment,
-					lab.world);
-
-			assert(activeExperimentRebuilt);
-		}
-	}
-	
-	ImGui::Separator();
-	
-	//--------------------------------------------------
-	// Chunk Debug Counts
-	//--------------------------------------------------
-	ImGui::Text(
-		"Total Chunks: %zu",
-		lab.world.chunks.size());
-
-	ImGui::Text(
-		"Surface chunks: %zu",
-		lab.world.surfaceMap.chunks.size());
-
-	uint64_t surfaceVoxelCount = 0;
-
-	for (const SurfaceChunk& surfaceChunk : lab.world.surfaceMap.chunks)
-	{
-		surfaceVoxelCount += surfaceChunk.voxels.size();
+		assert(rebuilt);
 	}
 
-	ImGui::Text(
-		"Surface voxels: %llu",
-		static_cast<unsigned long long>(surfaceVoxelCount));
+	//--------------------------------------------------
+	// Shared Rendering
+	//--------------------------------------------------
 
-	ImGui::Separator();
+	renderStandardRenderSettingsDebugUi(
+		lab.standardRenderSettings);
 
 	//--------------------------------------------------
-	// Surface Reference Debug Counts
+	// Statistics
 	//--------------------------------------------------
-	uint64_t referenceVertexCount = 0;
-	uint64_t referenceIndexCount = 0;
 
-	getSurfaceRefMeshCounts(
-		lab.surfaceRef,
-		referenceVertexCount,
-		referenceIndexCount);
+	renderLabWorldStatistics(
+		lab.world);
 
-	ImGui::Text(
-		"Reference chunks: %zu",
-		lab.surfaceRef.chunks.size());
-
-	ImGui::Text(
-		"Reference vertices: %llu",
-		static_cast<unsigned long long>(referenceVertexCount));
-
-	ImGui::Text(
-		"Reference indices: %llu",
-		static_cast<unsigned long long>(referenceIndexCount));
+	renderSurfaceReferenceStatistics(
+		lab.surfaceRef);
 
 	//--------------------------------------------------
-	// Active Experiment Debug Interface
+	// Active Experiment
 	//--------------------------------------------------
+
 	const bool activeExperimentNeedsRebuild =
 		renderActiveExperimentDebugUiContent(
 			lab.activeExperiment,
@@ -343,11 +509,11 @@ void renderDebugUiContent(
 
 	if (activeExperimentNeedsRebuild)
 	{
-		const bool activeExperimentRebuilt =
+		const bool rebuilt =
 			rebuildActiveExperiment(
 				lab.activeExperiment,
 				lab.world);
 
-		assert(activeExperimentRebuilt);
+		assert(rebuilt);
 	}
 }

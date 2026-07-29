@@ -22,6 +22,7 @@
 
 struct LabWorld;
 struct Renderer;
+struct StandardRenderSettings;
 
 /***********************************************************
 * XZ Columnar Experiment Types
@@ -73,6 +74,7 @@ void updateXZColumnarExperiment(
 void renderXZColumnarExperiment(
 	const XZColumnarExperiment& experiment,
 	const Renderer& renderer,
+	const StandardRenderSettings& renderSettings,
 	const glm::mat4& viewProjection);
 
 /***********************************************************

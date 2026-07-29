@@ -13,6 +13,7 @@
 #include "lab_world/lab_world_coordinates.h"
 #include "renderer/gpu_mesh.h"
 #include "renderer/renderer.h"
+#include "renderer/standard_render_settings.h"
 
 #include <glm/ext/matrix_transform.inl>
 #include <glm/ext/matrix_float4x4.hpp>
@@ -63,12 +64,14 @@ static bool uploadXZColumnarRenderMesh(
 	}
 
 	const uint32_t vertexCount =
-		static_cast<uint32_t>(renderMesh.cpuMesh.vertices.size());
+		static_cast<uint32_t>(
+			renderMesh.cpuMesh.vertices.size());
 
 	const uint32_t indexCount =
-		static_cast<uint32_t>(renderMesh.cpuMesh.indices.size());
+		static_cast<uint32_t>(
+			renderMesh.cpuMesh.indices.size());
 
-	if (!createColoredGpuMesh(
+	if (!createStandardGpuMesh(
 		renderMesh.gpuMesh,
 		renderMesh.cpuMesh.vertices.data(),
 		vertexCount,
@@ -76,7 +79,9 @@ static bool uploadXZColumnarRenderMesh(
 		indexCount,
 		GpuPrimitiveType::Triangles))
 	{
-		destroyGpuMesh(renderMesh.gpuMesh);
+		destroyGpuMesh(
+			renderMesh.gpuMesh);
+
 		return false;
 	}
 
@@ -201,9 +206,11 @@ void updateXZColumnarExperiment(
 void renderXZColumnarExperiment(
 	const XZColumnarExperiment& experiment,
 	const Renderer& renderer,
+	const StandardRenderSettings& renderSettings,
 	const glm::mat4& viewProjection)
 {
-	for (const XZColumnarRenderMesh& columnarMesh : experiment.meshes)
+	for (const XZColumnarRenderMesh& columnarMesh :
+		experiment.meshes)
 	{
 		if (columnarMesh.gpuMesh.vertexArray == 0 ||
 			columnarMesh.gpuMesh.indexCount == 0)
@@ -212,11 +219,13 @@ void renderXZColumnarExperiment(
 		}
 
 		const glm::mat4 model =
-			getChunkModelMatrix(columnarMesh.coord);
+			getChunkModelMatrix(
+				columnarMesh.coord);
 
-		renderColoredMesh(
+		renderStandardMesh(
 			columnarMesh.gpuMesh,
-			renderer.colorShader,
+			renderer.standardShader,
+			renderSettings,
 			model,
 			viewProjection);
 	}
@@ -226,6 +235,93 @@ void renderXZColumnarExperiment(
 * XZ Columnar Experiment Debug UI
 ************************************************************/
 
+struct XZColumnarMeshStatistics
+{
+	uint64_t meshCount = 0;
+	uint64_t vertexCount = 0;
+	uint64_t indexCount = 0;
+	uint64_t topPieceCount = 0;
+	uint64_t sideFragmentCount = 0;
+};
+
+static XZColumnarMeshStatistics
+getXZColumnarMeshStatistics(
+	const XZColumnarExperiment& experiment)
+{
+	XZColumnarMeshStatistics statistics = {};
+
+	statistics.meshCount =
+		experiment.meshes.size();
+
+	for (const XZColumnarRenderMesh& mesh :
+		experiment.meshes)
+	{
+		statistics.vertexCount +=
+			mesh.cpuMesh.vertices.size();
+
+		statistics.indexCount +=
+			mesh.cpuMesh.indices.size();
+
+		statistics.topPieceCount +=
+			mesh.cpuMesh.topPieces.size();
+
+		statistics.sideFragmentCount +=
+			mesh.cpuMesh.sideFragments.size();
+	}
+
+	return statistics;
+}
+
+static const char* getXZColumnarColorizationName(
+	XZColumnarColorization colorization)
+{
+	switch (colorization)
+	{
+	case XZColumnarColorization::Normal:
+	{
+		return "Normal";
+	}
+
+	case XZColumnarColorization::OwnerVoxelY:
+	{
+		return "Owner Voxel Y";
+	}
+
+	default:
+	{
+		assert(false);
+		return "Unknown";
+	}
+	}
+}
+
+static void cycleXZColumnarColorization(
+	XZColumnarBuildSettings& settings)
+{
+	switch (settings.colorization)
+	{
+	case XZColumnarColorization::Normal:
+	{
+		settings.colorization =
+			XZColumnarColorization::OwnerVoxelY;
+	} break;
+
+	case XZColumnarColorization::OwnerVoxelY:
+	{
+		settings.colorization =
+			XZColumnarColorization::Normal;
+	} break;
+
+	default:
+	{
+		assert(false);
+
+		settings.colorization =
+			XZColumnarColorization::Normal;
+	} break;
+	}
+}
+
 bool renderXZColumnarExperimentDebugUiContent(
 	XZColumnarExperiment& experiment,
 	const LabWorld& world)
@@ -234,97 +330,68 @@ bool renderXZColumnarExperimentDebugUiContent(
 
 	bool needsRebuild = false;
 
-	ImGui::SeparatorText("XZ Columnar Experiment");
+	const XZColumnarMeshStatistics statistics =
+		getXZColumnarMeshStatistics(
+			experiment);
 
-	uint64_t vertexCount = 0;
-	uint64_t indexCount = 0;
-	uint64_t topPieceCount = 0;
-	uint64_t sideFragmentCount = 0;
+	ImGui::SeparatorText(
+		"XZ Columnar Experiment");
 
+	//--------------------------------------------------
+	// Geometry Statistics
+	//--------------------------------------------------
 
-	for (const XZColumnarRenderMesh& mesh : experiment.meshes)
-	{
-		vertexCount += mesh.cpuMesh.vertices.size();
-		indexCount += mesh.cpuMesh.indices.size();
-		
-		topPieceCount += mesh.cpuMesh.topPieces.size();
-	
-		sideFragmentCount +=
-			mesh.cpuMesh.sideFragments.size();
-	}
+	ImGui::TextDisabled("Geometry");
 
 	ImGui::Text(
-		"Experiment chunks: %zu",
-		experiment.meshes.size());
+		"Experiment chunks: %llu",
+		static_cast<unsigned long long>(
+			statistics.meshCount));
 
 	ImGui::Text(
-		"Experiment top pieces: %llu",
-		static_cast<unsigned long long>(topPieceCount));
+		"Top pieces: %llu",
+		static_cast<unsigned long long>(
+			statistics.topPieceCount));
 
 	ImGui::Text(
-		"Experiment mesh vertices: %llu",
-		static_cast<unsigned long long>(vertexCount));
+		"Side fragments: %llu",
+		static_cast<unsigned long long>(
+			statistics.sideFragmentCount));
 
 	ImGui::Text(
-		"Experiment mesh indices: %llu",
-		static_cast<unsigned long long>(indexCount));
+		"Mesh vertices: %llu",
+		static_cast<unsigned long long>(
+			statistics.vertexCount));
 
 	ImGui::Text(
-		"Experiment side fragments: %llu",
-		static_cast<unsigned long long>(sideFragmentCount));
+		"Mesh indices: %llu",
+		static_cast<unsigned long long>(
+			statistics.indexCount));
+
+	ImGui::Spacing();
+
+	//--------------------------------------------------
+	// Build Settings
+	//--------------------------------------------------
+
+	ImGui::TextDisabled("Build Settings");
 
 	ImGui::Text(
 		"Derivative step: %.3f",
-		experiment.buildSettings.derivativeStepMeters);
-
-	const char* colorizationName = "Unknown";
-
-	switch (experiment.buildSettings.colorization)
-	{
-	case XZColumnarColorization::Normal:
-	{
-		colorizationName = "Normal";
-	} break;
-
-	case XZColumnarColorization::OwnerVoxelY:
-	{
-		colorizationName = "Owner Voxel Y";
-	} break;
-
-	default:
-	{
-		assert(false);
-	} break;
-	}
+		experiment.buildSettings
+		.derivativeStepMeters);
 
 	ImGui::Text(
 		"Colorization: %s",
-		colorizationName);
+		getXZColumnarColorizationName(
+			experiment.buildSettings
+			.colorization));
 
-	if (ImGui::Button("Cycle Colorization"))
+	if (ImGui::Button(
+		"Cycle Colorization"))
 	{
-		switch (experiment.buildSettings.colorization)
-		{
-		case XZColumnarColorization::Normal:
-		{
-			experiment.buildSettings.colorization =
-				XZColumnarColorization::OwnerVoxelY;
-		} break;
-
-		case XZColumnarColorization::OwnerVoxelY:
-		{
-			experiment.buildSettings.colorization =
-				XZColumnarColorization::Normal;
-		} break;
-
-		default:
-		{
-			assert(false);
-
-			experiment.buildSettings.colorization =
-				XZColumnarColorization::Normal;
-		} break;
-		}
+		cycleXZColumnarColorization(
+			experiment.buildSettings);
 
 		needsRebuild = true;
 	}

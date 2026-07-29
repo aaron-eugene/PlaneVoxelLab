@@ -24,6 +24,7 @@
 #define LAB_ACTIVE_EXPERIMENT LAB_EXPERIMENT_XZ_COLUMNAR
 
 struct Renderer;
+struct StandardRenderSettings;
 
 // Placeholder active experiment used while the lab framework is being built.
 struct EmptyExperiment
@@ -85,6 +86,7 @@ bool rebuildActiveExperiment(
 void renderActiveExperiment(
 	const ActiveExperiment& experiment,
 	const Renderer& renderer,
+	const StandardRenderSettings& renderSettings,
 	const glm::mat4& viewProjection);
 
 /***********************************************************

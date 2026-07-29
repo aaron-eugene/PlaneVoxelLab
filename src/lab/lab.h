@@ -35,7 +35,7 @@ struct Lab
 	SurfaceChunkWireframes surfaceChunkWireframes = {};
 	ActiveExperiment activeExperiment = {};
 
-	StandardRenderSettings surfaceRenderSettings = {};
+	StandardRenderSettings standardRenderSettings = {};
 
 	bool showSurfaceReference = true;
 	bool showActiveExperiment = true;
