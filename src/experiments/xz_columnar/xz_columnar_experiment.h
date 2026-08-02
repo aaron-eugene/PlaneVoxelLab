@@ -13,6 +13,7 @@
 #pragma once
 
 #include "experiments/xz_columnar/xz_columnar_builder.h"
+#include "lab/terrain_render_resources.h"
 #include "lab_world/lab_world_coordinates.h"
 #include "renderer/gpu_mesh.h"
 
@@ -75,6 +76,7 @@ void renderXZColumnarExperiment(
 	const XZColumnarExperiment& experiment,
 	const Renderer& renderer,
 	const StandardRenderSettings& renderSettings,
+	const TerrainRenderResources& terrainRenderResources,
 	const glm::mat4& viewProjection);
 
 /***********************************************************

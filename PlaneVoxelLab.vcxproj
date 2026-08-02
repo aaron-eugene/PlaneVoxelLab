@@ -164,6 +164,7 @@
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\lab\active_experiment.cpp" />
     <ClCompile Include="src\lab\lab.cpp" />
+    <ClCompile Include="src\lab\terrain_render_resources.cpp" />
     <ClCompile Include="src\lab_debug\surface_chunk_wireframes.cpp" />
     <ClCompile Include="src\lab_world\lab_world.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -171,6 +172,7 @@
     <ClCompile Include="src\renderer\gpu_mesh.cpp" />
     <ClCompile Include="src\renderer\renderer.cpp" />
     <ClCompile Include="src\renderer\shader.cpp" />
+    <ClCompile Include="src\renderer\texture_2d.cpp" />
     <ClCompile Include="src\surface\surface_map.cpp" />
     <ClCompile Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.cpp" />
     <ClCompile Include="src\surface_ref\surface_ref.cpp" />
@@ -192,6 +194,7 @@
     <ClInclude Include="src\input\input.h" />
     <ClInclude Include="src\lab\active_experiment.h" />
     <ClInclude Include="src\lab\lab.h" />
+    <ClInclude Include="src\lab\terrain_render_resources.h" />
     <ClInclude Include="src\lab_debug\surface_chunk_wireframes.h" />
     <ClInclude Include="src\lab_debug\timing.h" />
     <ClInclude Include="src\lab_world\lab_world.h" />
@@ -204,6 +207,7 @@
     <ClInclude Include="src\renderer\render_vertex.h" />
     <ClInclude Include="src\renderer\shader.h" />
     <ClInclude Include="src\renderer\standard_render_settings.h" />
+    <ClInclude Include="src\renderer\texture_2d.h" />
     <ClInclude Include="src\surface\surface_map.h" />
     <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.h" />
     <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_tables.h" />

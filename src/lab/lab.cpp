@@ -86,12 +86,20 @@ bool initializeLab(
 		return false;
 	}
 
+	if (!createTerrainRenderResources(
+		lab.terrainRenderResources))
+	{
+		shutdownLab(lab);
+		return false;
+	}
+
 	return true;
 }
 
 void shutdownLab(
 	Lab& lab)
 {
+	destroyTerrainRenderResources(lab.terrainRenderResources);
 	shutdownActiveExperiment(lab.activeExperiment);
 	shutdownSurfaceChunkWireframes(lab.surfaceChunkWireframes);
 	shutdownSurfaceRef(lab.surfaceRef);
@@ -169,6 +177,7 @@ void renderLab(
 			lab.activeExperiment,
 			renderer,
 			lab.standardRenderSettings,
+			lab.terrainRenderResources,
 			viewProjection);
 	}
 

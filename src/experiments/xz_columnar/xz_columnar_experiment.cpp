@@ -207,6 +207,7 @@ void renderXZColumnarExperiment(
 	const XZColumnarExperiment& experiment,
 	const Renderer& renderer,
 	const StandardRenderSettings& renderSettings,
+	const TerrainRenderResources& terrainRenderResources,
 	const glm::mat4& viewProjection)
 {
 	for (const XZColumnarRenderMesh& columnarMesh :
@@ -226,6 +227,7 @@ void renderXZColumnarExperiment(
 			columnarMesh.gpuMesh,
 			renderer.standardShader,
 			renderSettings,
+			terrainRenderResources.tileAtlas,
 			model,
 			viewProjection);
 	}

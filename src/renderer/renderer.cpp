@@ -11,6 +11,7 @@
 #include "renderer/gpu_mesh.h"
 #include "renderer/shader.h"
 #include "renderer/standard_render_settings.h"
+#include "renderer/texture_2d.h"
 
 #include <glad/glad.h>
 #include <glm/geometric.hpp>
@@ -50,6 +51,7 @@ static constexpr const char* UNIFORM_SHADING_MODE = "uShadingMode";
 static constexpr const char* UNIFORM_LIGHT_DIRECTION = "uLightDirection";
 static constexpr const char* UNIFORM_AMBIENT_STRENGTH = "uAmbientStrength";
 static constexpr const char* UNIFORM_DIFFUSE_STRENGTH = "uDiffuseStrength";
+static constexpr const char* UNIFORM_TEXTURE = "uTexture";
 
 /***********************************************************
 * Internal Helpers
@@ -146,6 +148,7 @@ static bool initializeStandardShader(StandardShader& shader)
 	assert(shader.lightDirectionLocation == -1);
 	assert(shader.ambientStrengthLocation == -1);
 	assert(shader.diffuseStrengthLocation == -1);
+	assert(shader.textureLocation == -1);
 
 	ShaderSource shaderSource = {};
 
@@ -199,12 +202,18 @@ static bool initializeStandardShader(StandardShader& shader)
 			shader.program,
 			UNIFORM_DIFFUSE_STRENGTH);
 
+	shader.textureLocation =
+		getShaderUniformLocation(
+			shader.program,
+			UNIFORM_TEXTURE);
+
 	if (shader.modelLocation < 0 ||
 		shader.viewProjectionLocation < 0 ||
 		shader.shadingModeLocation < 0 ||
 		shader.lightDirectionLocation < 0 ||
 		shader.ambientStrengthLocation < 0 ||
-		shader.diffuseStrengthLocation < 0)
+		shader.diffuseStrengthLocation < 0 ||
+		shader.textureLocation < 0)
 	{
 		shutdownStandardShader(shader);
 		return false;
@@ -334,6 +343,7 @@ void renderStandardMesh(
 	const GpuMesh& mesh,
 	const StandardShader& shader,
 	const StandardRenderSettings& settings,
+	const Texture2D& texture,
 	const glm::mat4& model,
 	const glm::mat4& viewProjection)
 {
@@ -347,6 +357,11 @@ void renderStandardMesh(
 	assert(shader.lightDirectionLocation >= 0);
 	assert(shader.ambientStrengthLocation >= 0);
 	assert(shader.diffuseStrengthLocation >= 0);
+	assert(shader.textureLocation >= 0);
+
+	assert(texture.handle != 0);
+	assert(texture.width > 0);
+	assert(texture.height > 0);
 
 	assert(settings.ambientStrength >= 0.0f);
 	assert(settings.diffuseStrength >= 0.0f);
@@ -360,6 +375,8 @@ void renderStandardMesh(
 		lightDirectionLengthSquared >
 		LIGHT_DIRECTION_EPSILON *
 		LIGHT_DIRECTION_EPSILON);
+
+	constexpr GLuint textureUnit = 0;
 
 	glUseProgram(shader.program.handle);
 
@@ -394,7 +411,20 @@ void renderStandardMesh(
 		shader.diffuseStrengthLocation,
 		settings.diffuseStrength);
 
+	glBindTextureUnit(
+		textureUnit,
+		texture.handle);
+
+	glUniform1i(
+		shader.textureLocation,
+		static_cast<GLint>(
+			textureUnit));
+
 	drawGpuMesh(mesh);
+
+	glBindTextureUnit(
+		textureUnit,
+		0);
 
 	glUseProgram(0);
 }

@@ -10,8 +10,11 @@
 
 #include "renderer/gpu_mesh.h"
 #include "renderer/shader.h"
+#include "renderer/texture_2d.h"
 
 #include <glm/ext/matrix_float4x4.hpp>
+
+#include <cstdint>
 
 struct StandardRenderSettings;
 
@@ -38,6 +41,8 @@ struct StandardShader
 	int lightDirectionLocation = -1;
 	int ambientStrengthLocation = -1;
 	int diffuseStrengthLocation = -1;
+
+	int32_t textureLocation = -1;
 };
 
 /***********************************************************
@@ -82,5 +87,6 @@ void renderStandardMesh(
 	const GpuMesh& mesh,
 	const StandardShader& shader,
 	const StandardRenderSettings& settings,
+	const Texture2D& texture,
 	const glm::mat4& model,
 	const glm::mat4& viewProjection);

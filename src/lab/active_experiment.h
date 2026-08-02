@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include "lab/terrain_render_resources.h"
 #include "lab_world/lab_world.h"
 
 #include <glm/mat4x4.hpp>
@@ -87,6 +88,7 @@ void renderActiveExperiment(
 	const ActiveExperiment& experiment,
 	const Renderer& renderer,
 	const StandardRenderSettings& renderSettings,
+	const TerrainRenderResources& terrainRenderResources,
 	const glm::mat4& viewProjection);
 
 /***********************************************************

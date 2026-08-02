@@ -14,6 +14,7 @@
 
 #include "lab/active_experiment.h"
 #include "lab_debug/surface_chunk_wireframes.h"
+#include "lab/terrain_render_resources.h"
 #include "lab_world/lab_world.h"
 #include "renderer/standard_render_settings.h"
 #include "surface_ref/surface_ref.h"
@@ -36,6 +37,7 @@ struct Lab
 	ActiveExperiment activeExperiment = {};
 
 	StandardRenderSettings standardRenderSettings = {};
+	TerrainRenderResources terrainRenderResources = {};
 
 	bool showSurfaceReference = true;
 	bool showActiveExperiment = true;

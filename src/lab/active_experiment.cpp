@@ -140,6 +140,7 @@ void renderActiveExperiment(
 	const ActiveExperiment& experiment,
 	const Renderer& renderer,
 	const StandardRenderSettings& renderSettings,
+	const TerrainRenderResources& terrainRenderResources,
 	const glm::mat4& viewProjection)
 {
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
@@ -150,7 +151,7 @@ void renderActiveExperiment(
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 	renderXZColumnarExperiment(experiment, renderer, renderSettings,
-		viewProjection);
+		terrainRenderResources, viewProjection);
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
 	renderPolygonIntersectionExperiment(experiment, renderer);
