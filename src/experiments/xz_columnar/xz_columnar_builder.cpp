@@ -17,6 +17,7 @@
 #include "renderer/render_vertex.h"
 #include "surface/surface_map.h"
 
+#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
 #include <algorithm>
@@ -98,33 +99,50 @@ static uint32_t getClampedLocalVoxelYFromWorldY(
 * Mesh Emission Helpers
 ************************************************************/
 
+static glm::vec2 getXZColumnarTopTileUv(
+	const glm::vec3& worldPosition,
+	const glm::vec3& chunkWorldMin,
+	const VoxelCoord& ownerVoxel)
+{
+	const float cellWorldMinX =
+		chunkWorldMin.x +
+		static_cast<float>(ownerVoxel.x) *
+		VOXEL_SIZE_METERS;
+
+	const float cellWorldMinZ =
+		chunkWorldMin.z +
+		static_cast<float>(ownerVoxel.z) *
+		VOXEL_SIZE_METERS;
+
+	return glm::vec2(
+		(worldPosition.x - cellWorldMinX) /
+		VOXEL_SIZE_METERS,
+		(worldPosition.z - cellWorldMinZ) /
+		VOXEL_SIZE_METERS);
+}
+
 static uint32_t appendStandardVertexToMesh(
 	XZColumnarMesh& mesh,
 	const glm::vec3& worldPosition,
 	const glm::vec3& chunkWorldMin,
 	const glm::vec3& normal,
-	const glm::vec3& color)
+	const glm::vec3& color,
+	const glm::vec2& tileUv)
 {
 	StandardVertex vertex = {};
 
-	vertex.position =
-		worldPosition -
+	vertex.position = worldPosition -
 		chunkWorldMin;
 
-	vertex.normal =
-		normal;
-
-	vertex.color =
-		color;
-
-	vertex.tileUv = {};
+	vertex.normal = normal;
+	vertex.color = color;
+	vertex.tileUv = tileUv;
 
 	const uint32_t vertexIndex =
 		static_cast<uint32_t>(
 			mesh.vertices.size());
 
-	mesh.vertices.push_back(
-		vertex);
+	mesh.vertices.push_back(vertex);
 
 	return vertexIndex;
 }
@@ -176,12 +194,19 @@ static void appendVoxelOwnedPolygonToMesh(
 		const XZColumnarClipVertex& clipVertex =
 			polygon.vertices[vertexIndex];
 
+		const glm::vec2 tileUv =
+			getXZColumnarTopTileUv(
+				clipVertex.position,
+				chunkWorldMin,
+				ownerVoxel);
+
 		appendStandardVertexToMesh(
 			mesh,
 			clipVertex.position,
 			chunkWorldMin,
 			normal,
-			pieceColor);
+			pieceColor,
+			tileUv);
 	}
 
 	for (uint32_t vertexIndex = 1;
@@ -340,7 +365,8 @@ static void appendVoxelOwnedSidePolygonToMesh(
 				vertexIndex].position,
 				chunkWorldMin,
 				fragmentNormal,
-				fragmentColor);
+				fragmentColor,
+				glm::vec2(0.0f));
 	}
 
 	for (uint32_t vertexIndex = 1;
