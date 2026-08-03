@@ -8,9 +8,17 @@
 
 #include "lab/terrain_render_resources.h"
 
-#include <array>
+#include "renderer/image_data.h"
+#include "lab/terrain_tile_atlas.h"
+
 #include <cassert>
-#include <cstdint>
+
+/***********************************************************
+* Terrain Render Resource Constants
+************************************************************/
+
+static constexpr const char* TERRAIN_TILE_ATLAS_PATH =
+"assets/textures/terrain_tile_atlas.png";
 
 /***********************************************************
 * Terrain Render Resource Interface
@@ -23,46 +31,62 @@ bool createTerrainRenderResources(
 	assert(resources.tileAtlas.width == 0);
 	assert(resources.tileAtlas.height == 0);
 
-	//--------------------------------------------------
-	// Temporary 2 x 2 test atlas
-	//--------------------------------------------------
+	ImageData atlasImage = {};
 
-	constexpr uint32_t atlasWidth = 2;
-	constexpr uint32_t atlasHeight = 2;
-
-	constexpr std::array<uint8_t, atlasWidth* atlasHeight * 4>
-		atlasPixels =
+	if (!loadImageData(
+		atlasImage,
+		TERRAIN_TILE_ATLAS_PATH))
 	{
-		// Bottom-left
-		255, 0, 255, 255,
+		return false;
+	}
 
-		// Bottom-right
-		255, 255, 255, 255,
+	if (atlasImage.width !=
+		TERRAIN_TILE_ATLAS_WIDTH_PIXELS ||
+		atlasImage.height !=
+		TERRAIN_TILE_ATLAS_HEIGHT_PIXELS)
+	{
+		destroyImageData(
+			atlasImage);
 
-		// Top-left
-		0, 0, 0, 255,
-
-		// Top-right
-		0, 255, 255, 255,
-	};
+		return false;
+	}
 
 	Texture2DCreateInfo createInfo = {};
 
-	createInfo.width = atlasWidth;
-	createInfo.height = atlasHeight;
-	createInfo.rgbaPixels = atlasPixels.data();
+	createInfo.width =
+		atlasImage.width;
 
-	createInfo.minFilter = TextureFilter::Nearest;
-	createInfo.magFilter = TextureFilter::Nearest;
+	createInfo.height =
+		atlasImage.height;
 
-	createInfo.wrapS = TextureWrap::ClampToEdge;
-	createInfo.wrapT = TextureWrap::ClampToEdge;
+	createInfo.rgbaPixels =
+		atlasImage.rgbaPixels;
 
-	if (!createTexture2D(
-		resources.tileAtlas,
-		createInfo))
+	createInfo.minFilter =
+		TextureFilter::Nearest;
+
+	createInfo.magFilter =
+		TextureFilter::Nearest;
+
+	createInfo.wrapS =
+		TextureWrap::ClampToEdge;
+
+	createInfo.wrapT =
+		TextureWrap::ClampToEdge;
+
+	const bool textureCreated =
+		createTexture2D(
+			resources.tileAtlas,
+			createInfo);
+
+	destroyImageData(
+		atlasImage);
+
+	if (!textureCreated)
 	{
-		destroyTerrainRenderResources(resources);
+		destroyTerrainRenderResources(
+			resources);
+
 		return false;
 	}
 

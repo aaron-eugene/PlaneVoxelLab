@@ -12,6 +12,7 @@
 #include "experiments/xz_columnar/xz_columnar_planar_cell.h"
 #include "experiments/xz_columnar/xz_columnar_side_region.h"
 #include "fields/field_generators.h"
+#include "lab/terrain_tile_atlas.h"
 #include "lab_world/lab_world_constants.h"
 #include "lab_world/lab_world_coordinates.h"
 #include "renderer/render_vertex.h"
@@ -96,7 +97,7 @@ static uint32_t getClampedLocalVoxelYFromWorldY(
 }
 
 /***********************************************************
-* Mesh Emission Helpers
+* Texturing Helpers
 ************************************************************/
 
 static glm::vec2 getXZColumnarTopTileUv(
@@ -120,6 +121,80 @@ static glm::vec2 getXZColumnarTopTileUv(
 		(worldPosition.z - cellWorldMinZ) /
 		VOXEL_SIZE_METERS);
 }
+
+static glm::vec2 getXZColumnarSideTileUv(
+	const glm::vec3& worldPosition,
+	const glm::vec3& chunkWorldMin,
+	const VoxelCoord& ownerVoxel,
+	XZColumnarSide side)
+{
+	const float voxelWorldMinX =
+		chunkWorldMin.x +
+		static_cast<float>(ownerVoxel.x) *
+		VOXEL_SIZE_METERS;
+
+	const float voxelWorldMinY =
+		chunkWorldMin.y +
+		static_cast<float>(ownerVoxel.y) *
+		VOXEL_SIZE_METERS;
+
+	const float voxelWorldMinZ =
+		chunkWorldMin.z +
+		static_cast<float>(ownerVoxel.z) *
+		VOXEL_SIZE_METERS;
+
+	float tileU = 0.0f;
+
+	switch (side)
+	{
+	case XZColumnarSide::NegativeX:
+	{
+		tileU =
+			1.0f -
+			(worldPosition.z - voxelWorldMinZ) /
+			VOXEL_SIZE_METERS;
+	} break;
+
+	case XZColumnarSide::PositiveX:
+	{
+		tileU =
+			(worldPosition.z - voxelWorldMinZ) /
+			VOXEL_SIZE_METERS;
+	} break;
+
+	case XZColumnarSide::NegativeZ:
+	{
+		tileU =
+			(worldPosition.x - voxelWorldMinX) /
+			VOXEL_SIZE_METERS;
+	} break;
+
+	case XZColumnarSide::PositiveZ:
+	{
+		tileU =
+			1.0f -
+			(worldPosition.x - voxelWorldMinX) /
+			VOXEL_SIZE_METERS;
+	} break;
+
+	default:
+	{
+		assert(false);
+	} break;
+	}
+
+	const float tileV =
+		(worldPosition.y - voxelWorldMinY) /
+		VOXEL_SIZE_METERS;
+
+	return glm::vec2(
+		tileU,
+		tileV);
+}
+
+/***********************************************************
+* Mesh Emission Helpers
+************************************************************/
 
 static uint32_t appendStandardVertexToMesh(
 	XZColumnarMesh& mesh,
@@ -177,11 +252,14 @@ static void appendVoxelOwnedPolygonToMesh(
 		static_cast<uint32_t>(
 			mesh.indices.size());
 
-	const glm::vec3 pieceColor =
-		getColumnarPieceColor(
-			polygon,
-			settings,
-			ownerVoxel);
+	//const glm::vec3 pieceColor =
+		//getColumnarPieceColor(
+			//polygon,
+			//settings,
+			//ownerVoxel);
+
+	// TEST
+	const glm::vec3 pieceColor = glm::vec3(1.0f);
 
 	const uint32_t baseVertexIndex =
 		static_cast<uint32_t>(
@@ -200,13 +278,18 @@ static void appendVoxelOwnedPolygonToMesh(
 				chunkWorldMin,
 				ownerVoxel);
 
+		const glm::vec2 atlasUv =
+			getTerrainAtlasUv(
+				tileUv,
+				TerrainTile::Grass);
+
 		appendStandardVertexToMesh(
 			mesh,
 			clipVertex.position,
 			chunkWorldMin,
 			normal,
 			pieceColor,
-			tileUv);
+			atlasUv);
 	}
 
 	for (uint32_t vertexIndex = 1;
@@ -351,6 +434,9 @@ static void appendVoxelOwnedSidePolygonToMesh(
 				ownerVoxel.y);
 	}
 
+	// TEST
+	fragmentColor = glm::vec3(1.0f);
+
 	const uint32_t baseVertexIndex =
 		static_cast<uint32_t>(
 			mesh.vertices.size());
@@ -359,14 +445,29 @@ static void appendVoxelOwnedSidePolygonToMesh(
 		vertexIndex < polygon.vertexCount;
 		++vertexIndex)
 	{
+		const glm::vec3& worldPosition =
+			polygon.vertices[
+				vertexIndex].position;
+
+		const glm::vec2 tileUv =
+			getXZColumnarSideTileUv(
+				worldPosition,
+				chunkWorldMin,
+				ownerVoxel,
+				side);
+
+		const glm::vec2 atlasUv =
+			getTerrainAtlasUv(
+				tileUv,
+				TerrainTile::Grass);
+
 		appendStandardVertexToMesh(
 			mesh,
-			polygon.vertices[
-				vertexIndex].position,
-				chunkWorldMin,
-				fragmentNormal,
-				fragmentColor,
-				glm::vec2(0.0f));
+			worldPosition,
+			chunkWorldMin,
+			fragmentNormal,
+			fragmentColor,
+			atlasUv);
 	}
 
 	for (uint32_t vertexIndex = 1;
