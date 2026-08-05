@@ -312,7 +312,7 @@ static void emitVoxelOwnedTopPiece(
 	}
 }
 
-static void sliceAndEmitTopPolygonByVoxelY(
+static bool sliceAndEmitTopPolygonByVoxelY(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
 	const glm::vec3& chunkWorldMin,
@@ -322,9 +322,11 @@ static void sliceAndEmitTopPolygonByVoxelY(
 	TerrainTile terrainTile,
 	const XZColumnarBuildSettings& settings)
 {
+	bool emittedTopPiece = false;
+	
 	if (polygon.vertexCount < 3)
 	{
-		return;
+		return emittedTopPiece;
 	}
 
 	const float chunkMinY =
@@ -341,7 +343,7 @@ static void sliceAndEmitTopPolygonByVoxelY(
 
 	if (chunkClippedPolygon.vertexCount < 3)
 	{
-		return;
+		return emittedTopPiece;
 	}
 
 	const float polygonMinY =
@@ -396,7 +398,11 @@ static void sliceAndEmitTopPolygonByVoxelY(
 			ownerVoxel,
 			terrainTile,
 			settings);
+
+		emittedTopPiece = true;
 	}
+
+	return emittedTopPiece;
 }
 
 static void emitVoxelOwnedSideFragment(
@@ -620,15 +626,43 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 				getXZColumnarPlanarCellTopPolygon(
 					planarCell);
 
-			sliceAndEmitTopPolygonByVoxelY(
-				mesh,
-				topPolygon,
-				chunkWorldMin,
-				planarCell.normal,
-				localX,
-				localZ,
-				planarCell.surfaceTile,
-				settings);
+			const bool emittedTopPiece =
+				sliceAndEmitTopPolygonByVoxelY(
+					mesh,
+					topPolygon,
+					chunkWorldMin,
+					planarCell.normal,
+					localX,
+					localZ,
+					planarCell.surfaceTile,
+					settings);
+
+			// Aggregate height range
+			if (emittedTopPiece)
+			{
+				if (!mesh.hasSurfaceHeightRange)
+				{
+					mesh.minSurfaceHeightMeters =
+						planarCell.surfaceHeightMeters;
+
+					mesh.maxSurfaceHeightMeters =
+						planarCell.surfaceHeightMeters;
+
+					mesh.hasSurfaceHeightRange = true;
+				}
+				else
+				{
+					mesh.minSurfaceHeightMeters =
+						std::min(
+							mesh.minSurfaceHeightMeters,
+							planarCell.surfaceHeightMeters);
+
+					mesh.maxSurfaceHeightMeters =
+						std::max(
+							mesh.maxSurfaceHeightMeters,
+							planarCell.surfaceHeightMeters);
+				}
+			}
 		}
 	}
 

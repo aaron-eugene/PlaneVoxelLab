@@ -52,6 +52,8 @@ struct XZColumnarPlanarCell
 
 	glm::vec3 color = {};
 
+	float surfaceHeightMeters = 0.0f;
+
 	TerrainTile surfaceTile =
 		TerrainTile::Grass;
 };

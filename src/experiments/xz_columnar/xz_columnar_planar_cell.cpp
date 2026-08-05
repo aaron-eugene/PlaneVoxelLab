@@ -180,6 +180,9 @@ static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 		getNormalColor(
 			cell.normal);
 
+	cell.surfaceHeightMeters = 
+		patchSample.height;
+
 	cell.surfaceTile =
 		classifyXZColumnarSurfaceTile(
 			patchSample.height);

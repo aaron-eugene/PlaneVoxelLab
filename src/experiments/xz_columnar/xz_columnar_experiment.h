@@ -19,11 +19,29 @@
 
 #include <glm/ext/matrix_float4x4.hpp>
 
+#include <cstdint>
 #include <vector>
 
 struct LabWorld;
 struct Renderer;
 struct StandardRenderSettings;
+
+/***********************************************************
+* XZ Columnar Debug Stats
+************************************************************/
+
+struct XZColumnarDebugStats
+{
+	uint64_t meshCount = 0;
+	uint64_t vertexCount = 0;
+	uint64_t indexCount = 0;
+	uint64_t topPieceCount = 0;
+	uint64_t sideFragmentCount = 0;
+
+	bool hasSurfaceHeightRange = false;
+	float minSurfaceHeightMeters = 0.0f;
+	float maxSurfaceHeightMeters = 0.0f;
+};
 
 /***********************************************************
 * XZ Columnar Experiment Types
@@ -42,6 +60,8 @@ struct XZColumnarExperiment
 	XZColumnarBuildSettings buildSettings = {};
 
 	std::vector<XZColumnarRenderMesh> meshes = {};
+
+	XZColumnarDebugStats debugStats = {};
 };
 
 /***********************************************************

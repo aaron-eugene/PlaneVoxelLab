@@ -61,9 +61,9 @@ static constexpr uint32_t CHUNK_SAMPLE_COUNT =
 ************************************************************/
 
 //static constexpr uint32_t MAX_LAB_CHUNKS = 1;
-constexpr int CHUNK_LOAD_RADIUS_X = 3;
-constexpr int CHUNK_LOAD_RADIUS_Y = 2;
-constexpr int CHUNK_LOAD_RADIUS_Z = 3;
+constexpr int CHUNK_LOAD_RADIUS_X = 4;
+constexpr int CHUNK_LOAD_RADIUS_Y = 3;
+constexpr int CHUNK_LOAD_RADIUS_Z = 4;
 
 static constexpr uint32_t CHUNK_LOAD_COUNT_X =
 static_cast<uint32_t>(CHUNK_LOAD_RADIUS_X * 2);

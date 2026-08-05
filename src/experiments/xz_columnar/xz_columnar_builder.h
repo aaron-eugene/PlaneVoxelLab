@@ -67,6 +67,11 @@ struct XZColumnarMesh
 
 	std::vector<XZColumnarTopPiece> topPieces = {};
 	std::vector<XZColumnarSideFragment> sideFragments = {};
+
+	// Mesh stats
+	bool hasSurfaceHeightRange = false;
+	float minSurfaceHeightMeters = 0.0f;
+	float maxSurfaceHeightMeters = 0.0f;
 };
 
 /***********************************************************

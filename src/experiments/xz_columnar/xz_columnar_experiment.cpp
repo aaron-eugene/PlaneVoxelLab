@@ -22,10 +22,11 @@
 
 #include <imgui/imgui.h>
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
-#include <vector>
 #include <utility>
+#include <vector>
 
 /***********************************************************
 * File-Local Helpers
@@ -88,6 +89,65 @@ static bool uploadXZColumnarRenderMesh(
 	return true;
 }
 
+static void updateXZColumnarDebugStats(
+	XZColumnarExperiment& experiment)
+{
+	XZColumnarDebugStats& stats =
+		experiment.debugStats;
+
+	stats = {};
+
+	stats.meshCount =
+		experiment.meshes.size();
+
+	for (const XZColumnarRenderMesh& renderMesh :
+		experiment.meshes)
+	{
+		const XZColumnarMesh& mesh =
+			renderMesh.cpuMesh;
+
+		stats.vertexCount +=
+			mesh.vertices.size();
+
+		stats.indexCount +=
+			mesh.indices.size();
+
+		stats.topPieceCount +=
+			mesh.topPieces.size();
+
+		stats.sideFragmentCount +=
+			mesh.sideFragments.size();
+
+		if (!mesh.hasSurfaceHeightRange)
+		{
+			continue;
+		}
+
+		if (!stats.hasSurfaceHeightRange)
+		{
+			stats.minSurfaceHeightMeters =
+				mesh.minSurfaceHeightMeters;
+
+			stats.maxSurfaceHeightMeters =
+				mesh.maxSurfaceHeightMeters;
+
+			stats.hasSurfaceHeightRange = true;
+
+			continue;
+		}
+
+		stats.minSurfaceHeightMeters =
+			std::min(
+				stats.minSurfaceHeightMeters,
+				mesh.minSurfaceHeightMeters);
+
+		stats.maxSurfaceHeightMeters =
+			std::max(
+				stats.maxSurfaceHeightMeters,
+				mesh.maxSurfaceHeightMeters);
+	}
+}
+
 /***********************************************************
 * XZ Columnar Experiment Lifecycle
 ************************************************************/
@@ -109,12 +169,15 @@ bool initializeXZColumnarExperiment(
 static void destroyXZColumnarExperimentMeshes(
 	XZColumnarExperiment& experiment)
 {
-	for (XZColumnarRenderMesh& renderMesh : experiment.meshes)
+	for (XZColumnarRenderMesh& renderMesh :
+		experiment.meshes)
 	{
-		destroyXZColumnarRenderMesh(renderMesh);
+		destroyXZColumnarRenderMesh(
+			renderMesh);
 	}
 
 	experiment.meshes.clear();
+	experiment.debugStats = {};
 }
 
 void shutdownXZColumnarExperiment(
@@ -182,6 +245,8 @@ bool rebuildXZColumnarExperiment(
 			std::move(renderMesh));
 	}
 
+	updateXZColumnarDebugStats(experiment);
+
 	return true;
 }
 
@@ -236,43 +301,6 @@ void renderXZColumnarExperiment(
 /***********************************************************
 * XZ Columnar Experiment Debug UI
 ************************************************************/
-
-struct XZColumnarMeshStatistics
-{
-	uint64_t meshCount = 0;
-	uint64_t vertexCount = 0;
-	uint64_t indexCount = 0;
-	uint64_t topPieceCount = 0;
-	uint64_t sideFragmentCount = 0;
-};
-
-static XZColumnarMeshStatistics
-getXZColumnarMeshStatistics(
-	const XZColumnarExperiment& experiment)
-{
-	XZColumnarMeshStatistics statistics = {};
-
-	statistics.meshCount =
-		experiment.meshes.size();
-
-	for (const XZColumnarRenderMesh& mesh :
-		experiment.meshes)
-	{
-		statistics.vertexCount +=
-			mesh.cpuMesh.vertices.size();
-
-		statistics.indexCount +=
-			mesh.cpuMesh.indices.size();
-
-		statistics.topPieceCount +=
-			mesh.cpuMesh.topPieces.size();
-
-		statistics.sideFragmentCount +=
-			mesh.cpuMesh.sideFragments.size();
-	}
-
-	return statistics;
-}
 
 static const char* getXZColumnarColorizationName(
 	XZColumnarColorization colorization)
@@ -332,15 +360,14 @@ bool renderXZColumnarExperimentDebugUiContent(
 
 	bool needsRebuild = false;
 
-	const XZColumnarMeshStatistics statistics =
-		getXZColumnarMeshStatistics(
-			experiment);
+	const XZColumnarDebugStats& stats =
+		experiment.debugStats;
 
 	ImGui::SeparatorText(
 		"XZ Columnar Experiment");
 
 	//--------------------------------------------------
-	// Geometry Statistics
+	// Geometry Stats
 	//--------------------------------------------------
 
 	ImGui::TextDisabled("Geometry");
@@ -348,27 +375,53 @@ bool renderXZColumnarExperimentDebugUiContent(
 	ImGui::Text(
 		"Experiment chunks: %llu",
 		static_cast<unsigned long long>(
-			statistics.meshCount));
+			stats.meshCount));
 
 	ImGui::Text(
 		"Top pieces: %llu",
 		static_cast<unsigned long long>(
-			statistics.topPieceCount));
+			stats.topPieceCount));
 
 	ImGui::Text(
 		"Side fragments: %llu",
 		static_cast<unsigned long long>(
-			statistics.sideFragmentCount));
+			stats.sideFragmentCount));
 
 	ImGui::Text(
 		"Mesh vertices: %llu",
 		static_cast<unsigned long long>(
-			statistics.vertexCount));
+			stats.vertexCount));
 
 	ImGui::Text(
 		"Mesh indices: %llu",
 		static_cast<unsigned long long>(
-			statistics.indexCount));
+			stats.indexCount));
+
+	ImGui::Spacing();
+
+	//--------------------------------------------------
+	// Terrain Stats
+	//--------------------------------------------------
+
+	ImGui::TextDisabled("Terrain");
+
+	if (stats.hasSurfaceHeightRange)
+	{
+		ImGui::Text(
+			"Surface center height: %.2f to %.2f m",
+			stats.minSurfaceHeightMeters,
+			stats.maxSurfaceHeightMeters);
+
+		ImGui::Text(
+			"Center height span: %.2f m",
+			stats.maxSurfaceHeightMeters -
+			stats.minSurfaceHeightMeters);
+	}
+	else
+	{
+		ImGui::TextDisabled(
+			"Surface height: unavailable");
+	}
 
 	ImGui::Spacing();
 
