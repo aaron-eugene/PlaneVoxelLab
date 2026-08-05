@@ -233,12 +233,13 @@ static void appendTriangleToMesh(
 	mesh.indices.push_back(index2);
 }
 
-static void appendVoxelOwnedPolygonToMesh(
+static void emitVoxelOwnedTopPiece(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
 	const glm::vec3& chunkWorldMin,
 	const glm::vec3& normal,
 	const VoxelCoord& ownerVoxel,
+	TerrainTile terrainTile,
 	const XZColumnarBuildSettings& settings)
 {
 	if (polygon.vertexCount < 3)
@@ -252,14 +253,10 @@ static void appendVoxelOwnedPolygonToMesh(
 		static_cast<uint32_t>(
 			mesh.indices.size());
 
-	//const glm::vec3 pieceColor =
-		//getColumnarPieceColor(
-			//polygon,
-			//settings,
-			//ownerVoxel);
-
-	// TEST
-	const glm::vec3 pieceColor = glm::vec3(1.0f);
+	// Temporary neutral color while verifying textures
+	(void)settings;
+	const glm::vec3 pieceColor =
+		glm::vec3(1.0f);
 
 	const uint32_t baseVertexIndex =
 		static_cast<uint32_t>(
@@ -281,7 +278,7 @@ static void appendVoxelOwnedPolygonToMesh(
 		const glm::vec2 atlasUv =
 			getTerrainAtlasUv(
 				tileUv,
-				TerrainTile::Grass);
+				terrainTile);
 
 		appendStandardVertexToMesh(
 			mesh,
@@ -310,17 +307,19 @@ static void appendVoxelOwnedPolygonToMesh(
 
 	if (topPiece.indexCount > 0)
 	{
-		mesh.topPieces.push_back(topPiece);
+		mesh.topPieces.push_back(
+			topPiece);
 	}
 }
 
-static void appendVoxelYSlicedPolygonToMesh(
+static void sliceAndEmitTopPolygonByVoxelY(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
 	const glm::vec3& chunkWorldMin,
 	const glm::vec3& normal,
 	uint32_t localX,
 	uint32_t localZ,
+	TerrainTile terrainTile,
 	const XZColumnarBuildSettings& settings)
 {
 	if (polygon.vertexCount < 3)
@@ -389,22 +388,24 @@ static void appendVoxelYSlicedPolygonToMesh(
 		ownerVoxel.y = localY;
 		ownerVoxel.z = localZ;
 
-		appendVoxelOwnedPolygonToMesh(
+		emitVoxelOwnedTopPiece(
 			mesh,
 			voxelClippedPolygon,
 			chunkWorldMin,
 			normal,
 			ownerVoxel,
+			terrainTile,
 			settings);
 	}
 }
 
-static void appendVoxelOwnedSidePolygonToMesh(
+static void emitVoxelOwnedSideFragment(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
 	const glm::vec3& chunkWorldMin,
 	const VoxelCoord& ownerVoxel,
 	XZColumnarSide side,
+	TerrainTile terrainTile,
 	const XZColumnarBuildSettings& settings)
 {
 	if (polygon.vertexCount < 3)
@@ -423,19 +424,10 @@ static void appendVoxelOwnedSidePolygonToMesh(
 		getXZColumnarSideNormal(
 			side);
 
-	glm::vec3 fragmentColor =
-		polygon.vertices[0].color;
-
-	if (settings.colorization ==
-		XZColumnarColorization::OwnerVoxelY)
-	{
-		fragmentColor =
-			getOwnerVoxelYColor(
-				ownerVoxel.y);
-	}
-
-	// TEST
-	fragmentColor = glm::vec3(1.0f);
+	// Temporary neutral color while verifying textures.
+	(void)settings;
+	const glm::vec3 fragmentColor =
+		glm::vec3(1.0f);
 
 	const uint32_t baseVertexIndex =
 		static_cast<uint32_t>(
@@ -459,7 +451,7 @@ static void appendVoxelOwnedSidePolygonToMesh(
 		const glm::vec2 atlasUv =
 			getTerrainAtlasUv(
 				tileUv,
-				TerrainTile::Grass);
+				terrainTile);
 
 		appendStandardVertexToMesh(
 			mesh,
@@ -493,19 +485,13 @@ static void appendVoxelOwnedSidePolygonToMesh(
 	}
 }
 
-static void appendOwnedSideRegionToMesh(
+static void sliceAndEmitOwnedSideRegion(
 	XZColumnarMesh& mesh,
 	const XZColumnarSideRegion& region,
 	const glm::vec3& chunkWorldMin,
+	TerrainTile terrainTile,
 	const XZColumnarBuildSettings& settings)
 {
-	if (!isXZColumnarPlanarCellCoordinateOwned(
-		region.ownerRelativeX,
-		region.ownerRelativeZ))
-	{
-		return;
-	}
-
 	const XZColumnarClipPolygon sidePolygon =
 		getXZColumnarSideRegionPolygon(
 			region);
@@ -581,13 +567,14 @@ static void appendOwnedSideRegionToMesh(
 		ownerVoxel.z =
 			static_cast<uint32_t>(
 				region.ownerRelativeZ);
-
-		appendVoxelOwnedSidePolygonToMesh(
+		
+		emitVoxelOwnedSideFragment(
 			mesh,
 			voxelClippedPolygon,
 			chunkWorldMin,
 			ownerVoxel,
 			region.ownerSide,
+			terrainTile,
 			settings);
 	}
 }
@@ -633,13 +620,14 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 				getXZColumnarPlanarCellTopPolygon(
 					planarCell);
 
-			appendVoxelYSlicedPolygonToMesh(
+			sliceAndEmitTopPolygonByVoxelY(
 				mesh,
 				topPolygon,
 				chunkWorldMin,
 				planarCell.normal,
 				localX,
 				localZ,
+				planarCell.surfaceTile,
 				settings);
 		}
 	}
@@ -684,10 +672,27 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 				regionIndex < regionCount;
 				++regionIndex)
 			{
-				appendOwnedSideRegionToMesh(
+				const XZColumnarSideRegion& region =
+					regions[regionIndex];
+
+				if (!isXZColumnarPlanarCellCoordinateOwned(
+					region.ownerRelativeX,
+					region.ownerRelativeZ))
+				{
+					continue;
+				}
+
+				const XZColumnarPlanarCell& ownerCell =
+					getXZColumnarPlanarCell(
+						grid,
+						region.ownerRelativeX,
+						region.ownerRelativeZ);
+
+				sliceAndEmitOwnedSideRegion(
 					mesh,
-					regions[regionIndex],
+					region,
 					chunkWorldMin,
+					ownerCell.surfaceTile,
 					settings);
 			}
 		}
@@ -733,15 +738,31 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 				regionIndex < regionCount;
 				++regionIndex)
 			{
-				appendOwnedSideRegionToMesh(
+				const XZColumnarSideRegion& region =
+					regions[regionIndex];
+
+				if (!isXZColumnarPlanarCellCoordinateOwned(
+					region.ownerRelativeX,
+					region.ownerRelativeZ))
+				{
+					continue;
+				}
+
+				const XZColumnarPlanarCell& ownerCell =
+					getXZColumnarPlanarCell(
+						grid,
+						region.ownerRelativeX,
+						region.ownerRelativeZ);
+
+				sliceAndEmitOwnedSideRegion(
 					mesh,
-					regions[regionIndex],
+					region,
 					chunkWorldMin,
+					ownerCell.surfaceTile,
 					settings);
 			}
 		}
 	}
-	
 
 	return true;
 }

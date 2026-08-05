@@ -11,8 +11,8 @@
 
 #include "experiments/xz_columnar/xz_columnar_clipping.h"
 #include "experiments/xz_columnar/xz_columnar_patch.h"
+#include "lab/terrain_tile_atlas.h"
 #include "lab_world/lab_world_constants.h"
-#include "lab_world/lab_world_coordinates.h"
 
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
@@ -22,6 +22,19 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+
+/***********************************************************
+* Surface Tile Constants
+************************************************************/
+
+static constexpr float SAND_MAX_WORLD_HEIGHT_METERS =
+-3.0f;
+
+static constexpr float GRASS_MAX_WORLD_HEIGHT_METERS =
+6.0f;
+
+static constexpr float ROCK_MAX_WORLD_HEIGHT_METERS =
+12.0f;
 
 /***********************************************************
 * Local Planar Cell Constants
@@ -39,6 +52,34 @@ static constexpr size_t XZ_COLUMNAR_PLANAR_CELL_COUNT =
 	static_cast<size_t>(
 		XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE) *
 		XZ_COLUMNAR_PLANAR_CELL_GRID_SIZE;
+
+/***********************************************************
+* Surface Tile Helpers
+************************************************************/
+
+static TerrainTile classifyXZColumnarSurfaceTile(
+	float worldHeight)
+{
+	if (worldHeight <
+		SAND_MAX_WORLD_HEIGHT_METERS)
+	{
+		return TerrainTile::Sand;
+	}
+
+	if (worldHeight <
+		GRASS_MAX_WORLD_HEIGHT_METERS)
+	{
+		return TerrainTile::Grass;
+	}
+
+	if (worldHeight <
+		ROCK_MAX_WORLD_HEIGHT_METERS)
+	{
+		return TerrainTile::Rock;
+	}
+
+	return TerrainTile::Snow;
+}
 
 /***********************************************************
 * Colorization Helpers
@@ -138,6 +179,10 @@ static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 	cell.color =
 		getNormalColor(
 			cell.normal);
+
+	cell.surfaceTile =
+		classifyXZColumnarSurfaceTile(
+			patchSample.height);
 
 	cell.p00 =
 		glm::vec3(

@@ -19,6 +19,7 @@
 
 #include "experiments/xz_columnar/xz_columnar_clipping.h"
 #include "fields/field_generators.h"
+#include "lab/terrain_tile_atlas.h"
 #include "lab_world/lab_world_coordinates.h"
 
 #include <glm/vec3.hpp>
@@ -50,6 +51,9 @@ struct XZColumnarPlanarCell
 	glm::vec3 p10 = {};
 
 	glm::vec3 color = {};
+
+	TerrainTile surfaceTile =
+		TerrainTile::Grass;
 };
 
 struct XZColumnarPlanarCellGrid
