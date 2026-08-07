@@ -275,10 +275,15 @@ float getXZColumnarPolygonMaxY(
 	return maxY;
 }
 
-glm::vec3 getXZColumnarClipPolygonNormal(
+bool calculateXZColumnarClipPolygonNormal(
+	glm::vec3& normal,
 	const XZColumnarClipPolygon& polygon)
 {
-	assert(polygon.vertexCount >= 3);
+	if (polygon.vertexCount < 3)
+	{
+		normal = {};
+		return false;
+	}
 
 	for (uint32_t vertexIndex = 1;
 		vertexIndex + 1 < polygon.vertexCount;
@@ -306,13 +311,16 @@ glm::vec3 getXZColumnarClipPolygonNormal(
 			XZ_COLUMNAR_CLIPPING_EPSILON *
 			XZ_COLUMNAR_CLIPPING_EPSILON)
 		{
-			return glm::normalize(
-				crossProduct);
+			normal =
+				glm::normalize(
+					crossProduct);
+
+			return true;
 		}
 	}
 
-	assert(false);
-	return glm::vec3(0.0f, 1.0f, 0.0f);
+	normal = {};
+	return false;
 }
 
 void setXZColumnarClipPolygonColor(

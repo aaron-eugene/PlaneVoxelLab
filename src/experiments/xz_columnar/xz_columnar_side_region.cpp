@@ -402,9 +402,14 @@ XZColumnarClipPolygon getXZColumnarSideRegionPolygon(
 		return {};
 	}
 
-	const glm::vec3 polygonNormal =
-		getXZColumnarClipPolygonNormal(
-			polygon);
+	glm::vec3 polygonNormal = {};
+
+	if (!calculateXZColumnarClipPolygonNormal(
+		polygonNormal,
+		polygon))
+	{
+		return {};
+	}
 
 	const glm::vec3 expectedNormal =
 		getXZColumnarSideNormal(

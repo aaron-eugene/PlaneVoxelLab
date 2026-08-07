@@ -33,8 +33,8 @@ bool initializeLabWorld(
 		CHUNK_SIZE_METERS_D * 1.75;
 
 	world.heightmapField.baseHeight = 0.0f;
-	world.heightmapField.amplitude = 8.0f;
-	world.heightmapField.frequency = 0.08f;
+	world.heightmapField.amplitude = 22.0f;
+	world.heightmapField.frequency = 0.04f;
 
 	setLabWorldDensityFieldType(
 		world,

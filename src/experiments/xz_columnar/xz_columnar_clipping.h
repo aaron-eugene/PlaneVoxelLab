@@ -67,7 +67,8 @@ float getXZColumnarPolygonMinY(
 float getXZColumnarPolygonMaxY(
 	const XZColumnarClipPolygon& polygon);
 
-glm::vec3 getXZColumnarClipPolygonNormal(
+bool calculateXZColumnarClipPolygonNormal(
+	glm::vec3& normal,
 	const XZColumnarClipPolygon& polygon);
 
 void setXZColumnarClipPolygonColor(
