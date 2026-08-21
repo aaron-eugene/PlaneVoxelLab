@@ -10,9 +10,11 @@
 #include "surface_ref/surface_ref.h"
 
 #include "chunk/chunk.h"
-#include "lab_world/lab_world_coordinates.h"
+#include "renderer/gpu_mesh.h"
 #include "renderer/renderer.h"
-#include "surface/surface_map.h"
+#include "spatial/spatial_coordinates.h"
+#include "surface_map/surface_map.h"
+#include "surface_ref/marching_tetrahedra/tetrahedra_builder.h"
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
@@ -55,18 +57,14 @@ static bool rebuildSurfaceRefChunk(
 	assert(surfaceChunk.coord.y == chunk.coord.y);
 	assert(surfaceChunk.coord.z == chunk.coord.z);
 
-	destroyGpuMesh(surfaceRefChunk.gpuMesh);
-	clearTetrahedraMesh(surfaceRefChunk.cpuMesh);
+	destroySurfaceRefChunk(surfaceRefChunk);
 
 	surfaceRefChunk.coord = chunk.coord;
 
-	if (!buildTetrahedraMesh(
+	buildTetrahedraMesh(
 		surfaceRefChunk.cpuMesh,
 		chunk,
-		surfaceChunk))
-	{
-		return false;
-	}
+		surfaceChunk);
 
 	if (surfaceRefChunk.cpuMesh.vertices.empty() ||
 		surfaceRefChunk.cpuMesh.indices.empty())
@@ -75,10 +73,12 @@ static bool rebuildSurfaceRefChunk(
 	}
 
 	const uint32_t vertexCount =
-		static_cast<uint32_t>(surfaceRefChunk.cpuMesh.vertices.size());
+		static_cast<uint32_t>(
+			surfaceRefChunk.cpuMesh.vertices.size());
 
 	const uint32_t indexCount =
-		static_cast<uint32_t>(surfaceRefChunk.cpuMesh.indices.size());
+		static_cast<uint32_t>(
+			surfaceRefChunk.cpuMesh.indices.size());
 
 	if (!createColoredGpuMesh(
 		surfaceRefChunk.gpuMesh,
@@ -88,7 +88,7 @@ static bool rebuildSurfaceRefChunk(
 		indexCount,
 		GpuPrimitiveType::Triangles))
 	{
-		destroyGpuMesh(surfaceRefChunk.gpuMesh);
+		destroySurfaceRefChunk(surfaceRefChunk);
 		return false;
 	}
 
@@ -148,14 +148,12 @@ bool rebuildSurfaceRef(
 		assert(surfaceChunk.coord.z == chunk.coord.z);
 
 		SurfaceRefChunk surfaceRefChunk = {};
-		surfaceRefChunk.coord = surfaceChunk.coord;
 
 		if (!rebuildSurfaceRefChunk(
 			surfaceRefChunk,
 			chunk,
 			surfaceChunk))
 		{
-			destroySurfaceRefChunk(surfaceRefChunk);
 			shutdownSurfaceRef(surfaceRef);
 			return false;
 		}

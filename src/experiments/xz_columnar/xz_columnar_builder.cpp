@@ -13,10 +13,10 @@
 #include "experiments/xz_columnar/xz_columnar_side_region.h"
 #include "fields/field_generators.h"
 #include "lab/terrain_tile_atlas.h"
-#include "lab_world/lab_world_constants.h"
-#include "lab_world/lab_world_coordinates.h"
 #include "renderer/render_vertex.h"
-#include "surface/surface_map.h"
+#include "spatial/spatial_constants.h"
+#include "spatial/spatial_coordinates.h"
+#include "surface_map/surface_map.h"
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -27,48 +27,6 @@
 #include <cstdint>
 #include <utility>
 #include <vector>
-
-/***********************************************************
-* Colorization Helpers
-************************************************************/
-
-static glm::vec3 getOwnerVoxelYColor(
-	uint32_t localY)
-{
-	const float t =
-		static_cast<float>(localY % 8) / 7.0f;
-
-	return glm::vec3(
-		0.35f + 0.45f * t,
-		0.75f - 0.35f * t,
-		0.55f + 0.25f * (1.0f - t));
-}
-
-static glm::vec3 getColumnarPieceColor(
-	const XZColumnarClipPolygon& polygon,
-	const XZColumnarBuildSettings& settings,
-	const VoxelCoord& ownerVoxel)
-{
-	switch (settings.colorization)
-	{
-	case XZColumnarColorization::Normal:
-	{
-		assert(polygon.vertexCount > 0);
-		return polygon.vertices[0].color;
-	} break;
-
-	case XZColumnarColorization::OwnerVoxelY:
-	{
-		return getOwnerVoxelYColor(ownerVoxel.y);
-	} break;
-
-	default:
-	{
-		assert(false);
-		return glm::vec3(1.0f);
-	} break;
-	}
-}
 
 /***********************************************************
 * Y-Range Helpers

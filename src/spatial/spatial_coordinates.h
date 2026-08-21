@@ -1,28 +1,24 @@
 ///////////////////////////////////////////////////////////////////////////////
-// lab_world/lab_world_coordinates.h
-// =================================
+// spatial/spatial_coordinates.h
+// =============================
 //
-// Declares coordinate types and inline conversion helpers for the lab world's
-// chunk, voxel, sample, local-position, and world-position systems.
+// Declares coordinate types and inline conversion helpers for chunk, voxel,
+// sample, chunk-local, and world-space coordinate systems.
 //
-// These helpers provide the canonical way to translate positions and indices
-// across the lab world's spatial domains.
-//
-// No functions in this file depend on the Chunk struct. Everything operates on
-// primitive coordinate types and GLM vectors only.
+// These helpers provide the canonical conversions and indexing rules used by
+// the project's spatial grid.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include "lab_world/lab_world_constants.h"
+#include "spatial/spatial_constants.h"
 
+#include <glm/common.hpp>
 #include <glm/ext/vector_double3.hpp>
 #include <glm/ext/vector_float3.hpp>
-#include <glm/common.hpp>
 
 #include <cassert>
-#include <cmath>
 #include <cstdint>
 
 /***********************************************************
@@ -149,7 +145,15 @@ inline glm::vec3 getVoxelLocalCenter(
 inline VoxelCoord getVoxelCoordFromChunkLocalPosition(
 	const glm::vec3& localPosition)
 {
-	VoxelCoord voxelCoord = {
+	assert(localPosition.x >= 0.0f);
+	assert(localPosition.y >= 0.0f);
+	assert(localPosition.z >= 0.0f);
+
+	assert(localPosition.x < CHUNK_SIZE_METERS_F);
+	assert(localPosition.y < CHUNK_SIZE_METERS_F);
+	assert(localPosition.z < CHUNK_SIZE_METERS_F);
+
+	return {
 		static_cast<uint32_t>(
 			glm::floor(localPosition.x / VOXEL_SIZE_METERS)),
 		static_cast<uint32_t>(
@@ -157,10 +161,6 @@ inline VoxelCoord getVoxelCoordFromChunkLocalPosition(
 		static_cast<uint32_t>(
 			glm::floor(localPosition.z / VOXEL_SIZE_METERS))
 	};
-
-	assert(isVoxelCoordInChunkBounds(voxelCoord));
-
-	return voxelCoord;
 }
 
 inline VoxelCoord getVoxelCoordFromWorldPosition(

@@ -15,17 +15,17 @@
 
 #pragma once
 
-#include "chunk/chunk.h"
-#include "lab_world/lab_world_coordinates.h"
 #include "renderer/gpu_mesh.h"
-#include "surface/surface_map.h"
+#include "spatial/spatial_coordinates.h"
 #include "surface_ref/marching_tetrahedra/tetrahedra_builder.h"
 
 #include <glm/mat4x4.hpp>
 
 #include <vector>
 
+struct Chunk;
 struct Renderer;
+struct SurfaceMap;
 
 /***********************************************************
 * Surface Reference Types

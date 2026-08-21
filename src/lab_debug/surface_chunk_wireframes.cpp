@@ -8,11 +8,11 @@
 
 #include "lab_debug/surface_chunk_wireframes.h"
 
-#include "lab_world/lab_world_constants.h"
-#include "lab_world/lab_world_coordinates.h"
 #include "renderer/render_vertex.h"
 #include "renderer/renderer.h"
-#include "surface/surface_map.h"
+#include "spatial/spatial_constants.h"
+#include "spatial/spatial_coordinates.h"
+#include "surface_map/surface_map.h"
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>

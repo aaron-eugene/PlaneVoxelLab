@@ -175,7 +175,7 @@
     <ClCompile Include="src\renderer\renderer.cpp" />
     <ClCompile Include="src\renderer\shader.cpp" />
     <ClCompile Include="src\renderer\texture_2d.cpp" />
-    <ClCompile Include="src\surface\surface_map.cpp" />
+    <ClCompile Include="src\surface_map\surface_map.cpp" />
     <ClCompile Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.cpp" />
     <ClCompile Include="src\surface_ref\surface_ref.cpp" />
   </ItemGroup>
@@ -202,7 +202,6 @@
     <ClInclude Include="src\lab_debug\timing.h" />
     <ClInclude Include="src\lab_world\lab_world.h" />
     <ClInclude Include="src\lab_world\lab_world_constants.h" />
-    <ClInclude Include="src\lab_world\lab_world_coordinates.h" />
     <ClInclude Include="src\math\math_utils.h" />
     <ClInclude Include="src\math\noise.h" />
     <ClInclude Include="src\renderer\gpu_mesh.h" />
@@ -212,7 +211,9 @@
     <ClInclude Include="src\renderer\shader.h" />
     <ClInclude Include="src\renderer\standard_render_settings.h" />
     <ClInclude Include="src\renderer\texture_2d.h" />
-    <ClInclude Include="src\surface\surface_map.h" />
+    <ClInclude Include="src\spatial\spatial_constants.h" />
+    <ClInclude Include="src\spatial\spatial_coordinates.h" />
+    <ClInclude Include="src\surface_map\surface_map.h" />
     <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.h" />
     <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_tables.h" />
     <ClInclude Include="src\surface_ref\surface_ref.h" />

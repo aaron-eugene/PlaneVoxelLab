@@ -2,21 +2,27 @@
 // geometry/voxel_topology.h
 // =========================
 //
-// Declares topology helpers for a single cube-shaped voxel cell.
+// Declares the shared corner, edge, face, and metric conventions for a
+// cube-shaped voxel cell.
 //
-// This module defines the shared corner, edge, and face conventions for one
-// voxel. Surface extraction, debug drawing, and chunk code use these conventions
-// when interpreting voxel-local corners, edges, and faces.
+// These conventions define the canonical indexing and winding used by systems
+// that interpret voxel geometry.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include "lab_world/lab_world_constants.h"
-
 #include <glm/ext/vector_float3.hpp>
 
 #include <cstdint>
+
+/***********************************************************
+* Voxel Topology Constants
+************************************************************/
+
+constexpr uint32_t VOXEL_CORNER_COUNT = 8;
+constexpr uint32_t VOXEL_EDGE_COUNT = 12;
+constexpr uint32_t VOXEL_FACE_COUNT = 6;
 
 /***********************************************************
 * Voxel Topology Types

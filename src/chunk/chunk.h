@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "lab_world/lab_world_coordinates.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <vector>
 
@@ -31,10 +31,10 @@ struct Chunk
 };
 
 /***********************************************************
-* Chunk Lifetime
+* Chunk Initialization
 ************************************************************/
 
-bool initializeChunk(
+void initializeChunk(
 	Chunk& chunk,
 	const ChunkCoord& coord);
 

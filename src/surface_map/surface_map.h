@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
-// surface/surface_map.h
-// =====================
+// surface_map/surface_map.h
+// =========================
 //
 // Defines surface-crossing lookup data built from sampled chunk density data.
 //
@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "lab_world/lab_world_coordinates.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <cstdint>
 #include <vector>
@@ -67,6 +67,6 @@ void clearSurfaceMap(
 * Surface Map Rebuild
 ************************************************************/
 
-bool rebuildSurfaceMap(
+void rebuildSurfaceMap(
 	SurfaceMap& surfaceMap,
 	const std::vector<Chunk>& chunks);

@@ -10,6 +10,7 @@
 
 #include "math/math_utils.h"
 
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 
@@ -147,9 +148,13 @@ float sampleFractalValueNoise2d(
 	float lacunarity,
 	uint32_t seed)
 {
+	assert(octaveCount > 0);
+	assert(persistence >= 0.0f);
+	assert(lacunarity > 0.0f);
+	
 	float total = 0.0f;
-	float amplitude = 1.0f;
-	float frequency = 1.0f;
+	float octaveAmplitude = 1.0f;
+	float octaveFrequency = 1.0f;
 	float maxAmplitude = 0.0f;
 
 	for (uint32_t octaveIndex = 0;
@@ -158,20 +163,15 @@ float sampleFractalValueNoise2d(
 	{
 		total +=
 			sampleValueNoise2d(
-				x * frequency,
-				z * frequency,
+				x * octaveFrequency,
+				z * octaveFrequency,
 				seed + octaveIndex * 1013) *
-			amplitude;
+			octaveAmplitude;
 
-		maxAmplitude += amplitude;
+		maxAmplitude += octaveAmplitude;
 
-		amplitude *= persistence;
-		frequency *= lacunarity;
-	}
-
-	if (maxAmplitude <= 0.0f)
-	{
-		return 0.0f;
+		octaveAmplitude *= persistence;
+		octaveFrequency *= lacunarity;
 	}
 
 	return total / maxAmplitude;

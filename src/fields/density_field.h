@@ -24,7 +24,7 @@
 * Density Field Types
 ************************************************************/
 
-typedef float (*DensitySampleFunction)(
+using DensitySampleFunction = float (*)(
 	const glm::dvec3& worldPosition,
 	const void* userData);
 

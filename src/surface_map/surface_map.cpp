@@ -1,17 +1,17 @@
 ///////////////////////////////////////////////////////////////////////////////
-// surface/surface_map.cpp
-// =======================
+// surface_map/surface_map.cpp
+// ===========================
 //
 // Implements surface-crossing lookup generation from sampled chunk density data.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "surface/surface_map.h"
+#include "surface_map/surface_map.h"
 
 #include "chunk/chunk.h"
 #include "geometry/voxel_topology.h"
-#include "lab_world/lab_world_constants.h"
-#include "lab_world/lab_world_coordinates.h"
+#include "spatial/spatial_constants.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <algorithm>
 #include <cassert>
@@ -29,15 +29,6 @@ static constexpr float SURFACE_MAP_DENSITY_EPSILON = 0.00001f;
 * Local Helpers
 ************************************************************/
 
-static bool areChunkCoordsInSameXZColumn(
-	const ChunkCoord& coordA,
-	const ChunkCoord& coordB)
-{
-	return
-		coordA.x == coordB.x &&
-		coordA.z == coordB.z;
-}
-
 static bool isChunkCoordBeforeInSurfaceMapOrder(
 	const ChunkCoord& coordA,
 	const ChunkCoord& coordB)
@@ -53,6 +44,37 @@ static bool isChunkCoordBeforeInSurfaceMapOrder(
 	}
 
 	return coordA.y < coordB.y;
+}
+
+static bool isChunkIndexBeforeInSurfaceMapOrder(
+	const std::vector<Chunk>& chunks,
+	uint32_t chunkIndexA,
+	uint32_t chunkIndexB)
+{
+	assert(chunkIndexA < chunks.size());
+	assert(chunkIndexB < chunks.size());
+
+	const ChunkCoord& coordA =
+		chunks[chunkIndexA].coord;
+
+	const ChunkCoord& coordB =
+		chunks[chunkIndexB].coord;
+
+	if (isChunkCoordBeforeInSurfaceMapOrder(
+		coordA,
+		coordB))
+	{
+		return true;
+	}
+
+	if (isChunkCoordBeforeInSurfaceMapOrder(
+		coordB,
+		coordA))
+	{
+		return false;
+	}
+
+	return chunkIndexA < chunkIndexB;
 }
 
 static bool isSurfaceChunkInColumn(
@@ -124,7 +146,7 @@ static bool doesVoxelContainSurfaceCrossing(
 		(hasZero && (hasNegative || hasPositive));
 }
 
-static bool rebuildSurfaceChunk(
+static void rebuildSurfaceChunk(
 	SurfaceChunk& surfaceChunk,
 	const Chunk& chunk,
 	uint32_t chunkIndex)
@@ -152,8 +174,6 @@ static bool rebuildSurfaceChunk(
 
 		surfaceChunk.voxels.push_back(surfaceVoxel);
 	}
-
-	return true;
 }
 
 /***********************************************************
@@ -166,11 +186,7 @@ void clearSurfaceMap(
 	surfaceMap = {};
 }
 
-/***********************************************************
-* Surface Map Rebuild
-************************************************************/
-
-bool rebuildSurfaceMap(
+void rebuildSurfaceMap(
 	SurfaceMap& surfaceMap,
 	const std::vector<Chunk>& chunks)
 {
@@ -202,30 +218,10 @@ bool rebuildSurfaceMap(
 			uint32_t chunkIndexA,
 			uint32_t chunkIndexB)
 		{
-			assert(chunkIndexA < chunks.size());
-			assert(chunkIndexB < chunks.size());
-
-			const ChunkCoord& coordA =
-				chunks[chunkIndexA].coord;
-
-			const ChunkCoord& coordB =
-				chunks[chunkIndexB].coord;
-
-			if (isChunkCoordBeforeInSurfaceMapOrder(
-				coordA,
-				coordB))
-			{
-				return true;
-			}
-
-			if (isChunkCoordBeforeInSurfaceMapOrder(
-				coordB,
-				coordA))
-			{
-				return false;
-			}
-
-			return chunkIndexA < chunkIndexB;
+			return isChunkIndexBeforeInSurfaceMapOrder(
+				chunks,
+				chunkIndexA,
+				chunkIndexB);
 		});
 
 	for (uint32_t chunkIndex :
@@ -235,14 +231,10 @@ bool rebuildSurfaceMap(
 
 		SurfaceChunk surfaceChunk = {};
 
-		if (!rebuildSurfaceChunk(
+		rebuildSurfaceChunk(
 			surfaceChunk,
 			chunks[chunkIndex],
-			chunkIndex))
-		{
-			clearSurfaceMap(surfaceMap);
-			return false;
-		}
+			chunkIndex);
 
 		if (surfaceChunk.voxels.empty())
 		{
@@ -279,6 +271,4 @@ bool rebuildSurfaceMap(
 		++surfaceMap.columns.back()
 			.surfaceChunkCount;
 	}
-
-	return true;
 }

@@ -12,7 +12,7 @@
 #include "chunk/chunk.h"
 #include "fields/density_field.h"
 #include "fields/field_generators.h"
-#include "surface/surface_map.h"
+#include "surface_map/surface_map.h"
 
 #include <vector>
 
@@ -32,6 +32,9 @@ enum class LabWorldDensityFieldType
 
 struct LabWorld
 {
+	//--------------------------------------------------
+	// Density Configuration
+	//--------------------------------------------------
 	LabWorldDensityFieldType activeDensityFieldType =
 		LabWorldDensityFieldType::Sphere;
 	
@@ -40,7 +43,14 @@ struct LabWorld
 
 	DensityField densityField = {};
 
+	//--------------------------------------------------
+	// Primary Generated Data
+	//--------------------------------------------------
 	std::vector<Chunk> chunks = {};
+
+	//--------------------------------------------------
+	// Derived World Data
+	//--------------------------------------------------
 	SurfaceMap surfaceMap = {};
 };
 
@@ -48,7 +58,7 @@ struct LabWorld
 * Lab World Lifecycle
 ************************************************************/
 
-bool initializeLabWorld(LabWorld& world);
+void initializeLabWorld(LabWorld& world);
 
 void shutdownLabWorld(LabWorld& world);
 
@@ -60,5 +70,5 @@ void setLabWorldDensityFieldType(
 	LabWorld& world,
 	LabWorldDensityFieldType fieldType);
 
-bool rebuildLabWorldDensityData(
+void rebuildLabWorldDensityData(
 	LabWorld& world);

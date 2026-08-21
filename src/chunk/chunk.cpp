@@ -2,12 +2,14 @@
 // chunk/chunk.cpp
 // ===============
 //
+// Implements chunk initialization and density-sample access.
+// 
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "chunk/chunk.h"
 
-#include "lab_world/lab_world_constants.h"
-#include "lab_world/lab_world_coordinates.h"
+#include "spatial/spatial_constants.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <cassert>
 #include <cstdint>
@@ -16,18 +18,14 @@
 * Chunk Lifetime
 ************************************************************/
 
-bool initializeChunk(
+void initializeChunk(
 	Chunk& chunk,
 	const ChunkCoord& coord)
 {
-	assert(chunk.densitySamples.empty());
-
 	chunk = {};
 	chunk.coord = coord;
 
 	chunk.densitySamples.resize(CHUNK_SAMPLE_COUNT);
-
-	return chunk.densitySamples.size() == CHUNK_SAMPLE_COUNT;
 }
 
 /***********************************************************

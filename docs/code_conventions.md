@@ -1,8 +1,8 @@
-# Runes Code Conventions
+# Plane Voxel Lab Code Conventions
 
-This document records coding conventions and design rules for the Runes codebase. These 
-conventions are intended to keep ownership, lifetime, and module boundaries clear as the 
-project grows.
+This document records coding conventions and design rules for the Plane Voxel Lab
+codebase. These conventions are intended to keep ownership, lifetime, naming, and
+module boundaries clear as the project grows.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -38,11 +38,67 @@ How the code looks.
 
 ### Unicode
 
-For now, we are not including unicode characters in any files. 
+For now, do not include Unicode characters in project files.
 
 ### Naming 
 
-Use names that describe ownership and intent.
+Use names that describe ownership, behavior, and intent.
+
+Names should reflect what a function or type actually does. Prefer distinctions such as
+`create`, `build`, `initialize`, `append`, `emit`, `clip`, `sample`, `classify`, `update`,
+and `render` when those distinctions are meaningful.
+
+#### Function Naming Semantics
+
+Use `create`, `initialize`, and `make` according to the lifetime and ownership behavior 
+of the operation.
+
+##### `create`
+
+Use `create` when establishing an explicitly managed resource or resource-owning object.
+
+Creation typically writes into a destination passed by reference. When replacing a live 
+destination would violate its lifetime contract, the destination must be empty before 
+creation.
+
+Creation may report runtime failure when the underlying operation has a meaningful 
+failure path.
+
+Examples:
+
+```cpp
+bool createGpuMesh(GpuMesh& mesh, ...);
+bool createTexture2D(Texture2D& texture, ...);
+```
+
+##### `initialize`
+
+Use `initialize` when resetting and populating ordinary state.
+
+Initialization may safely replace previous state when normal reset or RAII semantics 
+are sufficient. It does not imply ownership of an explicitly managed external resource.
+
+Examples:
+
+```cpp
+void initializeChunk(Chunk& chunk, const ChunkCoord& coord);
+bool initializeLabWorld(LabWorld& world);
+```
+
+##### `make`
+
+Use `make` when constructing and returning a value, adapter, view, or other lightweight 
+object that does not require a matching explicit destruction operation.
+
+Examples:
+
+```cpp
+DensityField makeSphereDensityField(
+	const SphereDensityField& sphere);
+
+DensityField makeHeightmapDensityField(
+	const HeightmapDensityField& heightmap);
+```
 
 ### Capitalization
 
@@ -74,8 +130,8 @@ Used for both headers and implementation files.
 ```cpp
 
 ///////////////////////////////////////////////////////////////////////////////
-// render/shader.h
-// ===============
+// renderer/shader.h
+// =================
 //
 // Brief module description.
 //
@@ -119,7 +175,7 @@ Used in implementation files for:
 Generally not needed in header files.
 
 Used in implementation files for:
-- breaking apart very large functions into major sections
+- breaking apart large functions into major sections
 
 #### Tertiary Banners
 
@@ -145,7 +201,7 @@ How the code is shaped.
 
 ### Data-Oriented Design
 
-Runes uses a data-oriented C++ style. No OOP. 
+Plane Voxel Lab uses a data-oriented C++ style rather than an object-oriented design.
 
 The preferred structure is:
 - plain structs for data
@@ -158,7 +214,13 @@ The preferred structure is:
 
 Prefer plain structs with public data.
 
-Resource-owning structs should be paired with explicit create/destroy functions.
+Structs that own explicitly managed resources should be paired with explicit create/destroy
+functions appropriate to their lifetime. Plain state structs, including structs that contain
+ordinary RAII containers such as `std::vector`, may use initialize/shutdown functions when
+resetting the struct is sufficient to manage its lifetime.
+
+Derived or cached data should be named so that its purpose is clear and should live with
+the system that is responsible for maintaining it.
 
 ### Function Policy
 
@@ -176,14 +238,15 @@ void renderMesh(const GpuMesh& mesh, const ShaderProgram& shader);
 
 ```
 
-Avoid functions that depend on hidden global state unless the state is explicitly file-local
-and temporary during bootstrap.
+Avoid functions that depend on hidden global state unless that state is intentionally
+file-local and part of a narrow implementation detail.
 
 ### Pointer and Reference Policy
 
 Use references for required inputs and outputs.
 
-Use pointers when null is a meaningful value or when passing arrays.
+Use pointers when null is a meaningful value or when pointer semantics are otherwise
+appropriate, such as borrowed array data.
 
 A pointer parameter must have a clear contract:
 - nullable, if null is allowed
@@ -191,17 +254,17 @@ A pointer parameter must have a clear contract:
 
 Raw pointers do not imply ownership unless explicitly documented.
 
-Owning resources should be represented by structs with explicit create/destroy functions.
+Owning resources should be represented by structs with explicit lifetime functions.
 
 ### Global State Policy
 
 Avoid project-wide global state.
 
-File-local static/global state may be used during early bootstrap or for truly private
-implementation details, but long-lived system state should eventually live in explicit
-state structs.
+File-local static state may be used for constants or truly private implementation details.
 
-Prefer passing state explicitly between systems.
+Long-lived runtime state should live in explicit state structs.
+
+Prefer passing state explicitly between systems and modules.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -213,58 +276,82 @@ What functions and resources promise and how failure is handled.
 
 Functions should have clear contracts.
 
-When a function requires valid input, the function should enforce that contract with assertions.
+When a function requires valid input, it should enforce that contract with assertions.
+
 Invalid input caused by incorrect internal usage is a programmer error, not a recoverable
 runtime failure.
 
 ### Assertion vs Runtime Failure
 
-Use assert for programmer errors and broken internal contracts.
+Use `assert` for programmer errors and broken internal contracts.
 
-Use if statements for recoverable failure paths or for normal runtime failures.
+Use runtime checks for recoverable failure paths or normal runtime failures.
 
-A broken ownership contract is not the same kind of failure as a library failing to load. 
-Broken contracts should stop execution during development so the calling code can be fixed.
+A broken ownership contract is not the same kind of failure as an external library or
+resource failing to initialize. Broken contracts should stop execution during development
+so the calling code can be fixed.
 
 ### Recoverability Policy
 
 A function should report failure when the caller has a meaningful decision to make.
 
-Recoverable failure does not mean the current caller must recover immediately. In early
-development, the current caller may assert or terminate on failure. Returning failure from a
-lower-level function can still be useful because a higher-level system may later choose to
-retry, use a fallback resource, skip a non-critical feature, or shut down cleanly.
+Recoverable failure does not mean the current caller must recover immediately. During
+development, a higher-level caller may still choose to terminate after receiving a failure.
 
-Use assertions for failures that indicate broken contracts, invalid internal usage, or an
-invalid system state.
+Returning failure from a lower-level function can remain useful because a higher-level system
+may later choose to:
+
+- retry
+- use a fallback resource
+- skip a non-critical feature
+- report the error through debug UI or logging
+- shut down cleanly
+
+Use assertions for failures that indicate:
+
+- broken contracts
+- invalid internal usage
+- impossible or invalid system state
 
 Use `bool` return values for failures that the caller may reasonably want to make a decision
 about.
 
 Examples of assertion failures:
+
 - passing a null pointer where a valid pointer is required
 - passing a non-empty resource to a creation function
 - passing zero vertices to mesh creation
 - calling a rendering function before renderer initialization
-- receiving an invalid OpenGL handle in a situation that indicates broken renderer setup
+- receiving an invalid OpenGL handle where that indicates broken renderer setup
 
 Examples of recoverable or reportable failures:
+
 - GLFW fails to initialize
 - a window cannot be created
 - GLAD fails to load OpenGL functions
 - shader compilation fails
 - shader linking fails
+- an image asset cannot be loaded
 - a mesh or texture resource cannot be created and the caller may choose a fallback
 
 During early development, assertions may temporarily stand in for recovery paths that do not
-exist yet. This is a development-stage choice, not a permanent error-handling strategy. As
-fallback resources, logging, debug UI, asset validation, and renderer error systems are added,
-some assertions may be converted into recoverable failure paths.
+exist yet. This is a development-stage choice, not a permanent error-handling strategy.
+
+As fallback resources, logging, debug UI, asset validation, and renderer error systems are
+added, some assertions may be converted into recoverable failure paths.
 
 ### Error Handling Policy
 
 Use `bool` return values for initialization and creation functions when the caller has a
 meaningful decision to make if the function fails.
+
+Use `void` when an operation has no meaningful reportable failure path. Do not return a `bool`
+only because an underlying standard-library operation could theoretically fail in a way the
+function does not observe.
+
+For this lab, allocation failure from standard containers is not handled explicitly. Standard
+containers are used as a convenience, and the project does not add exception-based recovery
+or custom allocation handling solely to detect out-of-memory conditions.
 
 On failure, creation functions should clean up any partial resources they created and leave
 the destination resource empty.
@@ -279,41 +366,65 @@ the destination resource empty.
 
 #### Creation Functions
 
-Creation functions for resource-owning structs require an empty destination and assert that 
+Creation functions for resource-owning structs require an empty destination and assert that
 contract.
 
-These is a programmer contract and should be enforced with assertions.
+This is a programmer contract and should be enforced with assertions.
 
-The create function may write into the resource during creation. If creation fails, the create 
-function cleans up only the resources it created during that attempt. On failure, the 
-destination is left empty. On success, the destination is left valid.
+The create function may write into the resource during creation. If creation fails, it cleans
+up only the resources created during that attempt and leaves the destination empty.
 
-Creation functions should not silently overwrite live resources. Replacing a live resource 
+On success, the destination is left valid.
+
+Creation functions should not silently overwrite live resources. Replacing a live resource
 requires explicit destruction first.
 
-Initialization functions for plain state structs may reset the destination to a known default 
-state.
+Initialization functions for plain state structs may reset the destination to a known default
+state. Ordinary RAII-owned members such as `std::vector` do not by themselves require an
+empty-destination contract or explicit destruction before reinitialization.
 
 #### Destroy Functions
 
-Destroy/shutdown functions should be safe to call on empty resources.
+Destroy and shutdown functions should be safe to call on empty resources.
 
-Destroy functions release any owned resources and reset the struct afterward.
+They should release owned resources and reset the struct afterward.
+
+Destruction should not require the resource to be valid or populated.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 ## Source and Module Boundaries
 
-How files and modules expose or hide things.
+How files and modules expose, hide, and depend on functionality.
+
+### Module Definition
+
+A module is a cohesive subsystem of the project, usually represented by a source directory.
+A module may contain multiple header/implementation pairs when its responsibility requires
+several related types or operations.
+
+Individual files should have focused responsibilities, but module ownership and dependency
+boundaries are defined at the subsystem level rather than treating every header/implementation
+pair as a separate module.
+
+For example, everything under `chunk/` belongs to the chunk module, while individual files
+within that directory may separate chunk storage, sampling behavior, or other chunk-specific
+responsibilities.
+
+`module_contracts.md` documents these module-level boundaries rather than maintaining a
+contract entry for every source file.
 
 ### Header Policy
 
 Headers define module contracts.
 
-A header should contain only the types and function declarations that other files/modules 
-are allowed to use.
+A header should contain only the types, constants, and function declarations that other
+files or modules are allowed to use.
 
 Implementation details should stay in `.cpp` files.
+
+A public type should not expose another module's type unless that dependency is intentional
+and part of the public contract.
 
 ### Include Policy
 
@@ -321,35 +432,63 @@ Headers should include only what they need to define their public types and func
 declarations.
 
 Implementation files should include their matching header first, followed by required
-dependencies, in a specific order:
-- other project module headers, alphabetically
-- OpenGL-related libraries (GLAD, GLM, GLFW, ImGui)
-- C standard library headers, alphabetically
+dependencies in this order:
 
-Prefer forward declarations when possible, but do not forward declare external library
-types unless the type is intentionally opaque at the module boundary.
+- other project module headers, alphabetically
+- third-party library headers, grouped sensibly
+- C and C++ standard library headers, alphabetically
+
+Implementation files should include what they use directly rather than relying on
+transitive inclusion from their matching header.
+
+Prefer forward declarations when they reduce unnecessary dependencies without obscuring
+the public contract.
+
+Do not forward declare external library types unless the type is intentionally opaque at the
+module boundary.
 
 Avoid unnecessary includes in headers. Header dependencies should be deliberate because
 they become dependencies for every file that includes that header.
 
 Do not use `using namespace` in headers.
 
-Implementation files should include what they need directly, rather than relying on 
-what their shared header provides. 
-
 ### File-Local Visibility Policy
 
 File-local helper functions should use `static`.
 
-File-local helper types, such as private structs, should be placed in an anonymous namespace.
+File-local helper types may be placed in an anonymous namespace when they should not be
+visible outside the implementation file.
 
 Anonymous namespaces should not be placed in headers.
 
+### Module Dependency Policy
+
+Modules should depend only on concepts appropriate to their layer and responsibility.
+
+Higher-level orchestration modules may depend on lower-level shared systems.
+
+Lower-level shared modules should not depend on higher-level orchestration modules or on
+specific experiments.
+
+Experiments may depend on shared project systems, but shared systems should not depend on
+experiment-specific types.
+
+Avoid circular dependencies between modules.
+
+If a public type begins depending on a higher-level module only to access one small shared
+concept, reconsider whether that concept belongs in a lower-level shared module.
+
 ### Module Ownership
 
-Each module should clearly define what it owns and what it only references.
+Each module should clearly define:
 
-Please see module_contracts.md for details on all modules. 
+- what it owns
+- what it creates and destroys
+- what it borrows or references
+- what concepts belong to it
+- what concepts explicitly do not belong to it
+
+See module_contracts.md for module-specific boundaries.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

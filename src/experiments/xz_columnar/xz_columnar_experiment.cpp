@@ -10,10 +10,10 @@
 
 #include "experiments/xz_columnar/xz_columnar_builder.h"
 #include "lab_world/lab_world.h"
-#include "lab_world/lab_world_coordinates.h"
 #include "renderer/gpu_mesh.h"
 #include "renderer/renderer.h"
 #include "renderer/standard_render_settings.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <glm/ext/matrix_transform.inl>
 #include <glm/ext/matrix_float4x4.hpp>

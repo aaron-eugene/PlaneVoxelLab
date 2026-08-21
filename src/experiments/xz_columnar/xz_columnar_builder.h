@@ -18,9 +18,9 @@
 
 #include "experiments/xz_columnar/xz_columnar_side_region.h"
 #include "fields/field_generators.h"
-#include "lab_world/lab_world_coordinates.h"
 #include "renderer/render_vertex.h"
-#include "surface/surface_map.h"
+#include "spatial/spatial_coordinates.h"
+#include "surface_map/surface_map.h"
 
 #include <cstdint>
 #include <vector>

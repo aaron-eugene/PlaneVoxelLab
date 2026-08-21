@@ -14,7 +14,7 @@
 
 #include "experiments/xz_columnar/xz_columnar_builder.h"
 #include "lab/terrain_render_resources.h"
-#include "lab_world/lab_world_coordinates.h"
+#include "spatial/spatial_coordinates.h"
 #include "renderer/gpu_mesh.h"
 
 #include <glm/ext/matrix_float4x4.hpp>

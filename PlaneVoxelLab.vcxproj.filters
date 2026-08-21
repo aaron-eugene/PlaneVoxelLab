@@ -55,9 +55,6 @@
     <Filter Include="src\surface_ref\marching_tetrahedra">
       <UniqueIdentifier>{64499eeb-4761-4177-8091-25b6554d8bbc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\surface">
-      <UniqueIdentifier>{2b85d7ad-6177-4efd-ab6b-7b4e5e1eb7f8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\math">
       <UniqueIdentifier>{660d43e1-74da-47bc-9612-0bfd4237c582}</UniqueIdentifier>
     </Filter>
@@ -69,6 +66,12 @@
     </Filter>
     <Filter Include="src\lab_debug">
       <UniqueIdentifier>{528f62a9-9979-4647-9957-05bd0cd62c9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\spatial">
+      <UniqueIdentifier>{f0cf64f3-691c-451c-b446-5df070293643}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\surface_map">
+      <UniqueIdentifier>{2b85d7ad-6177-4efd-ab6b-7b4e5e1eb7f8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -87,6 +90,8 @@
     <None Include="docs\todo.md">
       <Filter>docs</Filter>
     </None>
+    <None Include="assets\shaders\standard.frag" />
+    <None Include="assets\shaders\standard.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -164,9 +169,6 @@
     <ClCompile Include="src\surface_ref\surface_ref.cpp">
       <Filter>src\surface_ref</Filter>
     </ClCompile>
-    <ClCompile Include="src\surface\surface_map.cpp">
-      <Filter>src\surface</Filter>
-    </ClCompile>
     <ClCompile Include="src\math\noise.cpp">
       <Filter>src\math</Filter>
     </ClCompile>
@@ -190,6 +192,13 @@
     </ClCompile>
     <ClCompile Include="src\experiments\xz_columnar\xz_columnar_side_region.cpp">
       <Filter>src\experiments\xz_columnar</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lab\terrain_render_resources.cpp" />
+    <ClCompile Include="src\lab\terrain_tile_atlas.cpp" />
+    <ClCompile Include="src\renderer\image_data.cpp" />
+    <ClCompile Include="src\renderer\texture_2d.cpp" />
+    <ClCompile Include="src\surface_map\surface_map.cpp">
+      <Filter>src\surface_map</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -229,14 +238,8 @@
     <ClInclude Include="src\lab_world\lab_world.h">
       <Filter>src\lab_world</Filter>
     </ClInclude>
-    <ClInclude Include="src\lab_world\lab_world_constants.h">
-      <Filter>src\lab_world</Filter>
-    </ClInclude>
     <ClInclude Include="src\geometry\voxel_topology.h">
       <Filter>src\geometry</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lab_world\lab_world_coordinates.h">
-      <Filter>src\lab_world</Filter>
     </ClInclude>
     <ClInclude Include="src\chunk\chunk.h">
       <Filter>src\chunk</Filter>
@@ -252,9 +255,6 @@
     </ClInclude>
     <ClInclude Include="src\surface_ref\surface_ref.h">
       <Filter>src\surface_ref</Filter>
-    </ClInclude>
-    <ClInclude Include="src\surface\surface_map.h">
-      <Filter>src\surface</Filter>
     </ClInclude>
     <ClInclude Include="src\math\math_utils.h">
       <Filter>src\math</Filter>
@@ -282,6 +282,24 @@
     </ClInclude>
     <ClInclude Include="src\experiments\xz_columnar\xz_columnar_side_region.h">
       <Filter>src\experiments\xz_columnar</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lab\terrain_render_resources.h" />
+    <ClInclude Include="src\lab\terrain_tile_atlas.h" />
+    <ClInclude Include="src\lab_debug\timing.h" />
+    <ClInclude Include="src\renderer\image_data.h" />
+    <ClInclude Include="src\renderer\standard_render_settings.h" />
+    <ClInclude Include="src\renderer\texture_2d.h" />
+    <ClInclude Include="src\spatial\spatial_constants.h">
+      <Filter>src\spatial</Filter>
+    </ClInclude>
+    <ClInclude Include="src\spatial\spatial_coordinates.h">
+      <Filter>src\spatial</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lab_world\lab_world_constants.h">
+      <Filter>src\lab_world</Filter>
+    </ClInclude>
+    <ClInclude Include="src\surface_map\surface_map.h">
+      <Filter>src\surface_map</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "lab_world/lab_world_coordinates.h"
+#include "spatial/spatial_coordinates.h"
 #include "renderer/gpu_mesh.h"
 
 #include <glm/mat4x4.hpp>

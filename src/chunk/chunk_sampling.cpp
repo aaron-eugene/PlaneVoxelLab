@@ -2,22 +2,23 @@
 // chunk/chunk_sampling.cpp
 // ========================
 //
+// Implements density-field sampling for chunk sample grids.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "chunk/chunk_sampling.h"
 
 #include "chunk/chunk.h"
 #include "fields/density_field.h"
-#include "lab_world/lab_world_constants.h"
-#include "lab_world/lab_world_coordinates.h"
+#include "spatial/spatial_constants.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <glm/ext/vector_double3.hpp>
-#include <glm/ext/vector_float3.hpp>
 
 #include <cstdint>
 
 /***********************************************************
-* Chunk Sampling Interface
+* Chunk Sampling
 ************************************************************/
 
 void sampleChunkDensityField(
@@ -43,13 +44,10 @@ void sampleChunkDensityField(
 					sampleZ
 				};
 
-				const glm::vec3 sampleLocalPosition =
-					getSampleLocalPosition(sampleCoord);
-
 				const glm::dvec3 sampleWorldPosition =
-					getWorldPositionFromChunkLocalPosition(
+					getSampleWorldPosition(
 						chunk.coord,
-						sampleLocalPosition);
+						sampleCoord);
 
 				const float density =
 					sampleDensityField(

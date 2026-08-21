@@ -13,7 +13,7 @@
 #include "lab_debug/surface_chunk_wireframes.h"
 #include "lab_world/lab_world.h"
 #include "renderer/renderer.h"
-#include "surface/surface_map.h"
+#include "surface_map/surface_map.h"
 #include "surface_ref/surface_ref.h"
 
 #include <imgui/imgui.h>
@@ -55,11 +55,7 @@ bool initializeLab(
 	lab.showActiveExperiment = true;
 	lab.showSurfaceChunkWireframes = false;
 
-	if (!initializeLabWorld(lab.world))
-	{
-		shutdownLab(lab);
-		return false;
-	}
+	initializeLabWorld(lab.world);
 	
 	if (!initializeSurfaceRef(
 		lab.surfaceRef,
@@ -428,11 +424,8 @@ static bool rebuildLabDensityData(
 		lab.world,
 		fieldType);
 
-	if (!rebuildLabWorldDensityData(
-		lab.world))
-	{
-		return false;
-	}
+	rebuildLabWorldDensityData(
+		lab.world);
 
 	if (!rebuildSurfaceRef(
 		lab.surfaceRef,

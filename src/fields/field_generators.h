@@ -2,7 +2,7 @@
 // fields/field_generators.h
 // =========================
 //
-// Declares simple density field generators used by the lab.
+// Declares simple procedural density-field generators.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -24,12 +24,8 @@ struct SphereDensityField
 	double radius = 1.0;
 };
 
-DensityField createSphereDensityField(
+DensityField makeSphereDensityField(
 	const SphereDensityField& sphere);
-
-float sampleSphereDensityField(
-	const glm::dvec3& worldPosition,
-	const void* userData);
 
 /***********************************************************
 * Heightmap Density Field
@@ -53,9 +49,5 @@ float sampleHeightmapTerrainHeight(
 	float worldX,
 	float worldZ);
 
-DensityField createHeightmapDensityField(
+DensityField makeHeightmapDensityField(
 	const HeightmapDensityField& heightmap);
-
-float sampleHeightmapDensityField(
-	const glm::dvec3& worldPosition,
-	const void* userData);

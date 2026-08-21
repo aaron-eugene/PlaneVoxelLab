@@ -2,6 +2,8 @@
 // fields/density_field.cpp
 // ========================
 //
+// Implements validation and sampling for the generic density-field interface.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "fields/density_field.h"

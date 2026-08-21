@@ -37,7 +37,7 @@ struct TetrahedraMesh
 void clearTetrahedraMesh(
 	TetrahedraMesh& mesh);
 
-bool buildTetrahedraMesh(
+void buildTetrahedraMesh(
 	TetrahedraMesh& mesh,
 	const Chunk& chunk,
 	const SurfaceChunk& surfaceChunk);

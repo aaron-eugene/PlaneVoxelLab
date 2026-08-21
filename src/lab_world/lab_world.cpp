@@ -1,6 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // lab_world.cpp
 // =============
+// Implements LabWorld initialization, density-field selection, and rebuilding.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -11,8 +12,9 @@
 #include "fields/density_field.h"
 #include "fields/field_generators.h"
 #include "lab_world/lab_world_constants.h"
-#include "lab_world/lab_world_coordinates.h"
-#include "surface/surface_map.h"
+#include "spatial/spatial_constants.h"
+#include "spatial/spatial_coordinates.h"
+#include "surface_map/surface_map.h"
 
 #include <cassert>
 #include <cstdint>
@@ -21,11 +23,9 @@
 * Lab World Lifecycle
 ************************************************************/
 
-bool initializeLabWorld(
+void initializeLabWorld(
 	LabWorld& world)
 {
-	assert(world.chunks.empty());
-
 	world = {};
 
 	world.sphereField.center = glm::dvec3(0.0, 0.0, 0.0);
@@ -54,8 +54,6 @@ bool initializeLabWorld(
 				chunkX < CHUNK_LOAD_RADIUS_X;
 				++chunkX)
 			{
-				Chunk chunk = {};
-
 				const ChunkCoord coord =
 				{
 					chunkX,
@@ -63,34 +61,26 @@ bool initializeLabWorld(
 					chunkZ
 				};
 
-				if (!initializeChunk(
+				world.chunks.emplace_back();
+
+				Chunk& chunk = world.chunks.back();
+
+				initializeChunk(
 					chunk,
-					coord))
-				{
-					world = {};
-					return false;
-				}
+					coord);
 
 				sampleChunkDensityField(
 					chunk,
 					world.densityField);
-
-				world.chunks.push_back(chunk);
 			}
 		}
 	}
 
 	assert(world.chunks.size() == CHUNK_LOAD_COUNT);
 
-	if (!rebuildSurfaceMap(
+	rebuildSurfaceMap(
 		world.surfaceMap,
-		world.chunks))
-	{
-		world = {};
-		return false;
-	}
-
-	return true;
+		world.chunks);
 }
 
 void shutdownLabWorld(LabWorld& world)
@@ -113,13 +103,13 @@ void setLabWorldDensityFieldType(
 	case LabWorldDensityFieldType::Sphere:
 	{
 		world.densityField =
-			createSphereDensityField(world.sphereField);
+			makeSphereDensityField(world.sphereField);
 	} break;
 
 	case LabWorldDensityFieldType::Heightmap:
 	{
 		world.densityField =
-			createHeightmapDensityField(world.heightmapField);
+			makeHeightmapDensityField(world.heightmapField);
 	} break;
 
 	default:
@@ -132,7 +122,7 @@ void setLabWorldDensityFieldType(
 	assert(isDensityFieldValid(world.densityField));
 }
 
-bool rebuildLabWorldDensityData(
+void rebuildLabWorldDensityData(
 	LabWorld& world)
 {
 	assert(isDensityFieldValid(world.densityField));
@@ -144,13 +134,7 @@ bool rebuildLabWorldDensityData(
 			world.densityField);
 	}
 
-	if (!rebuildSurfaceMap(
+	rebuildSurfaceMap(
 		world.surfaceMap,
-		world.chunks))
-	{
-		clearSurfaceMap(world.surfaceMap);
-		return false;
-	}
-
-	return true;
+		world.chunks);
 }

@@ -8,9 +8,9 @@
 
 #include "chunk/chunk.h"
 #include "geometry/voxel_topology.h"
-#include "lab_world/lab_world_constants.h"
-#include "lab_world/lab_world_coordinates.h"
-#include "surface/surface_map.h"
+#include "spatial/spatial_constants.h"
+#include "spatial/spatial_coordinates.h"
+#include "surface_map/surface_map.h"
 #include "surface_ref/marching_tetrahedra/tetrahedra_tables.h"
 
 #include <glm/ext/vector_float3.hpp>
@@ -197,7 +197,7 @@ static void addOrientedTriangle(
 * Tetrahedra Helpers
 ************************************************************/
 
-static uint32_t gatherInsideOutsideCornerIndices(
+static void gatherInsideOutsideCornerIndices(
 	uint32_t insideCorners[MARCHING_TETRAHEDRON_CORNER_COUNT],
 	uint32_t& insideCount,
 	uint32_t outsideCorners[MARCHING_TETRAHEDRON_CORNER_COUNT],
@@ -224,8 +224,6 @@ static uint32_t gatherInsideOutsideCornerIndices(
 	}
 
 	assert(insideCount + outsideCount == MARCHING_TETRAHEDRON_CORNER_COUNT);
-
-	return insideCount;
 }
 
 static glm::vec3 getCornerGroupCentroid(
@@ -527,7 +525,7 @@ void clearTetrahedraMesh(
 	mesh.indices.clear();
 }
 
-bool buildTetrahedraMesh(
+void buildTetrahedraMesh(
 	TetrahedraMesh& mesh,
 	const Chunk& chunk,
 	const SurfaceChunk& surfaceChunk)
@@ -545,6 +543,4 @@ bool buildTetrahedraMesh(
 			chunk,
 			surfaceVoxel.coord);
 	}
-
-	return true;
 }

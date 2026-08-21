@@ -2,10 +2,12 @@
 // geometry/voxel_topology.cpp
 // ===========================
 //
+// Implements the canonical voxel corner, edge, face, and metric conventions.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "geometry/voxel_topology.h"
-#include "lab_world/lab_world_constants.h"
+#include "spatial/spatial_constants.h"
 
 #include <glm/ext/vector_float3.hpp>
 
@@ -150,7 +152,6 @@ VoxelCornerGridOffset getVoxelCornerGridOffset(
 	return VOXEL_CORNER_GRID_OFFSETS[cornerIndex];
 }
 
-// NOTE: Add table for metric offsets to avoid these casts?
 glm::vec3 getVoxelCornerMetricOffset(
 	uint32_t cornerIndex)
 {
