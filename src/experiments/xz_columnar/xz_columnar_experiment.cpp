@@ -80,9 +80,6 @@ static bool uploadXZColumnarRenderMesh(
 		indexCount,
 		GpuPrimitiveType::Triangles))
 	{
-		destroyGpuMesh(
-			renderMesh.gpuMesh);
-
 		return false;
 	}
 
@@ -289,8 +286,8 @@ void renderXZColumnarExperiment(
 				columnarMesh.coord);
 
 		renderStandardMesh(
+			renderer,
 			columnarMesh.gpuMesh,
-			renderer.standardShader,
 			renderSettings,
 			terrainRenderResources.tileAtlas,
 			model,

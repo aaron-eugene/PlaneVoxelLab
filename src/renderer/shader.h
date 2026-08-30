@@ -40,7 +40,7 @@ bool loadShaderSource(
 	const char* vertexShaderPath,
 	const char* fragmentShaderPath);
 
-void destroyShaderSource(ShaderSource& shaderSource);
+void clearShaderSource(ShaderSource& shaderSource);
 
 /***********************************************************
 * Shader Lifecycle

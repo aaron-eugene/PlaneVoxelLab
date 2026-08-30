@@ -107,7 +107,7 @@ static bool initializeColorShader(ColorShader& shader)
 			shader.program,
 			shaderSource);
 
-	destroyShaderSource(shaderSource);
+	clearShaderSource(shaderSource);
 
 	if (!shaderCreated)
 	{
@@ -165,7 +165,7 @@ static bool initializeStandardShader(StandardShader& shader)
 			shader.program,
 			shaderSource);
 
-	destroyShaderSource(shaderSource);
+	clearShaderSource(shaderSource);
 
 	if (!shaderCreated)
 	{
@@ -282,10 +282,6 @@ void beginRenderFrame(
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void endRenderFrame()
-{
-}
-
 /***********************************************************
 * Renderer Drawing
 ************************************************************/
@@ -308,13 +304,16 @@ static void drawGpuMesh(
 }
 
 void renderColoredMesh(
+	const Renderer& renderer,
 	const GpuMesh& mesh,
-	const ColorShader& shader,
 	const glm::mat4& model,
 	const glm::mat4& viewProjection)
 {
 	assert(mesh.vertexArray != 0);
 	assert(mesh.indexCount > 0);
+
+	const ColorShader& shader =
+		renderer.colorShader;
 
 	assert(shader.program.handle != 0);
 	assert(shader.modelLocation >= 0);
@@ -340,8 +339,8 @@ void renderColoredMesh(
 }
 
 void renderStandardMesh(
+	const Renderer& renderer,
 	const GpuMesh& mesh,
-	const StandardShader& shader,
 	const StandardRenderSettings& settings,
 	const Texture2D& texture,
 	const glm::mat4& model,
@@ -349,6 +348,9 @@ void renderStandardMesh(
 {
 	assert(mesh.vertexArray != 0);
 	assert(mesh.indexCount > 0);
+
+	const StandardShader& shader =
+		renderer.standardShader;
 
 	assert(shader.program.handle != 0);
 	assert(shader.modelLocation >= 0);

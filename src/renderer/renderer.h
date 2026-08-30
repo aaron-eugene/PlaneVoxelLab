@@ -71,21 +71,19 @@ void beginRenderFrame(
 	int framebufferWidth,
 	int framebufferHeight);
 
-void endRenderFrame();
-
 /***********************************************************
 * Renderer Drawing
 ************************************************************/
 
 void renderColoredMesh(
+	const Renderer& renderer,
 	const GpuMesh& mesh,
-	const ColorShader& shader,
 	const glm::mat4& model,
 	const glm::mat4& viewProjection);
 
 void renderStandardMesh(
+	const Renderer& renderer,
 	const GpuMesh& mesh,
-	const StandardShader& shader,
 	const StandardRenderSettings& settings,
 	const Texture2D& texture,
 	const glm::mat4& model,

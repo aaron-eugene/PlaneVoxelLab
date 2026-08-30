@@ -57,7 +57,7 @@ static void assertValidGpuMeshSource(
 	assert(vertexStride > 0);
 }
 
-static void createGpuMeshStorage(
+static bool createGpuMeshStorage(
 	GpuMesh& mesh,
 	const void* vertices,
 	uint32_t vertexCount,
@@ -79,18 +79,31 @@ static void createGpuMeshStorage(
 		1,
 		&mesh.vertexArray);
 
+	if (mesh.vertexArray == 0)
+	{
+		destroyGpuMesh(mesh);
+		return false;
+	}
+
 	glCreateBuffers(
 		1,
 		&mesh.vertexBuffer);
+
+	if (mesh.vertexBuffer == 0)
+	{
+		destroyGpuMesh(mesh);
+		return false;
+	}
 
 	glCreateBuffers(
 		1,
 		&mesh.indexBuffer);
 
-	// Invalid handles here indicate broken renderer setup or invalid OpenGL state.
-	assert(mesh.vertexArray != 0);
-	assert(mesh.vertexBuffer != 0);
-	assert(mesh.indexBuffer != 0);
+	if (mesh.indexBuffer == 0)
+	{
+		destroyGpuMesh(mesh);
+		return false;
+	}
 
 	mesh.vertexCount = vertexCount;
 	mesh.indexCount = indexCount;
@@ -126,6 +139,8 @@ static void createGpuMeshStorage(
 	glVertexArrayElementBuffer(
 		mesh.vertexArray,
 		mesh.indexBuffer);
+
+	return true;
 }
 
 static void configureFloatVertexAttribute(
@@ -177,7 +192,7 @@ static void configureColoredVertexLayout(
 				color)));
 }
 
-static void configureSurfaceVertexLayout(
+static void configureStandardVertexLayout(
 	const GpuMesh& mesh)
 {
 	configureFloatVertexAttribute(
@@ -229,7 +244,7 @@ bool createColoredGpuMesh(
 	uint32_t indexCount,
 	GpuPrimitiveType primitiveType)
 {
-	createGpuMeshStorage(
+	if (!createGpuMeshStorage(
 		mesh,
 		vertices,
 		vertexCount,
@@ -237,7 +252,10 @@ bool createColoredGpuMesh(
 			sizeof(ColoredVertex)),
 		indices,
 		indexCount,
-		primitiveType);
+		primitiveType))
+	{
+		return false;
+	}
 
 	configureColoredVertexLayout(mesh);
 
@@ -252,7 +270,7 @@ bool createStandardGpuMesh(
 	uint32_t indexCount,
 	GpuPrimitiveType primitiveType)
 {
-	createGpuMeshStorage(
+	if (!createGpuMeshStorage(
 		mesh,
 		vertices,
 		vertexCount,
@@ -260,9 +278,12 @@ bool createStandardGpuMesh(
 			sizeof(StandardVertex)),
 		indices,
 		indexCount,
-		primitiveType);
+		primitiveType))
+	{
+		return false;
+	}
 
-	configureSurfaceVertexLayout(mesh);
+	configureStandardVertexLayout(mesh);
 
 	return true;
 }

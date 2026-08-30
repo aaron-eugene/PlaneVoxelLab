@@ -242,8 +242,6 @@ static void endAppRenderFrame(
 
 		ImGui_ImplOpenGL3_RenderDrawData(
 			ImGui::GetDrawData());
-
-		endRenderFrame();
 	}
 	else
 	{
@@ -319,7 +317,7 @@ static void renderDebugUi(ApplicationState& app)
 
 	ImGui::Separator();
 
-	renderDebugUiContent(app.lab);
+	renderLabDebugUiContent(app.lab);
 
 	ImGui::End();
 }

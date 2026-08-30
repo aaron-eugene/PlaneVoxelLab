@@ -10,7 +10,7 @@
 
 #include "input/input.h"
 #include "lab/active_experiment.h"
-#include "lab_debug/surface_chunk_wireframes.h"
+#include "lab_debug/chunk_wireframes.h"
 #include "lab_world/lab_world.h"
 #include "renderer/renderer.h"
 #include "surface_map/surface_map.h"
@@ -53,7 +53,7 @@ bool initializeLab(
 	lab = {};
 	lab.showSurfaceReference = false;
 	lab.showActiveExperiment = true;
-	lab.showSurfaceChunkWireframes = false;
+	lab.showChunkWireframes = false;
 
 	initializeLabWorld(lab.world);
 	
@@ -66,9 +66,9 @@ bool initializeLab(
 		return false;
 	}
 
-	if (!initializeSurfaceChunkWireframes(
-		lab.surfaceChunkWireframes,
-		lab.world.surfaceMap))
+	if (!initializeChunkWireframes(
+		lab.chunkWireframes,
+		lab.world.chunks))
 	{
 		shutdownLab(lab);
 		return false;
@@ -97,7 +97,7 @@ void shutdownLab(
 {
 	destroyTerrainRenderResources(lab.terrainRenderResources);
 	shutdownActiveExperiment(lab.activeExperiment);
-	shutdownSurfaceChunkWireframes(lab.surfaceChunkWireframes);
+	shutdownChunkWireframes(lab.chunkWireframes);
 	shutdownSurfaceRef(lab.surfaceRef);
 	shutdownLabWorld(lab.world);
 
@@ -131,17 +131,20 @@ void updateLab(
 		input,
 		InputAction::ToggleChunkWireframes))
 	{
-		lab.showSurfaceChunkWireframes = !lab.showSurfaceChunkWireframes;
+		lab.showChunkWireframes = !lab.showChunkWireframes;
 	}
 
 	if (wasActionPressed(
 		input,
 		InputAction::RebuildMeshes))
 	{
-		rebuildSurfaceRef(
-			lab.surfaceRef,
-			lab.world.chunks,
-			lab.world.surfaceMap);
+		const bool rebuilt =
+			rebuildSurfaceRef(
+				lab.surfaceRef,
+				lab.world.chunks,
+				lab.world.surfaceMap);
+
+		assert(rebuilt);
 	}
 
 	updateActiveExperiment(
@@ -177,10 +180,10 @@ void renderLab(
 			viewProjection);
 	}
 
-	if (lab.showSurfaceChunkWireframes)
+	if (lab.showChunkWireframes)
 	{
-		renderSurfaceChunkWireframes(
-			lab.surfaceChunkWireframes,
+		renderChunkWireframes(
+			lab.chunkWireframes,
 			renderer,
 			viewProjection);
 	}
@@ -372,8 +375,8 @@ static void renderLabComponentToggles(
 		&lab.showActiveExperiment);
 
 	ImGui::Checkbox(
-		"Surface Chunk Wireframes",
-		&lab.showSurfaceChunkWireframes);
+		"Chunk Wireframes",
+		&lab.showChunkWireframes);
 }
 
 static bool renderDensityFieldSelection(
@@ -435,13 +438,6 @@ static bool rebuildLabDensityData(
 		return false;
 	}
 
-	if (!rebuildSurfaceChunkWireframes(
-		lab.surfaceChunkWireframes,
-		lab.world.surfaceMap))
-	{
-		return false;
-	}
-
 	if (!rebuildActiveExperiment(
 		lab.activeExperiment,
 		lab.world))
@@ -456,7 +452,7 @@ static bool rebuildLabDensityData(
 * Debug Rendering
 ************************************************************/
 
-void renderDebugUiContent(
+void renderLabDebugUiContent(
 	Lab& lab)
 {
 	renderLabComponentToggles(

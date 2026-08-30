@@ -188,8 +188,8 @@ void renderSurfaceRef(
 			getChunkModelMatrix(surfaceRefChunk.coord);
 
 		renderColoredMesh(
+			renderer,
 			surfaceRefChunk.gpuMesh,
-			renderer.colorShader,
 			model,
 			viewProjection);
 	}

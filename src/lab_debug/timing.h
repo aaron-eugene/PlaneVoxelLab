@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
-// debug/timing.h
-// ==============
+// lab_debug/timing.h
+// ==================
 //
 // Defines lightweight timing helpers for measuring temporary code sections.
 //

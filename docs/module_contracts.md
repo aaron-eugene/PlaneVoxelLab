@@ -127,6 +127,61 @@ It must not depend on:
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+## Lab Debug Module
+
+### Purpose
+
+The Lab Debug module provides shared debugging and diagnostic utilities used by
+the lab, including chunk-boundary visualization and lightweight code-section
+timing helpers.
+
+### Owns
+
+- `ChunkWireframes`
+- The reusable GPU line mesh used to render loaded chunk boundaries
+- The list of loaded chunk coordinates used by the chunk-wireframe debug view
+- Chunk-wireframe initialization, rendering, and shutdown behavior
+- Lightweight elapsed-time measurement helpers
+- Optional timing output to standard output
+
+### Does Not Own
+
+- LabWorld state
+- Chunk storage
+- Surface-map data
+- Density fields
+- Active experiment state
+- Renderer or shader lifetime
+- General application UI state
+- ImGui controls owned by other systems
+
+### Dependency Boundary
+
+The Lab Debug module may depend on:
+
+- chunk data required to initialize debug visualizations
+- shared spatial/grid definitions
+- renderer mesh/resource interfaces needed for debug drawing
+- standard-library timing facilities
+
+It must not depend on:
+
+- surface-reference implementations
+- active experiments
+- higher-level lab orchestration
+- experiment-specific geometry or rendering state
+
+### Lifetime
+
+`ChunkWireframes` owns an explicitly managed GPU mesh.
+
+Initialization requires an empty destination and creates the reusable chunk
+wireframe mesh once for the currently loaded chunk set.
+
+Shutdown releases the owned GPU resource and resets the debug state.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 ## Lab World Module
 
 ### Purpose
@@ -226,6 +281,84 @@ It must not depend on:
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+## Renderer Module
+
+### Purpose
+
+The Renderer module owns the lab's core OpenGL rendering resources and provides
+the mesh-upload and drawing interfaces used by higher-level systems.
+
+It defines the renderer-supported vertex formats, GPU mesh resources, shader
+program resources, texture resources, standard render settings, and frame-level
+rendering operations.
+
+### Owns
+
+- `Renderer`
+- Renderer-owned shader programs and cached uniform locations
+- `GpuMesh`
+- GPU vertex-array, vertex-buffer, and index-buffer resources
+- `ShaderProgram`
+- Shader-source loading, shader compilation, and program linking
+- Renderer-supported CPU vertex formats
+- Texture resources and texture upload helpers
+- Standard render settings and renderer shading modes
+- OpenGL primitive-type translation
+- Renderer frame setup
+- Colored-mesh rendering
+- Standard textured/shaded mesh rendering
+
+### Does Not Own
+
+- Source terrain or surface geometry
+- Chunk, LabWorld, or density-field state
+- Surface-reference state
+- Active experiment state
+- Camera state
+- Higher-level render-resource orchestration
+- Debug visualization ownership outside renderer resources
+
+### Dependency Boundary
+
+The Renderer module may depend on:
+
+- OpenGL
+- GLM
+- standard-library facilities used for resource loading and data handling
+
+It must not depend on:
+
+- chunk storage
+- spatial/world systems
+- density fields
+- surface systems
+- LabWorld
+- active experiments
+- higher-level lab orchestration
+
+Higher-level systems may create renderer resources and request drawing through
+the Renderer API, but they should not depend on renderer-owned shader
+implementation details.
+
+### Lifetime
+
+Renderer-owned and GPU-backed resource types use explicit creation and
+destruction.
+
+Creation requires an empty destination.
+
+Successful creation leaves a complete valid resource. Detectable runtime
+creation failure returns `false` and leaves the destination empty.
+
+Destruction is tolerant of empty or partially created resources and resets the
+destination to its empty state.
+
+`Renderer` initialization creates its required shader resources. On
+initialization failure, `Renderer` is left empty. Shutdown releases all
+renderer-owned resources and resets the renderer.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 ## Spatial Module
 
 ### Purpose
@@ -320,6 +453,68 @@ It must not depend on:
 
 Source chunks are borrowed during SurfaceMap rebuilding. The SurfaceMap stores
 derived lookup data and does not retain references or pointers to those chunks.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+## Surface Reference Module
+
+### Purpose
+
+The Surface Reference module builds, owns, and renders the lab's reference
+surface from sampled chunk density data.
+
+The current reference surface is generated using marching tetrahedra.
+
+### Owns
+
+- `SurfaceRef`
+- `SurfaceRefChunk`
+- CPU-side reference surface meshes
+- GPU meshes uploaded for reference-surface rendering
+- Reference-surface chunk rebuild logic
+- Reference-surface rendering
+- Marching-tetrahedra reference mesh generation
+- Marching-tetrahedra decomposition tables and implementation-specific helpers
+
+### Does Not Own
+
+- Source chunk storage or density samples
+- Density-field definitions or generator state
+- `SurfaceMap` data
+- LabWorld orchestration
+- Renderer or shader lifetime
+- Experiment-specific terrain state
+- Shared spatial or voxel-topology definitions
+
+### Dependency Boundary
+
+The Surface Reference module may depend on:
+
+- chunk density-sample storage and access
+- spatial/grid definitions
+- shared voxel geometry/topology
+- `SurfaceMap` lookup data
+- renderer mesh/resource interfaces needed for upload and drawing
+
+It must not depend on:
+
+- `LabWorld` orchestration
+- active experiments
+- experiment-specific geometry or rendering state
+- higher-level lab orchestration
+
+### Lifetime
+
+`SurfaceRef` owns explicitly managed GPU resources through its
+`SurfaceRefChunk` entries.
+
+Initialization requires an empty destination.
+
+Rebuilding replaces the existing reference surface. On successful rebuild,
+`SurfaceRef` contains the complete replacement surface. On rebuild failure,
+`SurfaceRef` is left empty.
+
+Shutdown releases all owned GPU resources and resets the `SurfaceRef`.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

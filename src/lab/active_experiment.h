@@ -19,15 +19,14 @@
 
 #define LAB_EXPERIMENT_NONE 0
 #define LAB_EXPERIMENT_XZ_COLUMNAR 1	
-#define LAB_EXPERIMENT_POLYGON_INTERSECTION 2
-#define LAB_EXPERIMENT_PROXY_TILES 3
+#define LAB_EXPERIMENT_MARCHING_TETRAHEDRA 2
 
 #define LAB_ACTIVE_EXPERIMENT LAB_EXPERIMENT_XZ_COLUMNAR
 
 struct Renderer;
 struct StandardRenderSettings;
 
-// Placeholder active experiment used while the lab framework is being built.
+// Empty experiment state used when no active experiment is selected.
 struct EmptyExperiment
 {
 };
@@ -39,13 +38,9 @@ typedef EmptyExperiment ActiveExperiment;
 #include "experiments/xz_columnar/xz_columnar_experiment.h"
 typedef XZColumnarExperiment ActiveExperiment;
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
-#include "experiments/polygon_intersection/polygon_intersection_experiment.h"
-typedef PolygonIntersectionExperiment ActiveExperiment;
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
-#include "experiments/proxy_tiles/proxy_tiles_experiment.h"
-typedef ProxyTilesExperiment ActiveExperiment;
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
+#include "experiments/marching_tetrahedra/marching_tetrahedra_experiment.h"
+typedef MarchingTetrahedraExperiment ActiveExperiment;
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT

@@ -29,5 +29,4 @@ struct StandardVertex
 	glm::vec2 tileUv = {};
 };
 
-// Possible future work:
 // struct MaterialVertex

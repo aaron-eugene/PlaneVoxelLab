@@ -178,7 +178,7 @@
     <ClCompile Include="src\experiments\xz_columnar\xz_columnar_experiment.cpp">
       <Filter>src\experiments\xz_columnar</Filter>
     </ClCompile>
-    <ClCompile Include="src\lab_debug\surface_chunk_wireframes.cpp">
+    <ClCompile Include="src\lab_debug\chunk_wireframes.cpp">
       <Filter>src\lab_debug</Filter>
     </ClCompile>
     <ClCompile Include="src\experiments\xz_columnar\xz_columnar_patch.cpp">
@@ -268,7 +268,7 @@
     <ClInclude Include="src\experiments\xz_columnar\xz_columnar_experiment.h">
       <Filter>src\experiments\xz_columnar</Filter>
     </ClInclude>
-    <ClInclude Include="src\lab_debug\surface_chunk_wireframes.h">
+    <ClInclude Include="src\lab_debug\chunk_wireframes.h">
       <Filter>src\lab_debug</Filter>
     </ClInclude>
     <ClInclude Include="src\experiments\xz_columnar\xz_columnar_patch.h">
@@ -285,7 +285,6 @@
     </ClInclude>
     <ClInclude Include="src\lab\terrain_render_resources.h" />
     <ClInclude Include="src\lab\terrain_tile_atlas.h" />
-    <ClInclude Include="src\lab_debug\timing.h" />
     <ClInclude Include="src\renderer\image_data.h" />
     <ClInclude Include="src\renderer\standard_render_settings.h" />
     <ClInclude Include="src\renderer\texture_2d.h" />
@@ -300,6 +299,9 @@
     </ClInclude>
     <ClInclude Include="src\surface_map\surface_map.h">
       <Filter>src\surface_map</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lab_debug\timing.h">
+      <Filter>src\lab_debug</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

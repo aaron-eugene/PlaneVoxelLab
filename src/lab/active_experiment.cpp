@@ -2,6 +2,9 @@
 // lab/active_experiment.cpp
 // =========================
 //
+// Implements the compile-time bridge between the lab and the selected active
+// experiment.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lab/active_experiment.h"
@@ -15,11 +18,8 @@
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 #include "experiments/xz_columnar/xz_columnar_experiment.h"
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
-//#include
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
-//#include
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
+#include "experiments/marching_tetrahedra/marching_tetrahedra_experiment.h"
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -42,11 +42,8 @@ bool initializeActiveExperiment(
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 	return initializeXZColumnarExperiment(experiment, world);
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
-	return initializePolygonIntersectionExperiment(experiment, world);
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
-	return initializeProxyTilesExperiment(experiment, world);
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
+	return initializeMarchingTetrahedraExperiment(experiment, world);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -63,11 +60,8 @@ void shutdownActiveExperiment(
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 	shutdownXZColumnarExperiment(experiment);
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
-	shutdownPolygonIntersectionExperiment(experiment);
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
-	shutdownProxyTilesExperiment(experiment);
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
+	shutdownMarchingTetrahedraExperiment(experiment);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -92,11 +86,8 @@ void updateActiveExperiment(
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 	updateXZColumnarExperiment(experiment, world, deltaTime);
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
-	updatePolygonIntersectionExperiment(experiment, world, deltaTime);
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
-	updateProxyTilesExperiment(experiment, world, deltaTime);
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
+	updateMarchingTetrahedraExperiment(experiment, world, deltaTime);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -120,11 +111,8 @@ bool rebuildActiveExperiment(
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 	return rebuildXZColumnarExperiment(experiment, world);
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
-	return buildPolygonIntersectionExperimentMeshes(experiment, world);
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
-	return buildProxyTilesExperimentMeshes(experiment, world);
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
+	return rebuildMarchingTetrahedraExperiment(experiment, world);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -147,17 +135,15 @@ void renderActiveExperiment(
 	(void)experiment;
 	(void)renderer;
 	(void)renderSettings;
+	(void)terrainRenderResources;
 	(void)viewProjection;
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 	renderXZColumnarExperiment(experiment, renderer, renderSettings,
 		terrainRenderResources, viewProjection);
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
-	renderPolygonIntersectionExperiment(experiment, renderer);
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
-	renderProxyTilesExperiment(experiment, renderer);
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
+	renderMarchingTetrahedraExperiment(experiment, renderer);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -183,13 +169,8 @@ bool renderActiveExperimentDebugUiContent(
 		experiment,
 		world);
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_POLYGON_INTERSECTION
-	return renderPolygonIntersectionExperimentDebugUiContent(
-		experiment,
-		world);
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_PROXY_TILES
-	return renderProxyTilesExperimentDebugUiContent(
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
+	return renderMarchingTetrahedraExperimentDebugUiContent(
 		experiment,
 		world);
 

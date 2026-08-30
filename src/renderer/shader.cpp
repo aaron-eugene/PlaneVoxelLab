@@ -21,7 +21,9 @@
 * File-Local Helpers
 ************************************************************/
 
-static bool loadTextFile(std::string& text, const char* filePath)
+static bool loadTextFile(
+	std::string& text, 
+	const char* filePath)
 {
 	assert(text.empty());
 	assert(filePath != nullptr);
@@ -40,14 +42,23 @@ static bool loadTextFile(std::string& text, const char* filePath)
 	return true;
 }
 
-static uint32_t compileShader(uint32_t shaderType, const char* shaderSource)
+static uint32_t compileShader(
+	uint32_t shaderType, 
+	const char* shaderSource)
 {
 	assert(shaderSource != nullptr);
 
+	assert(
+		shaderType == GL_VERTEX_SHADER ||
+		shaderType == GL_FRAGMENT_SHADER);
+
 	uint32_t shader = glCreateShader(shaderType);
 
-	// Invalid handles here indicate broken renderer setup or invalid OpenGL state.
-	assert(shader != 0);
+	if (shader == 0)
+	{
+		std::printf("Failed to create shader object.\n");
+		return 0;
+	}
 
 	glShaderSource(shader, 1, &shaderSource, nullptr);
 	glCompileShader(shader);
@@ -96,20 +107,20 @@ bool loadShaderSource(
 
 	if (!loadTextFile(shaderSource.vertexSource, vertexShaderPath))
 	{
-		destroyShaderSource(shaderSource);
+		clearShaderSource(shaderSource);
 		return false;
 	}
 
 	if (!loadTextFile(shaderSource.fragmentSource, fragmentShaderPath))
 	{
-		destroyShaderSource(shaderSource);
+		clearShaderSource(shaderSource);
 		return false;
 	}
 
 	return true;
 }
 
-void destroyShaderSource(ShaderSource& shaderSource)
+void clearShaderSource(ShaderSource& shaderSource)
 {
 	shaderSource = {};
 }
@@ -158,8 +169,14 @@ bool createShaderProgram(
 
 	uint32_t program = glCreateProgram();
 
-	// Invalid handles here indicate broken renderer setup or invalid OpenGL state.
-	assert(program != 0);
+	if (program == 0)
+	{
+		glDeleteShader(vertexShader);
+		glDeleteShader(fragmentShader);
+
+		std::printf("Failed to create shader program.\n");
+		return false;
+	}
 
 	glAttachShader(program, vertexShader);
 	glAttachShader(program, fragmentShader);

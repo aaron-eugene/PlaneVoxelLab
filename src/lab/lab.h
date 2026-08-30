@@ -13,7 +13,7 @@
 #pragma once
 
 #include "lab/active_experiment.h"
-#include "lab_debug/surface_chunk_wireframes.h"
+#include "lab_debug/chunk_wireframes.h"
 #include "lab/terrain_render_resources.h"
 #include "lab_world/lab_world.h"
 #include "renderer/standard_render_settings.h"
@@ -33,7 +33,7 @@ struct Lab
 	LabWorld world = {};
 
 	SurfaceRef surfaceRef = {};
-	SurfaceChunkWireframes surfaceChunkWireframes = {};
+	ChunkWireframes chunkWireframes = {};
 	ActiveExperiment activeExperiment = {};
 
 	StandardRenderSettings standardRenderSettings = {};
@@ -41,7 +41,7 @@ struct Lab
 
 	bool showSurfaceReference = true;
 	bool showActiveExperiment = true;
-	bool showSurfaceChunkWireframes = false;
+	bool showChunkWireframes = false;
 };
 
 /***********************************************************
@@ -74,4 +74,4 @@ void renderLab(
 * Debug Rendering
 ************************************************************/
 
-void renderDebugUiContent(Lab& lab);
+void renderLabDebugUiContent(Lab& lab);

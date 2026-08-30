@@ -2,8 +2,9 @@
 // renderer/gpu_mesh.h
 // ===================
 //
-// Declares GPU mesh resources and helper functions for uploading indexed colored
-// mesh data to OpenGL.
+// Declares OpenGL GPU mesh resources and upload helpers for the renderer's
+// supported vertex formats.
+//
 //
 ///////////////////////////////////////////////////////////////////////////////
 

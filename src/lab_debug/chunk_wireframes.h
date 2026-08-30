@@ -1,11 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////////
-// lab_debug/surface_chunk_wireframes.h
+// lab_debug/chunk_wireframes.h
 // ====================================
 //
-// Declares debug rendering for surface-containing chunk wireframes.
+// Declares debug rendering for loaded chunk wireframes.
 //
 // This module owns the uploaded GPU line mesh used to draw chunk outlines for
-// chunks that contain surface-crossing voxels.
+// all currently loaded chunks.
 //
 // This module does not own lab-world data, surface maps, chunks, or renderer
 // state.
@@ -21,44 +21,36 @@
 
 #include <vector>
 
+struct Chunk;
 struct Renderer;
-struct SurfaceMap;
 
 /***********************************************************
-* Surface Chunk Wireframe Types
+* Chunk Wireframe Types
 ************************************************************/
 
-struct SurfaceChunkWireframes
+struct ChunkWireframes
 {
-	GpuMesh chunkWireframeMesh = {};
+	GpuMesh mesh = {};
 
 	std::vector<ChunkCoord> chunkCoords = {};
 };
 
 /***********************************************************
-* Surface Chunk Wireframe Lifetime
+* Chunk Wireframe Lifetime
 ************************************************************/
 
-bool initializeSurfaceChunkWireframes(
-	SurfaceChunkWireframes& wireframes,
-	const SurfaceMap& surfaceMap);
+bool initializeChunkWireframes(
+	ChunkWireframes& wireframes,
+	const std::vector<Chunk>& chunks);
 
-void shutdownSurfaceChunkWireframes(
-	SurfaceChunkWireframes& wireframes);
+void shutdownChunkWireframes(
+	ChunkWireframes& wireframes);
 
 /***********************************************************
-* Surface Chunk Wireframe Rebuild
+* Chunk Wireframe Rendering
 ************************************************************/
 
-bool rebuildSurfaceChunkWireframes(
-	SurfaceChunkWireframes& wireframes,
-	const SurfaceMap& surfaceMap);
-
-/***********************************************************
-* Surface Chunk Wireframe Rendering
-************************************************************/
-
-void renderSurfaceChunkWireframes(
-	const SurfaceChunkWireframes& wireframes,
+void renderChunkWireframes(
+	const ChunkWireframes& wireframes,
 	const Renderer& renderer,
 	const glm::mat4& viewProjection);

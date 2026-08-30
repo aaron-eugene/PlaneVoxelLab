@@ -1,18 +1,18 @@
 ///////////////////////////////////////////////////////////////////////////////
-// lab_debug/surface_chunk_wireframes.cpp
+// lab_debug/chunk_wireframes.cpp
 // ======================================
 //
 // Implements debug rendering for surface-containing chunk wireframes.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "lab_debug/surface_chunk_wireframes.h"
+#include "lab_debug/chunk_wireframes.h"
 
+#include "chunk/chunk.h"
 #include "renderer/render_vertex.h"
 #include "renderer/renderer.h"
 #include "spatial/spatial_constants.h"
 #include "spatial/spatial_coordinates.h"
-#include "surface_map/surface_map.h"
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
@@ -130,92 +130,63 @@ static bool createChunkWireframeMesh(
 		static_cast<uint32_t>(indices.size()),
 		GpuPrimitiveType::Lines))
 	{
-		destroyGpuMesh(mesh);
 		return false;
 	}
 
 	return true;
 }
 
-static void rebuildSurfaceChunkCoordList(
-	std::vector<ChunkCoord>& chunkCoords,
-	const SurfaceMap& surfaceMap)
-{
-	chunkCoords.clear();
-	chunkCoords.reserve(surfaceMap.chunks.size());
-
-	for (const SurfaceChunk& surfaceChunk : surfaceMap.chunks)
-	{
-		chunkCoords.push_back(surfaceChunk.coord);
-	}
-}
-
 /***********************************************************
-* Surface Chunk Wireframe Lifetime
+* Chunk Wireframe Lifetime
 ************************************************************/
 
-bool initializeSurfaceChunkWireframes(
-	SurfaceChunkWireframes& wireframes,
-	const SurfaceMap& surfaceMap)
+bool initializeChunkWireframes(
+	ChunkWireframes& wireframes,
+	const std::vector<Chunk>& chunks)
 {
-	assert(wireframes.chunkWireframeMesh.vertexArray == 0);
-	assert(wireframes.chunkWireframeMesh.vertexBuffer == 0);
-	assert(wireframes.chunkWireframeMesh.indexBuffer == 0);
+	assert(wireframes.mesh.vertexArray == 0);
+	assert(wireframes.mesh.vertexBuffer == 0);
+	assert(wireframes.mesh.indexBuffer == 0);
 	assert(wireframes.chunkCoords.empty());
 
-	return rebuildSurfaceChunkWireframes(
-		wireframes,
-		surfaceMap);
+	if (!createChunkWireframeMesh(
+		wireframes.mesh))
+	{
+		shutdownChunkWireframes(wireframes);
+		return false;
+	}
+
+	wireframes.chunkCoords.reserve(
+		chunks.size());
+
+	for (const Chunk& chunk : chunks)
+	{
+		wireframes.chunkCoords.push_back(
+			chunk.coord);
+	}
+
+	return true;
 }
 
-void shutdownSurfaceChunkWireframes(
-	SurfaceChunkWireframes& wireframes)
+void shutdownChunkWireframes(
+	ChunkWireframes& wireframes)
 {
-	destroyGpuMesh(wireframes.chunkWireframeMesh);
+	destroyGpuMesh(wireframes.mesh);
 
 	wireframes = {};
 }
 
 /***********************************************************
-* Surface Chunk Wireframe Rebuild
+* Chunk Wireframe Rendering
 ************************************************************/
 
-bool rebuildSurfaceChunkWireframes(
-	SurfaceChunkWireframes& wireframes,
-	const SurfaceMap& surfaceMap)
-{
-	shutdownSurfaceChunkWireframes(wireframes);
-
-	rebuildSurfaceChunkCoordList(
-		wireframes.chunkCoords,
-		surfaceMap);
-
-	if (wireframes.chunkCoords.empty())
-	{
-		return true;
-	}
-
-	if (!createChunkWireframeMesh(
-		wireframes.chunkWireframeMesh))
-	{
-		shutdownSurfaceChunkWireframes(wireframes);
-		return false;
-	}
-
-	return true;
-}
-
-/***********************************************************
-* Surface Chunk Wireframe Rendering
-************************************************************/
-
-void renderSurfaceChunkWireframes(
-	const SurfaceChunkWireframes& wireframes,
+void renderChunkWireframes(
+	const ChunkWireframes& wireframes,
 	const Renderer& renderer,
 	const glm::mat4& viewProjection)
 {
-	if (wireframes.chunkWireframeMesh.vertexArray == 0 ||
-		wireframes.chunkWireframeMesh.indexCount == 0)
+	if (wireframes.mesh.vertexArray == 0 ||
+		wireframes.mesh.indexCount == 0)
 	{
 		return;
 	}
@@ -226,8 +197,8 @@ void renderSurfaceChunkWireframes(
 			getChunkModelMatrix(chunkCoord);
 
 		renderColoredMesh(
-			wireframes.chunkWireframeMesh,
-			renderer.colorShader,
+			renderer,
+			wireframes.mesh,
 			model,
 			viewProjection);
 	}
