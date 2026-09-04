@@ -9,6 +9,7 @@
 #include "surface_map/surface_map.h"
 
 #include "chunk/chunk.h"
+#include "fields/density_field.h"
 #include "geometry/voxel_topology.h"
 #include "spatial/spatial_constants.h"
 #include "spatial/spatial_coordinates.h"
@@ -109,8 +110,8 @@ static bool doesVoxelContainSurfaceCrossing(
 	const Chunk& chunk,
 	const VoxelCoord& voxelCoord)
 {
-	bool hasNegative = false;
-	bool hasPositive = false;
+	bool hasInside = false;
+	bool hasOutside = false;
 	bool hasZero = false;
 
 	for (uint32_t cornerIndex = 0;
@@ -127,23 +128,22 @@ static bool doesVoxelContainSurfaceCrossing(
 				chunk,
 				sampleCoord);
 
-		if (density < -SURFACE_MAP_DENSITY_EPSILON)
+		if (isDensityInside(density))
 		{
-			hasNegative = true;
-		}
-		else if (density > SURFACE_MAP_DENSITY_EPSILON)
-		{
-			hasPositive = true;
+			hasInside = true;
 		}
 		else
 		{
-			hasZero = true;
+			hasOutside = true;
+		}
+
+		if (hasInside && hasOutside)
+		{
+			return true;
 		}
 	}
 
-	return
-		(hasNegative && hasPositive) ||
-		(hasZero && (hasNegative || hasPositive));
+	return false;
 }
 
 static void rebuildSurfaceChunk(

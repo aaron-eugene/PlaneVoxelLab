@@ -2,9 +2,9 @@
 // experiments/xz_columnar/xz_columnar_builder.h
 // =============================================
 //
-// Declares CPU-side mesh construction for the columnar patch experiment.
+// Declares CPU-side mesh construction for the XZ columnar experiment.
 //
-// The columnar patch builder approximates a heightmap density field with planar
+// The XZ columnar builder approximates a heightmap density field with planar
 // quads. For each X/Z cell in each surface-containing chunk, it builds a local
 // bicubic height patch, takes the tangent plane at the patch center, clips the
 // resulting planar quad to the owning chunk's Y slab, and emits triangles into
@@ -26,7 +26,7 @@
 #include <vector>
 
 /***********************************************************
-* Columnar Patch Colorization
+* Columnar Colorization
 ************************************************************/
 
 enum class XZColumnarColorization
@@ -36,7 +36,7 @@ enum class XZColumnarColorization
 };
 
 /***********************************************************
-* Columnar Patch Mesh Types
+* Columnar Mesh Types
 ************************************************************/
 
 struct XZColumnarTopPiece
@@ -69,13 +69,13 @@ struct XZColumnarMesh
 	std::vector<XZColumnarSideFragment> sideFragments = {};
 
 	// Mesh stats
-	bool hasSurfaceHeightRange = false;
-	float minSurfaceHeightMeters = 0.0f;
-	float maxSurfaceHeightMeters = 0.0f;
+	bool hasSurfaceCenterHeightRange = false;
+	float minSurfaceCenterHeightMeters = 0.0f;
+	float maxSurfaceCenterHeightMeters = 0.0f;
 };
 
 /***********************************************************
-* Columnar Patch Builder Settings
+* Columnar Builder Settings
 ************************************************************/
 
 struct XZColumnarBuildSettings
@@ -87,13 +87,10 @@ struct XZColumnarBuildSettings
 };
 
 /***********************************************************
-* Columnar Patch Mesh Lifecycle
+* Columnar Mesh Lifecycle
 ************************************************************/
 
-void clearXZColumnarMeshes(
-	std::vector<XZColumnarMesh>& meshes);
-
-bool buildXZColumnarMeshes(
+void buildXZColumnarMeshes(
 	std::vector<XZColumnarMesh>& meshes,
 	const HeightmapDensityField& heightmap,
 	const SurfaceMap& surfaceMap,

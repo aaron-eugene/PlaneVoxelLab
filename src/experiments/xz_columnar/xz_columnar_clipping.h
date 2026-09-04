@@ -21,10 +21,10 @@
 * XZ Columnar Clipping Constants
 ************************************************************/
 
-inline constexpr float XZ_COLUMNAR_CLIPPING_EPSILON =
+constexpr float XZ_COLUMNAR_CLIPPING_EPSILON =
 	0.00001f;
 
-inline constexpr uint32_t
+constexpr uint32_t
 	MAX_XZ_COLUMNAR_CLIPPED_POLYGON_VERTICES = 8;
 
 /***********************************************************
@@ -48,6 +48,9 @@ struct XZColumnarClipPolygon
 /***********************************************************
 * XZ Columnar Clipping Interface
 ************************************************************/
+
+bool hasXZColumnarClipPolygonArea(
+	const XZColumnarClipPolygon& polygon);
 
 void appendXZColumnarClipVertex(
 	XZColumnarClipPolygon& polygon,

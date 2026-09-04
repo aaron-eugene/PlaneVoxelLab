@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "lab/terrain_render_resources.h"
 #include "lab_world/lab_world.h"
+#include "terrain_render/terrain_render_resources.h"
 
 #include <glm/mat4x4.hpp>
 
@@ -57,15 +57,6 @@ bool initializeActiveExperiment(
 
 void shutdownActiveExperiment(
 	ActiveExperiment& experiment);
-
-/***********************************************************
-* Active Experiment Update
-************************************************************/
-
-void updateActiveExperiment(
-	ActiveExperiment& experiment,
-	const LabWorld& world,
-	float deltaTime);
 
 /***********************************************************
 * Active Experiment Mesh Building

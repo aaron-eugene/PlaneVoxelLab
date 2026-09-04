@@ -13,6 +13,7 @@
 
 #include <cassert>
 #include <limits>
+#include <cstdint>
 
 /***********************************************************
 * Image Data Interface
@@ -31,14 +32,13 @@ bool loadImageData(
 
 	int loadedWidth = 0;
 	int loadedHeight = 0;
-	int loadedChannelCount = 0;
 
 	stbi_uc* loadedPixels =
 		stbi_load(
 			path,
 			&loadedWidth,
 			&loadedHeight,
-			&loadedChannelCount,
+			nullptr,
 			STBI_rgb_alpha);
 
 	if (loadedPixels == nullptr)

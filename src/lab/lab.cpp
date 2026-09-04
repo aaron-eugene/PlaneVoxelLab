@@ -113,6 +113,8 @@ void updateLab(
 	const InputState& input,
 	float deltaSeconds)
 {
+	(void)deltaSeconds;
+
 	if (wasActionPressed(
 		input,
 		InputAction::ToggleSurfaceReference))
@@ -146,11 +148,6 @@ void updateLab(
 
 		assert(rebuilt);
 	}
-
-	updateActiveExperiment(
-		lab.activeExperiment,
-		lab.world,
-		deltaSeconds);
 }
 
 /***********************************************************

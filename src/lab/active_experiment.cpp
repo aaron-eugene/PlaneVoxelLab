@@ -70,32 +70,6 @@ void shutdownActiveExperiment(
 }
 
 /***********************************************************
-* Active Experiment Update
-************************************************************/
-
-void updateActiveExperiment(
-	ActiveExperiment& experiment,
-	const LabWorld& world,
-	float deltaTime)
-{
-#if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
-	(void)experiment;
-	(void)world;
-	(void)deltaTime;
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
-	updateXZColumnarExperiment(experiment, world, deltaTime);
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
-	updateMarchingTetrahedraExperiment(experiment, world, deltaTime);
-
-#else
-#error Unknown LAB_ACTIVE_EXPERIMENT
-
-#endif
-}
-
-/***********************************************************
 * Active Experiment Mesh Rebuild
 ************************************************************/
 
@@ -165,9 +139,9 @@ bool renderActiveExperimentDebugUiContent(
 	return true;
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
+	(void)world;
 	return renderXZColumnarExperimentDebugUiContent(
-		experiment,
-		world);
+		experiment);
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
 	return renderMarchingTetrahedraExperimentDebugUiContent(

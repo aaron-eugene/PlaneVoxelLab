@@ -7,6 +7,7 @@
 #include "surface_ref/marching_tetrahedra/tetrahedra_builder.h"
 
 #include "chunk/chunk.h"
+#include "fields/density_field.h"
 #include "geometry/voxel_topology.h"
 #include "spatial/spatial_constants.h"
 #include "spatial/spatial_coordinates.h"
@@ -20,13 +21,10 @@
 #include <cstdint>
 
 /***********************************************************
-* File-Local Constants
+* Tetrahedra Building Constants
 ************************************************************/
 
-static constexpr float SURFACE_DENSITY = 0.0f;
-
-static constexpr float SURFACE_REFERENCE_MIN_BRIGHTNESS = 0.25f;
-static constexpr float SURFACE_REFERENCE_MAX_BRIGHTNESS = 0.90f;
+static constexpr float TRIANGLE_AREA_EPSILON = 0.00001f;
 
 /***********************************************************
 * Local Types
@@ -36,12 +34,6 @@ struct TetrahedronCorner
 {
 	glm::vec3 position = {};
 	float density = 0.0f;
-};
-
-struct TetrahedronSurfacePolygon
-{
-	glm::vec3 points[4] = {};
-	uint32_t pointCount = 0;
 };
 
 /***********************************************************
@@ -81,39 +73,44 @@ static glm::vec3 getVoxelCornerLocalPosition(
 }
 
 /***********************************************************
-* Density Helpers
-************************************************************/
-
-static bool isDensityInside(
-	float density)
-{
-	return density < SURFACE_DENSITY;
-}
-
-/***********************************************************
 * Mesh Helpers
 ************************************************************/
 
-static glm::vec3 calculateTriangleNormal(
+static bool calculateTriangleNormal(
+	glm::vec3& normal,
 	const glm::vec3& pointA,
 	const glm::vec3& pointB,
 	const glm::vec3& pointC)
 {
-	const glm::vec3 edgeAB = pointB - pointA;
-	const glm::vec3 edgeAC = pointC - pointA;
+	const glm::vec3 edgeAB =
+		pointB - pointA;
 
-	const glm::vec3 normal =
-		glm::cross(edgeAB, edgeAC);
+	const glm::vec3 edgeAC =
+		pointC - pointA;
 
-	const float normalLength =
-		glm::length(normal);
+	const glm::vec3 crossProduct =
+		glm::cross(
+			edgeAB,
+			edgeAC);
 
-	if (normalLength == 0.0f)
+	const float lengthSquared =
+		glm::dot(
+			crossProduct,
+			crossProduct);
+
+	if (lengthSquared <=
+		TRIANGLE_AREA_EPSILON *
+		TRIANGLE_AREA_EPSILON)
 	{
-		return glm::vec3(0.0f, 1.0f, 0.0f);
+		normal = {};
+		return false;
 	}
 
-	return normal / normalLength;
+	normal =
+		glm::normalize(
+			crossProduct);
+
+	return true;
 }
 
 static glm::vec3 getSurfaceReferenceNormalColor(
@@ -145,7 +142,7 @@ static glm::vec3 interpolateSurfacePoint(
 	}
 
 	const float t =
-		(densityA - SURFACE_DENSITY) / denominator;
+		(densityA - DENSITY_SURFACE_VALUE) / denominator;
 
 	return positionA + t * (positionB - positionA);
 }
@@ -157,36 +154,45 @@ static void addOrientedTriangle(
 	const glm::vec3& pointC,
 	const glm::vec3& desiredNormalDirection)
 {
+	glm::vec3 normal = {};
+
+	if (!calculateTriangleNormal(
+		normal,
+		pointA,
+		pointB,
+		pointC))
+	{
+		return;
+	}
+
 	glm::vec3 finalPointB = pointB;
 	glm::vec3 finalPointC = pointC;
 
-	const glm::vec3 normal =
-		calculateTriangleNormal(
-			pointA,
-			pointB,
-			pointC);
-
-	if (glm::dot(normal, desiredNormalDirection) < 0.0f)
+	if (glm::dot(
+		normal,
+		desiredNormalDirection) < 0.0f)
 	{
 		finalPointB = pointC;
 		finalPointC = pointB;
+		normal = -normal;
 	}
 
 	const uint32_t baseIndex =
-		static_cast<uint32_t>(mesh.vertices.size());
-
-	const glm::vec3 finalNormal =
-		calculateTriangleNormal(
-			pointA,
-			finalPointB,
-			finalPointC);
+		static_cast<uint32_t>(
+			mesh.vertices.size());
 
 	const glm::vec3 color =
-		getSurfaceReferenceNormalColor(finalNormal);
+		getSurfaceReferenceNormalColor(
+			normal);
 
-	mesh.vertices.push_back({ pointA, color });
-	mesh.vertices.push_back({ finalPointB, color });
-	mesh.vertices.push_back({ finalPointC, color });
+	mesh.vertices.push_back(
+		{ pointA, color });
+
+	mesh.vertices.push_back(
+		{ finalPointB, color });
+
+	mesh.vertices.push_back(
+		{ finalPointC, color });
 
 	mesh.indices.push_back(baseIndex + 0);
 	mesh.indices.push_back(baseIndex + 1);

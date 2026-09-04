@@ -2,9 +2,8 @@
 // experiments/xz_columnar/xz_columnar_clipping.cpp
 // ================================================
 //
-// This module clips construction polygons against horizontal Y boundaries.
-// It does not determine ownership, construct planar cells, emit mesh data,
-// or own persistent resources.
+// Implements temporary polygon construction and horizontal Y-slab clipping
+// used by the XZ columnar mesh builder.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -161,9 +160,66 @@ static void clipPolygonMaxY(
 	}
 }
 
+static bool findXZColumnarClipPolygonCrossProduct(
+	glm::vec3& crossProduct,
+	const XZColumnarClipPolygon& polygon)
+{
+	if (polygon.vertexCount < 3)
+	{
+		crossProduct = {};
+		return false;
+	}
+
+	for (uint32_t vertexIndex = 1;
+		vertexIndex + 1 < polygon.vertexCount;
+		++vertexIndex)
+	{
+		const glm::vec3 edgeA =
+			polygon.vertices[vertexIndex].position -
+			polygon.vertices[0].position;
+
+		const glm::vec3 edgeB =
+			polygon.vertices[vertexIndex + 1].position -
+			polygon.vertices[0].position;
+
+		const glm::vec3 candidateCrossProduct =
+			glm::cross(
+				edgeA,
+				edgeB);
+
+		const float lengthSquared =
+			glm::dot(
+				candidateCrossProduct,
+				candidateCrossProduct);
+
+		if (lengthSquared >
+			XZ_COLUMNAR_CLIPPING_EPSILON *
+			XZ_COLUMNAR_CLIPPING_EPSILON)
+		{
+			crossProduct =
+				candidateCrossProduct;
+
+			return true;
+		}
+	}
+
+	crossProduct = {};
+	return false;
+}
+
 /***********************************************************
 * XZ Columnar Clipping Interface
 ************************************************************/
+
+bool hasXZColumnarClipPolygonArea(
+	const XZColumnarClipPolygon& polygon)
+{
+	glm::vec3 crossProduct = {};
+
+	return findXZColumnarClipPolygonCrossProduct(
+		crossProduct,
+		polygon);
+}
 
 void appendXZColumnarClipVertex(
 	XZColumnarClipPolygon& polygon,
@@ -279,48 +335,21 @@ bool calculateXZColumnarClipPolygonNormal(
 	glm::vec3& normal,
 	const XZColumnarClipPolygon& polygon)
 {
-	if (polygon.vertexCount < 3)
+	glm::vec3 crossProduct = {};
+
+	if (!findXZColumnarClipPolygonCrossProduct(
+		crossProduct,
+		polygon))
 	{
 		normal = {};
 		return false;
 	}
 
-	for (uint32_t vertexIndex = 1;
-		vertexIndex + 1 < polygon.vertexCount;
-		++vertexIndex)
-	{
-		const glm::vec3 edgeA =
-			polygon.vertices[vertexIndex].position -
-			polygon.vertices[0].position;
+	normal =
+		glm::normalize(
+			crossProduct);
 
-		const glm::vec3 edgeB =
-			polygon.vertices[vertexIndex + 1].position -
-			polygon.vertices[0].position;
-
-		const glm::vec3 crossProduct =
-			glm::cross(
-				edgeA,
-				edgeB);
-
-		const float lengthSquared =
-			glm::dot(
-				crossProduct,
-				crossProduct);
-
-		if (lengthSquared >
-			XZ_COLUMNAR_CLIPPING_EPSILON *
-			XZ_COLUMNAR_CLIPPING_EPSILON)
-		{
-			normal =
-				glm::normalize(
-					crossProduct);
-
-			return true;
-		}
-	}
-
-	normal = {};
-	return false;
+	return true;
 }
 
 void setXZColumnarClipPolygonColor(

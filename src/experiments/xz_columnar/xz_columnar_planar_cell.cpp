@@ -11,8 +11,7 @@
 
 #include "experiments/xz_columnar/xz_columnar_clipping.h"
 #include "experiments/xz_columnar/xz_columnar_patch.h"
-#include "lab/terrain_tile_atlas.h"
-#include "lab_world/lab_world_constants.h"
+#include "terrain_render/terrain_tile_atlas.h"
 
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
@@ -24,7 +23,7 @@
 #include <vector>
 
 /***********************************************************
-* Surface Tile Constants
+* Surface Tile Classification Constants
 ************************************************************/
 
 static constexpr float SAND_MAX_WORLD_HEIGHT_METERS =
@@ -180,7 +179,7 @@ static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 		getNormalColor(
 			cell.normal);
 
-	cell.surfaceHeightMeters = 
+	cell.surfaceCenterHeightMeters = 
 		patchSample.height;
 
 	cell.surfaceTile =

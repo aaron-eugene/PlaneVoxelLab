@@ -127,6 +127,86 @@ It must not depend on:
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+## Lab Module
+
+### Purpose
+
+The Lab module is the top-level terrain experiment workbench.
+
+It owns and coordinates the shared LabWorld, reference surface, debug
+visualization state, shared render settings and terrain-render resources, and
+the compile-time selected active experiment.
+
+The Lab module is responsible for orchestrating initialization, shutdown,
+updates, rendering, debug UI, and rebuilds that affect multiple subsystems.
+
+### Owns
+
+* `Lab`
+* Top-level lifetime and orchestration of lab subsystems
+* `LabWorld` lifetime
+* `SurfaceRef` lifetime
+* `ChunkWireframes` lifetime
+* `ActiveExperiment` lifetime
+* The current `StandardRenderSettings`
+* The `TerrainRenderResources` instance used by terrain experiments
+* Visibility state for major lab components
+* Shared Lab debug UI
+* Density-field selection at the workbench level
+* Coordination of rebuilds after shared world data changes
+* The compile-time bridge between the Lab and the selected active experiment
+
+### Does Not Own
+
+* Definitions or implementations of density fields
+* Chunk storage behavior or coordinate conventions
+* Surface-map generation behavior
+* Reference-surface extraction internals
+* Renderer implementation or renderer-owned shader programs
+* Terrain-render resource types or atlas vocabulary
+* Experiment-specific algorithms or geometry
+* Shared debug-resource implementations such as chunk-wireframe mesh creation
+
+### Dependency Boundary
+
+The Lab module may depend on:
+
+* LabWorld
+* Surface Reference
+* Lab Debug
+* Renderer-facing render settings and interfaces
+* Terrain Render
+* Input
+* the active-experiment bridge
+
+`active_experiment.*` is the intentional compile-time boundary through which the
+Lab depends on the selected concrete experiment.
+
+Other Lab code should not directly depend on experiment-specific types or
+implementation details.
+
+Lower-level shared modules must not depend on the Lab module.
+
+### Lifetime
+
+`Lab` aggregates several subsystems that own explicitly managed resources.
+
+Initialization requires an uninitialized Lab and initializes its owned
+subsystems in dependency order.
+
+If initialization fails, already initialized subsystems are shut down and the
+Lab is returned to an empty state.
+
+Shutdown releases owned subsystem resources in reverse dependency order and
+resets the Lab.
+
+Runtime rebuild operations may propagate detectable failures upward. The Lab is
+not required to recover from unrecoverable runtime resource failures; those
+failures may be reported and propagated to the application level for clean
+termination.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 ## Lab Debug Module
 
 ### Purpose
@@ -285,12 +365,14 @@ It must not depend on:
 
 ### Purpose
 
-The Renderer module owns the lab's core OpenGL rendering resources and provides
-the mesh-upload and drawing interfaces used by higher-level systems.
+The Renderer module provides the lab's low-level OpenGL rendering layer.
 
-It defines the renderer-supported vertex formats, GPU mesh resources, shader
-program resources, texture resources, standard render settings, and frame-level
-rendering operations.
+It owns the renderer's shared shader programs and defines the GPU-resource,
+vertex-format, texture, shading-setting, and drawing interfaces used by
+higher-level systems.
+
+The module may also provide narrowly scoped CPU-side loading utilities used
+directly to create renderer resources.
 
 ### Owns
 
@@ -298,12 +380,14 @@ rendering operations.
 - Renderer-owned shader programs and cached uniform locations
 - `GpuMesh`
 - GPU vertex-array, vertex-buffer, and index-buffer resources
+- `Texture2D`
+- OpenGL texture creation and destruction
 - `ShaderProgram`
 - Shader-source loading, shader compilation, and program linking
 - Renderer-supported CPU vertex formats
-- Texture resources and texture upload helpers
+- CPU-side RGBA image loading used by renderer texture creation
 - Standard render settings and renderer shading modes
-- OpenGL primitive-type translation
+- OpenGL primitive and vertex-layout translation
 - Renderer frame setup
 - Colored-mesh rendering
 - Standard textured/shaded mesh rendering
@@ -315,7 +399,9 @@ rendering operations.
 - Surface-reference state
 - Active experiment state
 - Camera state
+- Terrain tile or atlas semantics
 - Higher-level render-resource orchestration
+- Experiment-specific visualization policy
 - Debug visualization ownership outside renderer resources
 
 ### Dependency Boundary
@@ -324,6 +410,7 @@ The Renderer module may depend on:
 
 - OpenGL
 - GLM
+- image-decoding support used by renderer image loading
 - standard-library facilities used for resource loading and data handling
 
 It must not depend on:
@@ -334,11 +421,15 @@ It must not depend on:
 - surface systems
 - LabWorld
 - active experiments
+- terrain-render semantics
 - higher-level lab orchestration
 
 Higher-level systems may create renderer resources and request drawing through
 the Renderer API, but they should not depend on renderer-owned shader
 implementation details.
+
+Higher-level visualization policy should select among renderer capabilities
+rather than introducing experiment-specific behavior into the renderer.
 
 ### Lifetime
 
@@ -353,7 +444,10 @@ creation failure returns `false` and leaves the destination empty.
 Destruction is tolerant of empty or partially created resources and resets the
 destination to its empty state.
 
-`Renderer` initialization creates its required shader resources. On
+CPU-side `ImageData` owns its decoded pixel allocation until explicitly
+destroyed.
+
+`Renderer` initialization creates its required shared shader resources. On
 initialization failure, `Renderer` is left empty. Shutdown releases all
 renderer-owned resources and resets the renderer.
 
@@ -518,3 +612,177 @@ Shutdown releases all owned GPU resources and resets the `SurfaceRef`.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+## Terrain Render Module
+
+### Purpose
+
+The Terrain Render module defines shared terrain-rendering vocabulary and owns
+the resource types and helpers used to render terrain with the shared tile
+atlas.
+
+It provides the terrain tile definitions, atlas layout and UV mapping, and the
+shared GPU texture resource used by terrain experiments.
+
+### Owns
+
+* `TerrainTile`
+* Terrain tile atlas dimensions and layout
+* Terrain tile atlas UV mapping
+* `TerrainRenderResources`
+* Loading and validating the terrain tile atlas image
+* Creation and destruction of the terrain tile atlas GPU texture
+* The asset path and texture-sampling configuration used for the shared terrain
+  atlas
+
+### Does Not Own
+
+* Lab state or orchestration
+* Active experiment state
+* Terrain geometry or mesh generation
+* Renderer or shader lifetime
+* Chunk or LabWorld data
+* Density fields
+* Surface maps or reference surfaces
+* Rules that determine which terrain tile an experiment assigns to a surface
+
+### Dependency Boundary
+
+The Terrain Render module may depend on:
+
+* renderer image-loading and texture-resource interfaces
+* GLM types required for UV calculations
+* standard-library facilities
+
+It must not depend on:
+
+* `Lab`
+* `LabWorld`
+* chunks or density fields
+* surface systems
+* specific terrain experiments
+* higher-level lab orchestration
+
+Terrain experiments may depend on the Terrain Render module for shared terrain
+tile vocabulary, atlas mapping, and rendering resources.
+
+### Lifetime
+
+`TerrainRenderResources` owns explicitly managed GPU texture resources.
+
+Creation requires an empty destination.
+
+Successful creation leaves a complete valid resource set. Detectable runtime
+creation failure returns `false` and leaves the resource set empty.
+
+Destruction is tolerant of empty state and releases all owned GPU resources
+before resetting the destination.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+## XZ Columnar Experiment Module
+
+### Purpose
+
+The XZ Columnar Experiment module implements an experimental terrain-surface
+representation that approximates a heightmap with voxel-sized X/Z planar cells.
+
+Each planar cell is constructed from the tangent plane at the center of a
+bicubic Hermite height patch. The resulting top surfaces and exposed side
+regions are clipped and partitioned by chunk and voxel Y boundaries so that
+emitted geometry has explicit voxel ownership.
+
+The experiment also assigns voxel-local terrain tile UVs and maintains the CPU
+and GPU mesh state required to render the resulting terrain.
+
+### Owns
+
+- `XZColumnarExperiment`
+- XZ columnar build settings and diagnostic statistics
+- CPU-side XZ columnar meshes and ownership metadata
+- GPU meshes created for the experiment
+- Bicubic height-patch sampling used by planar-cell construction
+- Planar-cell construction and one-cell X/Z halo grids
+- Tangent-plane surface approximation
+- Height-based terrain-tile selection for planar cells
+- Temporary clipping polygon types and Y-slab clipping
+- Shared-edge comparison and exposed side-region construction
+- X/Z planar-cell ownership of exposed side regions
+- Y-voxel slicing and ownership of top pieces and side fragments
+- Voxel-local terrain tile UV generation
+- Experiment-specific debug UI and visualization settings
+
+### Does Not Own
+
+- `Lab` or Lab orchestration
+- `LabWorld`
+- Heightmap density-field data
+- `SurfaceMap`
+- Shared spatial coordinate conventions
+- Shared voxel topology
+- Terrain tile definitions, atlas layout, or atlas texture resources
+- Renderer implementation or renderer-owned resources
+- Shared shader programs or render settings
+- Reference-surface generation
+
+The experiment borrows source world, heightmap, surface-map, renderer, and
+terrain-render data while building or rendering.
+
+### Dependency Boundary
+
+The XZ Columnar Experiment may depend on:
+
+- Fields for heightmap sampling
+- Spatial for voxel/chunk dimensions and coordinates
+- Surface Map for identifying relevant chunk columns
+- Renderer CPU vertex formats and GPU mesh interfaces
+- Terrain Render for terrain tile vocabulary, atlas UV mapping, and shared
+  terrain-render resources
+- GLM and standard-library facilities
+
+It must not be depended on by lower-level shared modules.
+
+The Lab interacts with the experiment through the compile-time
+`active_experiment` bridge rather than directly depending on XZ-columnar
+implementation details.
+
+The experiment should not introduce XZ-columnar-specific concepts into shared
+world, surface, renderer, or terrain-render modules unless a later experiment
+demonstrates that the concept is genuinely reusable.
+
+### Geometry and Ownership
+
+A planar-cell grid represents the X/Z cells owned by one chunk column together
+with a one-cell X/Z halo used for neighboring-edge comparisons.
+
+Each planar cell stores a tangent-plane approximation derived from a bicubic
+height patch sampled at the cell center.
+
+Top polygons are clipped first to the owning chunk's Y slab and then to
+individual voxel Y slabs. Each emitted top piece records its owning
+`VoxelCoord`.
+
+Neighboring planar-cell edge profiles are compared to discover exposed side
+regions. Each region is assigned to the cell whose surface lies above the
+other within that region. Side regions are subsequently clipped by chunk and
+voxel Y slabs, and each emitted side fragment records its owning voxel and
+outward side.
+
+### Lifetime
+
+`XZColumnarExperiment` owns its generated CPU meshes and corresponding
+explicitly managed GPU meshes.
+
+Initialization requires an empty experiment and performs an initial rebuild.
+
+Rebuilding replaces the existing generated mesh state. CPU mesh construction
+does not report recoverable failure. Detectable GPU-resource creation failure
+returns `false` and leaves the experiment without partially committed render
+meshes.
+
+Shutdown destroys all owned GPU resources, clears generated CPU and diagnostic
+state, and resets the experiment.
+
+The planar-cell grid and clipping polygons are temporary CPU-side construction
+data and own no external resources.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

@@ -14,10 +14,10 @@
 
 #include "lab/active_experiment.h"
 #include "lab_debug/chunk_wireframes.h"
-#include "lab/terrain_render_resources.h"
 #include "lab_world/lab_world.h"
 #include "renderer/standard_render_settings.h"
 #include "surface_ref/surface_ref.h"
+#include "terrain_render/terrain_render_resources.h"
 
 #include <glm/mat4x4.hpp>
 

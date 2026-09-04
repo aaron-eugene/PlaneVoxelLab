@@ -13,11 +13,9 @@
 #pragma once
 
 #include "experiments/xz_columnar/xz_columnar_builder.h"
-#include "lab/terrain_render_resources.h"
 #include "spatial/spatial_coordinates.h"
 #include "renderer/gpu_mesh.h"
 
-#include <glm/ext/matrix_float4x4.hpp>
 
 #include <cstdint>
 #include <vector>
@@ -25,6 +23,7 @@
 struct LabWorld;
 struct Renderer;
 struct StandardRenderSettings;
+struct TerrainRenderResources;
 
 /***********************************************************
 * XZ Columnar Debug Stats
@@ -38,9 +37,9 @@ struct XZColumnarDebugStats
 	uint64_t topPieceCount = 0;
 	uint64_t sideFragmentCount = 0;
 
-	bool hasSurfaceHeightRange = false;
-	float minSurfaceHeightMeters = 0.0f;
-	float maxSurfaceHeightMeters = 0.0f;
+	bool hasSurfaceCenterHeightRange = false;
+	float minSurfaceCenterHeightMeters = 0.0f;
+	float maxSurfaceCenterHeightMeters = 0.0f;
 };
 
 /***********************************************************
@@ -80,15 +79,6 @@ bool rebuildXZColumnarExperiment(
 	const LabWorld& world);
 
 /***********************************************************
-* XZ Columnar Experiment Update
-************************************************************/
-
-void updateXZColumnarExperiment(
-	XZColumnarExperiment& experiment,
-	const LabWorld& world,
-	float deltaSeconds);
-
-/***********************************************************
 * XZ Columnar Experiment Rendering
 ************************************************************/
 
@@ -104,5 +94,4 @@ void renderXZColumnarExperiment(
 ************************************************************/
 
 bool renderXZColumnarExperimentDebugUiContent(
-	XZColumnarExperiment& experiment,
-	const LabWorld& world);
+	XZColumnarExperiment& experiment);

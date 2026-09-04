@@ -1,12 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////////
-// lab/terrain_tile_atlas.cpp
-// ==========================
+// terrain_render/terrain_tile_atlas.cpp
+// =====================================
 //
 // Implements shared terrain tile atlas UV mapping.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "lab/terrain_tile_atlas.h"
+#include "terrain_render/terrain_tile_atlas.h"
 
 #include <glm/vec2.hpp>
 

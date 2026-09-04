@@ -14,8 +14,9 @@
 #include "renderer/renderer.h"
 #include "renderer/standard_render_settings.h"
 #include "spatial/spatial_coordinates.h"
+#include "terrain_render/terrain_render_resources.h"
 
-#include <glm/ext/matrix_transform.inl>
+#include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_double3.hpp>
 #include <glm/ext/vector_float3.hpp>
@@ -57,6 +58,10 @@ static bool uploadXZColumnarRenderMesh(
 	assert(renderMesh.gpuMesh.vertexArray == 0);
 	assert(renderMesh.gpuMesh.vertexBuffer == 0);
 	assert(renderMesh.gpuMesh.indexBuffer == 0);
+
+	assert(
+		renderMesh.cpuMesh.vertices.empty() ==
+		renderMesh.cpuMesh.indices.empty());
 
 	if (renderMesh.cpuMesh.vertices.empty() ||
 		renderMesh.cpuMesh.indices.empty())
@@ -115,33 +120,33 @@ static void updateXZColumnarDebugStats(
 		stats.sideFragmentCount +=
 			mesh.sideFragments.size();
 
-		if (!mesh.hasSurfaceHeightRange)
+		if (!mesh.hasSurfaceCenterHeightRange)
 		{
 			continue;
 		}
 
-		if (!stats.hasSurfaceHeightRange)
+		if (!stats.hasSurfaceCenterHeightRange)
 		{
-			stats.minSurfaceHeightMeters =
-				mesh.minSurfaceHeightMeters;
+			stats.minSurfaceCenterHeightMeters =
+				mesh.minSurfaceCenterHeightMeters;
 
-			stats.maxSurfaceHeightMeters =
-				mesh.maxSurfaceHeightMeters;
+			stats.maxSurfaceCenterHeightMeters =
+				mesh.maxSurfaceCenterHeightMeters;
 
-			stats.hasSurfaceHeightRange = true;
+			stats.hasSurfaceCenterHeightRange = true;
 
 			continue;
 		}
 
-		stats.minSurfaceHeightMeters =
+		stats.minSurfaceCenterHeightMeters =
 			std::min(
-				stats.minSurfaceHeightMeters,
-				mesh.minSurfaceHeightMeters);
+				stats.minSurfaceCenterHeightMeters,
+				mesh.minSurfaceCenterHeightMeters);
 
-		stats.maxSurfaceHeightMeters =
+		stats.maxSurfaceCenterHeightMeters =
 			std::max(
-				stats.maxSurfaceHeightMeters,
-				mesh.maxSurfaceHeightMeters);
+				stats.maxSurfaceCenterHeightMeters,
+				mesh.maxSurfaceCenterHeightMeters);
 	}
 }
 
@@ -200,17 +205,11 @@ bool rebuildXZColumnarExperiment(
 
 	std::vector<XZColumnarMesh> cpuMeshes = {};
 
-	const bool meshesBuilt =
-		buildXZColumnarMeshes(
-			cpuMeshes,
-			world.heightmapField,
-			world.surfaceMap,
-			experiment.buildSettings);
-
-	if (!meshesBuilt)
-	{
-		return false;
-	}
+	buildXZColumnarMeshes(
+		cpuMeshes,
+		world.heightmapField,
+		world.surfaceMap,
+		experiment.buildSettings);
 
 	experiment.meshes.reserve(
 		cpuMeshes.size());
@@ -248,20 +247,6 @@ bool rebuildXZColumnarExperiment(
 }
 
 /***********************************************************
-* XZ Columnar Experiment Update
-************************************************************/
-
-void updateXZColumnarExperiment(
-	XZColumnarExperiment& experiment,
-	const LabWorld& world,
-	float deltaSeconds)
-{
-	(void)experiment;
-	(void)world;
-	(void)deltaSeconds;
-}
-
-/***********************************************************
 * XZ Columnar Experiment Rendering
 ************************************************************/
 
@@ -272,22 +257,22 @@ void renderXZColumnarExperiment(
 	const TerrainRenderResources& terrainRenderResources,
 	const glm::mat4& viewProjection)
 {
-	for (const XZColumnarRenderMesh& columnarMesh :
+	for (const XZColumnarRenderMesh& renderMesh :
 		experiment.meshes)
 	{
-		if (columnarMesh.gpuMesh.vertexArray == 0 ||
-			columnarMesh.gpuMesh.indexCount == 0)
+		if (renderMesh.gpuMesh.vertexArray == 0 ||
+			renderMesh.gpuMesh.indexCount == 0)
 		{
 			continue;
 		}
 
 		const glm::mat4 model =
 			getChunkModelMatrix(
-				columnarMesh.coord);
+				renderMesh.coord);
 
 		renderStandardMesh(
 			renderer,
-			columnarMesh.gpuMesh,
+			renderMesh.gpuMesh,
 			renderSettings,
 			terrainRenderResources.tileAtlas,
 			model,
@@ -350,11 +335,8 @@ static void cycleXZColumnarColorization(
 }
 
 bool renderXZColumnarExperimentDebugUiContent(
-	XZColumnarExperiment& experiment,
-	const LabWorld& world)
+	XZColumnarExperiment& experiment)
 {
-	(void)world;
-
 	bool needsRebuild = false;
 
 	const XZColumnarDebugStats& stats =
@@ -402,17 +384,17 @@ bool renderXZColumnarExperimentDebugUiContent(
 
 	ImGui::TextDisabled("Terrain");
 
-	if (stats.hasSurfaceHeightRange)
+	if (stats.hasSurfaceCenterHeightRange)
 	{
 		ImGui::Text(
 			"Surface center height: %.2f to %.2f m",
-			stats.minSurfaceHeightMeters,
-			stats.maxSurfaceHeightMeters);
+			stats.minSurfaceCenterHeightMeters,
+			stats.maxSurfaceCenterHeightMeters);
 
 		ImGui::Text(
 			"Center height span: %.2f m",
-			stats.maxSurfaceHeightMeters -
-			stats.minSurfaceHeightMeters);
+			stats.maxSurfaceCenterHeightMeters -
+			stats.minSurfaceCenterHeightMeters);
 	}
 	else
 	{

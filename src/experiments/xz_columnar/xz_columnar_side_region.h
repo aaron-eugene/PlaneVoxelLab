@@ -27,7 +27,9 @@
 * XZ Columnar Side Region Constants
 ************************************************************/
 
-inline constexpr uint32_t 
+// Two linear edge profiles can cross at most once, producing at most
+// two exposed side regions.
+constexpr uint32_t 
 	MAX_XZ_COLUMNAR_SHARED_EDGE_REGIONS = 2;
 
 /***********************************************************

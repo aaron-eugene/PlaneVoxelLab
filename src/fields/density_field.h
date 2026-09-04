@@ -21,6 +21,12 @@
 #include <glm/ext/vector_double3.hpp>
 
 /***********************************************************
+* Density Field Constants
+************************************************************/
+
+constexpr float DENSITY_SURFACE_VALUE = 0.0f;
+
+/***********************************************************
 * Density Field Types
 ************************************************************/
 
@@ -33,6 +39,16 @@ struct DensityField
 	DensitySampleFunction sample = nullptr;
 	const void* userData = nullptr;
 };
+
+/***********************************************************
+* Field Classification
+************************************************************/
+
+inline bool isDensityInside(
+	float density)
+{
+	return density < DENSITY_SURFACE_VALUE;
+}
 
 /***********************************************************
 * Density Field Interface

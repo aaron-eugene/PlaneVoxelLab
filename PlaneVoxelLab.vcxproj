@@ -164,8 +164,6 @@
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\lab\active_experiment.cpp" />
     <ClCompile Include="src\lab\lab.cpp" />
-    <ClCompile Include="src\lab\terrain_render_resources.cpp" />
-    <ClCompile Include="src\lab\terrain_tile_atlas.cpp" />
     <ClCompile Include="src\lab_debug\chunk_wireframes.cpp" />
     <ClCompile Include="src\lab_world\lab_world.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -178,6 +176,8 @@
     <ClCompile Include="src\surface_map\surface_map.cpp" />
     <ClCompile Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.cpp" />
     <ClCompile Include="src\surface_ref\surface_ref.cpp" />
+    <ClCompile Include="src\terrain_render\terrain_render_resources.cpp" />
+    <ClCompile Include="src\terrain_render\terrain_tile_atlas.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\camera\camera_math.h" />
@@ -196,8 +196,6 @@
     <ClInclude Include="src\input\input.h" />
     <ClInclude Include="src\lab\active_experiment.h" />
     <ClInclude Include="src\lab\lab.h" />
-    <ClInclude Include="src\lab\terrain_render_resources.h" />
-    <ClInclude Include="src\lab\terrain_tile_atlas.h" />
     <ClInclude Include="src\lab_debug\chunk_wireframes.h" />
     <ClInclude Include="src\lab_debug\timing.h" />
     <ClInclude Include="src\lab_world\lab_world.h" />
@@ -217,6 +215,8 @@
     <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.h" />
     <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_tables.h" />
     <ClInclude Include="src\surface_ref\surface_ref.h" />
+    <ClInclude Include="src\terrain_render\terrain_render_resources.h" />
+    <ClInclude Include="src\terrain_render\terrain_tile_atlas.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

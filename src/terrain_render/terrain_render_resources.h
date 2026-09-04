@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
-// lab/terrain_render_resources.h
-// ==============================
+// terrain_render/terrain_render_resources.h
+// =========================================
 //
 // Defines shared rendering resources used by terrain experiments.
 //

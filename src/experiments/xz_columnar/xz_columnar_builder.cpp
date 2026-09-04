@@ -12,11 +12,11 @@
 #include "experiments/xz_columnar/xz_columnar_planar_cell.h"
 #include "experiments/xz_columnar/xz_columnar_side_region.h"
 #include "fields/field_generators.h"
-#include "lab/terrain_tile_atlas.h"
 #include "renderer/render_vertex.h"
 #include "spatial/spatial_constants.h"
 #include "spatial/spatial_coordinates.h"
 #include "surface_map/surface_map.h"
+#include "terrain_render/terrain_tile_atlas.h"
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -299,7 +299,8 @@ static bool sliceAndEmitTopPolygonByVoxelY(
 			chunkMinY,
 			chunkMaxY);
 
-	if (chunkClippedPolygon.vertexCount < 3)
+	if (!hasXZColumnarClipPolygonArea(
+		chunkClippedPolygon))
 	{
 		return emittedTopPiece;
 	}
@@ -338,7 +339,8 @@ static bool sliceAndEmitTopPolygonByVoxelY(
 				voxelMinY,
 				voxelMaxY);
 
-		if (voxelClippedPolygon.vertexCount < 3)
+		if (!hasXZColumnarClipPolygonArea(
+			voxelClippedPolygon))
 		{
 			continue;
 		}
@@ -478,7 +480,8 @@ static void sliceAndEmitOwnedSideRegion(
 			chunkMinY,
 			chunkMaxY);
 
-	if (chunkClippedPolygon.vertexCount < 3)
+	if (!hasXZColumnarClipPolygonArea(
+		chunkClippedPolygon))
 	{
 		return;
 	}
@@ -515,7 +518,8 @@ static void sliceAndEmitOwnedSideRegion(
 				voxelMinY,
 				voxelMaxY);
 
-		if (voxelClippedPolygon.vertexCount < 3)
+		if (!hasXZColumnarClipPolygonArea(
+			voxelClippedPolygon))
 		{
 			continue;
 		}
@@ -547,7 +551,7 @@ static void sliceAndEmitOwnedSideRegion(
 * Surface Chunk Mesh Construction
 ************************************************************/
 
-static bool buildXZColumnarMeshForSurfaceChunk(
+static void buildXZColumnarMeshForSurfaceChunk(
 	XZColumnarMesh& mesh,
 	const XZColumnarPlanarCellGrid& grid,
 	const SurfaceChunk& surfaceChunk,
@@ -598,27 +602,27 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 			// Aggregate height range
 			if (emittedTopPiece)
 			{
-				if (!mesh.hasSurfaceHeightRange)
+				if (!mesh.hasSurfaceCenterHeightRange)
 				{
-					mesh.minSurfaceHeightMeters =
-						planarCell.surfaceHeightMeters;
+					mesh.minSurfaceCenterHeightMeters =
+						planarCell.surfaceCenterHeightMeters;
 
-					mesh.maxSurfaceHeightMeters =
-						planarCell.surfaceHeightMeters;
+					mesh.maxSurfaceCenterHeightMeters =
+						planarCell.surfaceCenterHeightMeters;
 
-					mesh.hasSurfaceHeightRange = true;
+					mesh.hasSurfaceCenterHeightRange = true;
 				}
 				else
 				{
-					mesh.minSurfaceHeightMeters =
+					mesh.minSurfaceCenterHeightMeters =
 						std::min(
-							mesh.minSurfaceHeightMeters,
-							planarCell.surfaceHeightMeters);
+							mesh.minSurfaceCenterHeightMeters,
+							planarCell.surfaceCenterHeightMeters);
 
-					mesh.maxSurfaceHeightMeters =
+					mesh.maxSurfaceCenterHeightMeters =
 						std::max(
-							mesh.maxSurfaceHeightMeters,
-							planarCell.surfaceHeightMeters);
+							mesh.maxSurfaceCenterHeightMeters,
+							planarCell.surfaceCenterHeightMeters);
 				}
 			}
 		}
@@ -755,21 +759,13 @@ static bool buildXZColumnarMeshForSurfaceChunk(
 			}
 		}
 	}
-
-	return true;
 }
 
 /***********************************************************
-* Columnar Patch Mesh Lifecycle
+* Columnar Mesh Lifecycle
 ************************************************************/
 
-void clearXZColumnarMeshes(
-	std::vector<XZColumnarMesh>& meshes)
-{
-	meshes.clear();
-}
-
-bool buildXZColumnarMeshes(
+void buildXZColumnarMeshes(
 	std::vector<XZColumnarMesh>& meshes,
 	const HeightmapDensityField& heightmap,
 	const SurfaceMap& surfaceMap,
@@ -777,7 +773,7 @@ bool buildXZColumnarMeshes(
 {
 	assert(settings.derivativeStepMeters > 0.0f);
 
-	clearXZColumnarMeshes(meshes);
+	meshes.clear();
 
 	meshes.reserve(
 		surfaceMap.chunks.size());
@@ -844,18 +840,17 @@ bool buildXZColumnarMeshes(
 
 			XZColumnarMesh mesh = {};
 
-			if (!buildXZColumnarMeshForSurfaceChunk(
+			buildXZColumnarMeshForSurfaceChunk(
 				mesh,
 				planarCellGrid,
 				surfaceChunk,
-				settings))
-			{
-				clearXZColumnarMeshes(meshes);
-				return false;
-			}
+				settings);
 
-			if (mesh.vertices.empty() ||
-				mesh.indices.empty())
+			assert(
+				mesh.vertices.empty() ==
+				mesh.indices.empty());
+
+			if (mesh.vertices.empty())
 			{
 				continue;
 			}
@@ -871,6 +866,4 @@ bool buildXZColumnarMeshes(
 	assert(
 		expectedSurfaceChunkIndex ==
 		surfaceMap.chunks.size());
-
-	return true;
 }

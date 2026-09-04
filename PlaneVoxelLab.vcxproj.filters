@@ -73,6 +73,9 @@
     <Filter Include="src\surface_map">
       <UniqueIdentifier>{2b85d7ad-6177-4efd-ab6b-7b4e5e1eb7f8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\terrain_render">
+      <UniqueIdentifier>{ef2001c7-ab84-4376-a93c-fbbc86905179}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\color.frag">
@@ -90,8 +93,12 @@
     <None Include="docs\todo.md">
       <Filter>docs</Filter>
     </None>
-    <None Include="assets\shaders\standard.frag" />
-    <None Include="assets\shaders\standard.vert" />
+    <None Include="assets\shaders\standard.frag">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="assets\shaders\standard.vert">
+      <Filter>assets\shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -193,12 +200,20 @@
     <ClCompile Include="src\experiments\xz_columnar\xz_columnar_side_region.cpp">
       <Filter>src\experiments\xz_columnar</Filter>
     </ClCompile>
-    <ClCompile Include="src\lab\terrain_render_resources.cpp" />
-    <ClCompile Include="src\lab\terrain_tile_atlas.cpp" />
-    <ClCompile Include="src\renderer\image_data.cpp" />
-    <ClCompile Include="src\renderer\texture_2d.cpp" />
     <ClCompile Include="src\surface_map\surface_map.cpp">
       <Filter>src\surface_map</Filter>
+    </ClCompile>
+    <ClCompile Include="src\terrain_render\terrain_render_resources.cpp">
+      <Filter>src\terrain_render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\terrain_render\terrain_tile_atlas.cpp">
+      <Filter>src\terrain_render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\image_data.cpp">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\texture_2d.cpp">
+      <Filter>src\renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -283,11 +298,6 @@
     <ClInclude Include="src\experiments\xz_columnar\xz_columnar_side_region.h">
       <Filter>src\experiments\xz_columnar</Filter>
     </ClInclude>
-    <ClInclude Include="src\lab\terrain_render_resources.h" />
-    <ClInclude Include="src\lab\terrain_tile_atlas.h" />
-    <ClInclude Include="src\renderer\image_data.h" />
-    <ClInclude Include="src\renderer\standard_render_settings.h" />
-    <ClInclude Include="src\renderer\texture_2d.h" />
     <ClInclude Include="src\spatial\spatial_constants.h">
       <Filter>src\spatial</Filter>
     </ClInclude>
@@ -302,6 +312,21 @@
     </ClInclude>
     <ClInclude Include="src\lab_debug\timing.h">
       <Filter>src\lab_debug</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_render\terrain_render_resources.h">
+      <Filter>src\terrain_render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_render\terrain_tile_atlas.h">
+      <Filter>src\terrain_render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\image_data.h">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\standard_render_settings.h">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\texture_2d.h">
+      <Filter>src\renderer</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

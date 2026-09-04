@@ -1,24 +1,25 @@
 ///////////////////////////////////////////////////////////////////////////////
-// lab/terrain_render_resources.cpp
-// ================================
+// terrain_render/terrain_render_resources.cpp
+// ===========================================
 //
 // Implements shared terrain rendering resource creation and destruction.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "lab/terrain_render_resources.h"
+#include "terrain_render/terrain_render_resources.h"
 
 #include "renderer/image_data.h"
-#include "lab/terrain_tile_atlas.h"
+#include "terrain_render/terrain_tile_atlas.h"
 
 #include <cassert>
+#include <cstdio>
 
 /***********************************************************
 * Terrain Render Resource Constants
 ************************************************************/
 
 static constexpr const char* TERRAIN_TILE_ATLAS_PATH =
-"assets/textures/terrain_tile_atlas.png";
+	"assets/textures/terrain_tile_atlas.png";
 
 /***********************************************************
 * Terrain Render Resource Interface
@@ -47,6 +48,11 @@ bool createTerrainRenderResources(
 	{
 		destroyImageData(
 			atlasImage);
+
+		std::printf(
+			"Terrain tile atlas has unexpected dimensions: %u x %u\n",
+			atlasImage.width,
+			atlasImage.height);
 
 		return false;
 	}
