@@ -20,6 +20,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cstdio>
 
 /***********************************************************
 * Local Helpers
@@ -47,16 +48,13 @@ static void getSurfaceRefMeshCounts(
 bool initializeLab(
 	Lab& lab)
 {
-	assert(lab.world.chunks.empty());
-	assert(lab.surfaceRef.chunks.empty());
-
 	lab = {};
 	lab.showSurfaceReference = false;
 	lab.showActiveExperiment = true;
 	lab.showChunkWireframes = false;
 
 	initializeLabWorld(lab.world);
-	
+
 	if (!initializeSurfaceRef(
 		lab.surfaceRef,
 		lab.world.chunks,
@@ -108,7 +106,7 @@ void shutdownLab(
 * Lab Update
 ************************************************************/
 
-void updateLab(
+bool updateLab(
 	Lab& lab,
 	const InputState& input,
 	float deltaSeconds)
@@ -119,35 +117,43 @@ void updateLab(
 		input,
 		InputAction::ToggleSurfaceReference))
 	{
-		lab.showSurfaceReference = !lab.showSurfaceReference;
+		lab.showSurfaceReference =
+			!lab.showSurfaceReference;
 	}
 
 	if (wasActionPressed(
 		input,
 		InputAction::ToggleActiveExperiment))
 	{
-		lab.showActiveExperiment = !lab.showActiveExperiment;
+		lab.showActiveExperiment =
+			!lab.showActiveExperiment;
 	}
 
 	if (wasActionPressed(
 		input,
 		InputAction::ToggleChunkWireframes))
 	{
-		lab.showChunkWireframes = !lab.showChunkWireframes;
+		lab.showChunkWireframes =
+			!lab.showChunkWireframes;
 	}
 
 	if (wasActionPressed(
 		input,
 		InputAction::RebuildMeshes))
 	{
-		const bool rebuilt =
-			rebuildSurfaceRef(
-				lab.surfaceRef,
-				lab.world.chunks,
-				lab.world.surfaceMap);
+		if (!rebuildSurfaceRef(
+			lab.surfaceRef,
+			lab.world.chunks,
+			lab.world.surfaceMap))
+		{
+			std::printf(
+				"Failed to rebuild surface reference.\n");
 
-		assert(rebuilt);
+			return false;
+		}
 	}
+
+	return true;
 }
 
 /***********************************************************
@@ -432,6 +438,9 @@ static bool rebuildLabDensityData(
 		lab.world.chunks,
 		lab.world.surfaceMap))
 	{
+		std::printf(
+			"Failed to rebuild surface reference after density-field change.\n");
+
 		return false;
 	}
 
@@ -439,6 +448,9 @@ static bool rebuildLabDensityData(
 		lab.activeExperiment,
 		lab.world))
 	{
+		std::printf(
+			"Failed to rebuild active experiment after density-field change.\n");
+
 		return false;
 	}
 
@@ -449,7 +461,7 @@ static bool rebuildLabDensityData(
 * Debug Rendering
 ************************************************************/
 
-void renderLabDebugUiContent(
+bool renderLabDebugUiContent(
 	Lab& lab)
 {
 	renderLabComponentToggles(
@@ -468,12 +480,12 @@ void renderLabDebugUiContent(
 	if (renderDensityFieldSelection(
 		selectedFieldType))
 	{
-		const bool rebuilt =
-			rebuildLabDensityData(
-				lab,
-				selectedFieldType);
-
-		assert(rebuilt);
+		if (!rebuildLabDensityData(
+			lab,
+			selectedFieldType))
+		{
+			return false;
+		}
 	}
 
 	//--------------------------------------------------
@@ -504,11 +516,16 @@ void renderLabDebugUiContent(
 
 	if (activeExperimentNeedsRebuild)
 	{
-		const bool rebuilt =
-			rebuildActiveExperiment(
-				lab.activeExperiment,
-				lab.world);
+		if (!rebuildActiveExperiment(
+			lab.activeExperiment,
+			lab.world))
+		{
+			std::printf(
+				"Failed to rebuild active experiment after settings change.\n");
 
-		assert(rebuilt);
+			return false;
+		}
 	}
+
+	return true;
 }

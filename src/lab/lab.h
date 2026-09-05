@@ -56,7 +56,7 @@ void shutdownLab(Lab& lab);
 * Lab Update
 ************************************************************/
 
-void updateLab(
+bool updateLab(
 	Lab& lab,
 	const InputState& input,
 	float deltaTime);
@@ -74,4 +74,4 @@ void renderLab(
 * Debug Rendering
 ************************************************************/
 
-void renderLabDebugUiContent(Lab& lab);
+bool renderLabDebugUiContent(Lab& lab);

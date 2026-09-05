@@ -48,14 +48,16 @@ static bool areOpposingColumnarSides(
 * Side Colorization Helpers
 ************************************************************/
 
-static glm::vec3 getSignedNormalColor(
+static glm::vec3 getNormalColor(
 	const glm::vec3& normal)
 {
-	const glm::vec3 normalizedNormal =
-		glm::normalize(normal);
+	const glm::vec3 absoluteNormal =
+		glm::abs(normal);
 
-	return glm::vec3(0.5f) +
-		normalizedNormal * 0.5f;
+	return glm::vec3(
+		0.55f + 0.25f * absoluteNormal.x,
+		0.55f + 0.25f * absoluteNormal.y,
+		0.55f + 0.25f * absoluteNormal.z);
 }
 
 /***********************************************************
@@ -422,7 +424,7 @@ XZColumnarClipPolygon getXZColumnarSideRegionPolygon(
 
 	setXZColumnarClipPolygonColor(
 		polygon,
-		getSignedNormalColor(
+		getNormalColor(
 			polygonNormal));
 
 	return polygon;

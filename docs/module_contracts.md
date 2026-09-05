@@ -62,6 +62,7 @@ procedural field generators used to sample terrain in world space.
 - `HeightmapDensityField`
 - Sphere and heightmap field generation behavior
 - Continuous height sampling for heightmap fields
+- The shared density surface value and inside/outside classification convention
 
 ### Does Not Own
 
@@ -191,8 +192,9 @@ Lower-level shared modules must not depend on the Lab module.
 
 `Lab` aggregates several subsystems that own explicitly managed resources.
 
-Initialization requires an uninitialized Lab and initializes its owned
-subsystems in dependency order.
+Initialization is intended for a fresh or previously shut-down `Lab`. It resets
+ordinary aggregate state before initializing owned subsystems in dependency
+order.
 
 If initialization fails, already initialized subsystems are shut down and the
 Lab is returned to an empty state.
@@ -504,7 +506,7 @@ It must not depend on:
 
 ### Purpose
 
-The surface module builds and stores derived lookup data identifying where
+The Surface Map module builds and stores derived lookup data identifying where
 sampled chunk density data contains surface crossings.
 
 It organizes surface-bearing chunks into contiguous X/Z column ranges for use
@@ -532,11 +534,12 @@ by surface extraction and terrain systems.
 
 ### Dependency Boundary
 
-The surface module may depend on:
+The Surface Map module may depend on:
 
 - spatial/grid definitions
 - shared voxel geometry/topology
 - chunk density-sample storage and access
+- the shared density inside/outside classification defined by Fields
 
 It must not depend on:
 
@@ -589,6 +592,7 @@ The Surface Reference module may depend on:
 - shared voxel geometry/topology
 - `SurfaceMap` lookup data
 - renderer mesh/resource interfaces needed for upload and drawing
+- the shared density inside/outside classification defined by Fields
 
 It must not depend on:
 

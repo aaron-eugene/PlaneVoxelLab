@@ -301,11 +301,17 @@ static DevelopmentCameraControls getDevelopmentCameraControls(
 * Debug UI
 ************************************************************/
 
-static void renderDebugUi(ApplicationState& app)
+static bool renderDebugUi(
+	ApplicationState& app)
 {
-	ImGui::Begin("Plane Voxel Lab Debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+	ImGui::Begin(
+		"Plane Voxel Lab Debug",
+		nullptr,
+		ImGuiWindowFlags_AlwaysAutoResize);
 
-	ImGui::Text("OpenGL Version: %s", glGetString(GL_VERSION));
+	ImGui::Text(
+		"OpenGL Version: %s",
+		glGetString(GL_VERSION));
 
 	ImGui::Separator();
 
@@ -317,9 +323,13 @@ static void renderDebugUi(ApplicationState& app)
 
 	ImGui::Separator();
 
-	renderLabDebugUiContent(app.lab);
+	const bool labUiSucceeded =
+		renderLabDebugUiContent(
+			app.lab);
 
 	ImGui::End();
+
+	return labUiSucceeded;
 }
 
 /***********************************************************
@@ -392,12 +402,19 @@ static void setApplicationCursorLocked(
 * Application Update
 ************************************************************/
 
-static void updateFrame(ApplicationState& app, float deltaTime)
+static bool updateFrame(
+	ApplicationState& app,
+	float deltaTime)
 {
-	if (isActionDown(app.input, InputAction::Quit))
+	if (isActionDown(
+		app.input,
+		InputAction::Quit))
 	{
-		glfwSetWindowShouldClose(app.window, GLFW_TRUE);
-		return;
+		glfwSetWindowShouldClose(
+			app.window,
+			GLFW_TRUE);
+
+		return true;
 	}
 
 	if (wasActionPressed(
@@ -419,10 +436,15 @@ static void updateFrame(ApplicationState& app, float deltaTime)
 			deltaTime);
 	}
 
-	updateLab(
+	if (!updateLab(
 		app.lab,
 		app.input,
-		deltaTime);
+		deltaTime))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 static void updateSimulation(ApplicationState& app, float fixedDeltaTime)
@@ -458,7 +480,7 @@ static void renderApp(
 * Main Loop
 ************************************************************/
 
-static void runGameLoop(ApplicationState& app)
+static bool runGameLoop(ApplicationState& app)
 {
 	FrameTiming timing = {};
 	initializeFrameTiming(timing);
@@ -471,7 +493,12 @@ static void runGameLoop(ApplicationState& app)
 
 		updateInput(app.input, app.window);
 
-		updateFrame(app, timing.frameDeltaTime);
+		if (!updateFrame(
+			app,
+			timing.frameDeltaTime))
+		{
+			return false;
+		}
 
 		while (timing.simulationAccumulator >= FIXED_SIMULATION_DELTA_TIME)
 		{
@@ -495,13 +522,19 @@ static void runGameLoop(ApplicationState& app)
 				interpolationAlpha,
 				frameRenderInfo);
 
-			renderDebugUi(app);
+			if (!renderDebugUi(app))
+			{
+				ImGui::EndFrame();
+				return false;
+			}
 		}
 
 		endAppRenderFrame(
 			app.window,
 			frameRenderInfo);
 	}
+
+	return true;
 }
 
 /***********************************************************
@@ -557,12 +590,13 @@ int main()
 		return -1;
 	}
 
-	runGameLoop(app);
+	const bool gameLoopSucceeded =
+		runGameLoop(app);
 
 	shutdownLab(app.lab);
 	shutdownImGui();
 	shutdownRenderer(app.renderer);
 	shutdownGlfw(app.window);
 
-	return 0;
+	return gameLoopSucceeded ? 0 : -1;
 }
