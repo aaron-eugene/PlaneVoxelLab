@@ -54,6 +54,49 @@ static uint32_t getClampedLocalVoxelYFromWorldY(
 	return static_cast<uint32_t>(clampedVoxelY);
 }
 
+
+/***********************************************************
+* Color Mode Helpers
+************************************************************/
+
+static glm::vec3 getOwnerVoxelYColor(
+	uint32_t localY)
+{
+	static constexpr glm::vec3 OWNER_VOXEL_Y_COLORS[] =
+	{
+		{ 0.45f, 0.10f, 0.15f },
+		{ 0.60f, 0.18f, 0.35f },
+		{ 0.38f, 0.18f, 0.55f },
+		{ 0.15f, 0.28f, 0.60f },
+	};
+
+	static constexpr uint32_t
+		OWNER_VOXEL_Y_COLOR_COUNT = 4;
+
+	return OWNER_VOXEL_Y_COLORS[
+		localY %
+			OWNER_VOXEL_Y_COLOR_COUNT];
+}
+
+static glm::vec3 getXZColumnarVertexColor(
+	const VoxelCoord& ownerVoxel,
+	const XZColumnarBuildSettings& settings)
+{
+	switch (settings.vertexColorMode)
+	{
+	case XZColumnarVertexColorMode::Neutral:
+		return glm::vec3(1.0f);
+
+	case XZColumnarVertexColorMode::OwnerVoxelY:
+		return getOwnerVoxelYColor(
+			ownerVoxel.y);
+
+	default:
+		assert(false);
+		return glm::vec3(1.0f);
+	}
+}
+
 /***********************************************************
 * Texturing Helpers
 ************************************************************/
@@ -211,10 +254,10 @@ static void emitVoxelOwnedTopPiece(
 		static_cast<uint32_t>(
 			mesh.indices.size());
 
-	// Temporary neutral color while verifying textures
-	(void)settings;
 	const glm::vec3 pieceColor =
-		glm::vec3(1.0f);
+		getXZColumnarVertexColor(
+			ownerVoxel,
+			settings);
 
 	const uint32_t baseVertexIndex =
 		static_cast<uint32_t>(
@@ -390,10 +433,10 @@ static void emitVoxelOwnedSideFragment(
 		getXZColumnarSideNormal(
 			side);
 
-	// Temporary neutral color while verifying textures.
-	(void)settings;
 	const glm::vec3 fragmentColor =
-		glm::vec3(1.0f);
+		getXZColumnarVertexColor(
+			ownerVoxel,
+			settings);
 
 	const uint32_t baseVertexIndex =
 		static_cast<uint32_t>(

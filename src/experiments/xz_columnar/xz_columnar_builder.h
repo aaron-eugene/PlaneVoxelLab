@@ -26,12 +26,12 @@
 #include <vector>
 
 /***********************************************************
-* Columnar Colorization
+*  Columnar Vertex Color Modes
 ************************************************************/
 
-enum class XZColumnarColorization
+enum class XZColumnarVertexColorMode
 {
-	Normal,
+	Neutral,
 	OwnerVoxelY,
 };
 
@@ -82,8 +82,8 @@ struct XZColumnarBuildSettings
 {
 	float derivativeStepMeters = 1.0f;
 
-	XZColumnarColorization colorization =
-		XZColumnarColorization::Normal;
+	XZColumnarVertexColorMode vertexColorMode =
+		XZColumnarVertexColorMode::Neutral;
 };
 
 /***********************************************************

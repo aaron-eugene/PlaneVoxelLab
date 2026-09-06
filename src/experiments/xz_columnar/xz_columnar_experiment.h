@@ -16,7 +16,6 @@
 #include "spatial/spatial_coordinates.h"
 #include "renderer/gpu_mesh.h"
 
-
 #include <cstdint>
 #include <vector>
 
@@ -43,6 +42,18 @@ struct XZColumnarDebugStats
 };
 
 /***********************************************************
+* XZ Columnar Display Modes
+************************************************************/
+
+enum class XZColumnarDisplayMode
+{
+	TexturedUnlit,
+	TexturedLit,
+	NormalVisualization,
+	VoxelOwnership,
+};
+
+/***********************************************************
 * XZ Columnar Experiment Types
 ************************************************************/
 
@@ -57,6 +68,9 @@ struct XZColumnarRenderMesh
 struct XZColumnarExperiment
 {
 	XZColumnarBuildSettings buildSettings = {};
+
+	XZColumnarDisplayMode displayMode =
+		XZColumnarDisplayMode::TexturedLit;
 
 	std::vector<XZColumnarRenderMesh> meshes = {};
 

@@ -30,7 +30,7 @@
 #include <vector>
 
 /***********************************************************
-* File-Local Helpers
+* XZ Columnar Render-Mesh Helpers
 ************************************************************/
 
 static glm::mat4 getChunkModelMatrix(
@@ -90,6 +90,54 @@ static bool uploadXZColumnarRenderMesh(
 
 	return true;
 }
+
+/***********************************************************
+* XZ Columnar Display-Mode Helpers
+************************************************************/
+
+static XZColumnarVertexColorMode getXZColumnarVertexColorMode(
+	XZColumnarDisplayMode displayMode)
+{
+	switch (displayMode)
+	{
+	case XZColumnarDisplayMode::TexturedUnlit:
+	case XZColumnarDisplayMode::TexturedLit:
+	case XZColumnarDisplayMode::NormalVisualization:
+		return XZColumnarVertexColorMode::Neutral;
+
+	case XZColumnarDisplayMode::VoxelOwnership:
+		return XZColumnarVertexColorMode::OwnerVoxelY;
+
+	default:
+		assert(false);
+		return XZColumnarVertexColorMode::Neutral;
+	}
+}
+
+static StandardShadingMode getXZColumnarShadingMode(
+	XZColumnarDisplayMode displayMode)
+{
+	switch (displayMode)
+	{
+	case XZColumnarDisplayMode::TexturedUnlit:
+	case XZColumnarDisplayMode::VoxelOwnership:
+		return StandardShadingMode::UnlitVertexColor;
+
+	case XZColumnarDisplayMode::TexturedLit:
+		return StandardShadingMode::LitVertexColor;
+
+	case XZColumnarDisplayMode::NormalVisualization:
+		return StandardShadingMode::NormalVisualization;
+
+	default:
+		assert(false);
+		return StandardShadingMode::LitVertexColor;
+	}
+}
+
+/***********************************************************
+* XZ Columnar Debug-Stats Helpers
+************************************************************/
 
 static void updateXZColumnarDebugStats(
 	XZColumnarExperiment& experiment)
@@ -161,7 +209,12 @@ bool initializeXZColumnarExperiment(
 	assert(experiment.meshes.empty());
 
 	experiment = {};
+
 	experiment.buildSettings.derivativeStepMeters = VOXEL_SIZE_METERS;
+	
+	experiment.buildSettings.vertexColorMode =
+		getXZColumnarVertexColorMode(
+			experiment.displayMode);
 
 	return rebuildXZColumnarExperiment(
 		experiment,
@@ -257,6 +310,13 @@ void renderXZColumnarExperiment(
 	const TerrainRenderResources& terrainRenderResources,
 	const glm::mat4& viewProjection)
 {
+	StandardRenderSettings experimentRenderSettings =
+		renderSettings;
+
+	experimentRenderSettings.shadingMode =
+		getXZColumnarShadingMode(
+			experiment.displayMode);
+	
 	for (const XZColumnarRenderMesh& renderMesh :
 		experiment.meshes)
 	{
@@ -273,7 +333,7 @@ void renderXZColumnarExperiment(
 		renderStandardMesh(
 			renderer,
 			renderMesh.gpuMesh,
-			renderSettings,
+			experimentRenderSettings,
 			terrainRenderResources.tileAtlas,
 			model,
 			viewProjection);
@@ -281,58 +341,58 @@ void renderXZColumnarExperiment(
 }
 
 /***********************************************************
-* XZ Columnar Experiment Debug UI
+* XZ Columnar Experiment Debug-UI Helpers
 ************************************************************/
 
-static const char* getXZColumnarColorizationName(
-	XZColumnarColorization colorization)
+static const char* getXZColumnarDisplayModeName(
+	XZColumnarDisplayMode displayMode)
 {
-	switch (colorization)
+	switch (displayMode)
 	{
-	case XZColumnarColorization::Normal:
-	{
-		return "Normal";
-	}
+	case XZColumnarDisplayMode::TexturedUnlit:
+		return "Textured Unlit";
 
-	case XZColumnarColorization::OwnerVoxelY:
-	{
-		return "Owner Voxel Y";
-	}
+	case XZColumnarDisplayMode::TexturedLit:
+		return "Textured Lit";
+
+	case XZColumnarDisplayMode::NormalVisualization:
+		return "Normal Visualization";
+
+	case XZColumnarDisplayMode::VoxelOwnership:
+		return "Voxel Ownership";
 
 	default:
-	{
 		assert(false);
 		return "Unknown";
 	}
-	}
 }
 
-static void cycleXZColumnarColorization(
-	XZColumnarBuildSettings& settings)
+static XZColumnarDisplayMode getNextXZColumnarDisplayMode(
+	XZColumnarDisplayMode displayMode)
 {
-	switch (settings.colorization)
+	switch (displayMode)
 	{
-	case XZColumnarColorization::Normal:
-	{
-		settings.colorization =
-			XZColumnarColorization::OwnerVoxelY;
-	} break;
+	case XZColumnarDisplayMode::TexturedUnlit:
+		return XZColumnarDisplayMode::TexturedLit;
 
-	case XZColumnarColorization::OwnerVoxelY:
-	{
-		settings.colorization =
-			XZColumnarColorization::Normal;
-	} break;
+	case XZColumnarDisplayMode::TexturedLit:
+		return XZColumnarDisplayMode::NormalVisualization;
+
+	case XZColumnarDisplayMode::NormalVisualization:
+		return XZColumnarDisplayMode::VoxelOwnership;
+
+	case XZColumnarDisplayMode::VoxelOwnership:
+		return XZColumnarDisplayMode::TexturedUnlit;
 
 	default:
-	{
 		assert(false);
-
-		settings.colorization =
-			XZColumnarColorization::Normal;
-	} break;
+		return XZColumnarDisplayMode::TexturedLit;
 	}
 }
+
+/***********************************************************
+* XZ Columnar Experiment Debug-UI
+************************************************************/
 
 bool renderXZColumnarExperimentDebugUiContent(
 	XZColumnarExperiment& experiment)
@@ -405,6 +465,41 @@ bool renderXZColumnarExperimentDebugUiContent(
 	ImGui::Spacing();
 
 	//--------------------------------------------------
+	// Display Mode
+	//--------------------------------------------------
+
+	ImGui::TextDisabled("Display");
+
+	ImGui::Text(
+		"Mode: %s",
+		getXZColumnarDisplayModeName(
+			experiment.displayMode));
+
+	if (ImGui::Button(
+		"Cycle Display Mode"))
+	{
+		const XZColumnarVertexColorMode
+			previousVertexColorMode =
+			experiment.buildSettings.vertexColorMode;
+
+		experiment.displayMode =
+			getNextXZColumnarDisplayMode(
+				experiment.displayMode);
+
+		experiment.buildSettings.vertexColorMode =
+			getXZColumnarVertexColorMode(
+				experiment.displayMode);
+
+		if (experiment.buildSettings.vertexColorMode !=
+			previousVertexColorMode)
+		{
+			needsRebuild = true;
+		}
+	}
+
+	ImGui::Spacing();
+
+	//--------------------------------------------------
 	// Build Settings
 	//--------------------------------------------------
 
@@ -414,21 +509,6 @@ bool renderXZColumnarExperimentDebugUiContent(
 		"Derivative step: %.3f",
 		experiment.buildSettings
 		.derivativeStepMeters);
-
-	ImGui::Text(
-		"Colorization: %s",
-		getXZColumnarColorizationName(
-			experiment.buildSettings
-			.colorization));
-
-	if (ImGui::Button(
-		"Cycle Colorization"))
-	{
-		cycleXZColumnarColorization(
-			experiment.buildSettings);
-
-		needsRebuild = true;
-	}
 
 	return needsRebuild;
 }
