@@ -212,88 +212,6 @@ static const char* getDensityFieldTypeName(
 	}
 }
 
-static const char* getStandardShadingModeName(
-	StandardShadingMode shadingMode)
-{
-	switch (shadingMode)
-	{
-	case StandardShadingMode::UnlitVertexColor:
-	{
-		return "Unlit Vertex Color";
-	}
-
-	case StandardShadingMode::LitVertexColor:
-	{
-		return "Lit Vertex Color";
-	}
-
-	case StandardShadingMode::NormalVisualization:
-	{
-		return "Normal Visualization";
-	}
-
-	default:
-	{
-		assert(false);
-		return "Unknown";
-	}
-	}
-}
-
-static void renderStandardRenderSettingsDebugUi(
-	StandardRenderSettings& settings)
-{
-	ImGui::SeparatorText(
-		"Standard Rendering");
-
-	const char* selectedModeName =
-		getStandardShadingModeName(
-			settings.shadingMode);
-
-	if (ImGui::BeginCombo(
-		"Shading Mode",
-		selectedModeName))
-	{
-		const bool unlitSelected =
-			settings.shadingMode ==
-			StandardShadingMode::UnlitVertexColor;
-
-		if (ImGui::Selectable(
-			"Unlit Vertex Color",
-			unlitSelected))
-		{
-			settings.shadingMode =
-				StandardShadingMode::UnlitVertexColor;
-		}
-
-		const bool litSelected =
-			settings.shadingMode ==
-			StandardShadingMode::LitVertexColor;
-
-		if (ImGui::Selectable(
-			"Lit Vertex Color",
-			litSelected))
-		{
-			settings.shadingMode =
-				StandardShadingMode::LitVertexColor;
-		}
-
-		const bool normalSelected =
-			settings.shadingMode ==
-			StandardShadingMode::NormalVisualization;
-
-		if (ImGui::Selectable(
-			"Normal Visualization",
-			normalSelected))
-		{
-			settings.shadingMode =
-				StandardShadingMode::NormalVisualization;
-		}
-
-		ImGui::EndCombo();
-	}
-}
-
 static uint64_t getSurfaceVoxelCount(
 	const SurfaceMap& surfaceMap)
 {
@@ -487,13 +405,6 @@ bool renderLabDebugUiContent(
 			return false;
 		}
 	}
-
-	//--------------------------------------------------
-	// Shared Rendering
-	//--------------------------------------------------
-
-	renderStandardRenderSettingsDebugUi(
-		lab.standardRenderSettings);
 
 	//--------------------------------------------------
 	// Statistics

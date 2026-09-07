@@ -16,9 +16,10 @@
 
 enum class StandardShadingMode
 {
-	UnlitVertexColor = 0,
-	LitVertexColor = 1,
-	NormalVisualization = 2,
+	TexturedUnlit = 0,
+	TexturedLit = 1,
+	VertexColor = 2,
+	NormalVisualization = 3,
 };
 
 /***********************************************************
@@ -28,7 +29,7 @@ enum class StandardShadingMode
 struct StandardRenderSettings
 {
 	StandardShadingMode shadingMode =
-		StandardShadingMode::LitVertexColor;
+		StandardShadingMode::TexturedLit;
 
 	// World-space direction in which the directional light rays travel.
 	// glm::normalize(glm::vec3(-0.5f, -1.0f, -0.35f))
@@ -37,7 +38,7 @@ struct StandardRenderSettings
 			-0.431934f,
 			-0.863868f,
 			-0.302354f);
-	
+
 	float ambientStrength = 0.3f;
 	float diffuseStrength = 0.7f;
 };

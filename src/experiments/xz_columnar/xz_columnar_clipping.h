@@ -34,7 +34,6 @@ constexpr uint32_t
 struct XZColumnarClipVertex
 {
 	glm::vec3 position = {};
-	glm::vec3 color = {};
 };
 
 struct XZColumnarClipPolygon
@@ -73,7 +72,3 @@ float getXZColumnarPolygonMaxY(
 bool calculateXZColumnarClipPolygonNormal(
 	glm::vec3& normal,
 	const XZColumnarClipPolygon& polygon);
-
-void setXZColumnarClipPolygonColor(
-	XZColumnarClipPolygon& polygon,
-	const glm::vec3& color);

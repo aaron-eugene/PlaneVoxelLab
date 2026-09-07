@@ -50,8 +50,6 @@ struct XZColumnarPlanarCell
 	glm::vec3 p11 = {};
 	glm::vec3 p10 = {};
 
-	glm::vec3 color = {};
-
 	float surfaceCenterHeightMeters = 0.0f;
 
 	TerrainTile surfaceTile =

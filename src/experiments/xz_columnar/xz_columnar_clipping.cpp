@@ -53,10 +53,6 @@ static XZColumnarClipVertex interpolateClipVertexAtY(
 		a.position +
 		(b.position - a.position) * t;
 
-	result.color =
-		a.color +
-		(b.color - a.color) * t;
-
 	return result;
 }
 
@@ -350,17 +346,4 @@ bool calculateXZColumnarClipPolygonNormal(
 			crossProduct);
 
 	return true;
-}
-
-void setXZColumnarClipPolygonColor(
-	XZColumnarClipPolygon& polygon,
-	const glm::vec3& color)
-{
-	for (uint32_t vertexIndex = 0;
-		vertexIndex < polygon.vertexCount;
-		++vertexIndex)
-	{
-		polygon.vertices[vertexIndex].color =
-			color;
-	}
 }

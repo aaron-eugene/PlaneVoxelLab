@@ -26,9 +26,10 @@ out vec4 outColor;
 * Standard Shading Modes
 ************************************************************/
 
-const int SHADING_MODE_UNLIT = 0;
-const int SHADING_MODE_LIT = 1;
-const int SHADING_MODE_NORMAL_VISUALIZATION = 2;
+const int SHADING_MODE_TEXTURED_UNLIT = 0;
+const int SHADING_MODE_TEXTURED_LIT = 1;
+const int SHADING_MODE_VERTEX_COLOR = 2;
+const int SHADING_MODE_NORMAL_VISUALIZATION = 3;
 
 void main()
 {
@@ -50,6 +51,17 @@ void main()
 		return;
 	}
 
+	if (uShadingMode ==
+		SHADING_MODE_VERTEX_COLOR)
+	{
+		outColor =
+			vec4(
+				vertexColor,
+				1.0);
+
+		return;
+	}
+
 	vec3 textureColor =
 		texture(
 			uTexture,
@@ -60,7 +72,7 @@ void main()
 		vertexColor;
 
 	if (uShadingMode ==
-		SHADING_MODE_UNLIT)
+		SHADING_MODE_TEXTURED_UNLIT)
 	{
 		outColor =
 			vec4(
@@ -71,7 +83,7 @@ void main()
 	}
 
 	if (uShadingMode ==
-		SHADING_MODE_LIT)
+		SHADING_MODE_TEXTURED_LIT)
 	{
 		// uLightDirection is the direction in which the light rays travel.
 		vec3 surfaceToLightDirection =

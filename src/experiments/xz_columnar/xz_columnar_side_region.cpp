@@ -45,22 +45,6 @@ static bool areOpposingColumnarSides(
 }
 
 /***********************************************************
-* Side Colorization Helpers
-************************************************************/
-
-static glm::vec3 getNormalColor(
-	const glm::vec3& normal)
-{
-	const glm::vec3 absoluteNormal =
-		glm::abs(normal);
-
-	return glm::vec3(
-		0.55f + 0.25f * absoluteNormal.x,
-		0.55f + 0.25f * absoluteNormal.y,
-		0.55f + 0.25f * absoluteNormal.z);
-}
-
-/***********************************************************
 * Side Region Construction Helpers
 ************************************************************/
 
@@ -354,19 +338,19 @@ XZColumnarClipPolygon getXZColumnarSideRegionPolygon(
 	{
 		appendXZColumnarClipVertex(
 			polygon,
-			{ region.upper.start, {} });
+			{ region.upper.start });
 
 		appendXZColumnarClipVertex(
 			polygon,
-			{ region.lower.start, {} });
+			{ region.lower.start});
 
 		appendXZColumnarClipVertex(
 			polygon,
-			{ region.lower.end, {} });
+			{ region.lower.end});
 
 		appendXZColumnarClipVertex(
 			polygon,
-			{ region.upper.end, {} });
+			{ region.upper.end});
 	} break;
 
 	case XZColumnarSide::PositiveX:
@@ -374,19 +358,19 @@ XZColumnarClipPolygon getXZColumnarSideRegionPolygon(
 	{
 		appendXZColumnarClipVertex(
 			polygon,
-			{ region.upper.start, {} });
+			{ region.upper.start});
 
 		appendXZColumnarClipVertex(
 			polygon,
-			{ region.upper.end, {} });
+			{ region.upper.end});
 
 		appendXZColumnarClipVertex(
 			polygon,
-			{ region.lower.end, {} });
+			{ region.lower.end});
 
 		appendXZColumnarClipVertex(
 			polygon,
-			{ region.lower.start, {} });
+			{ region.lower.start});
 	} break;
 
 	default:
@@ -421,11 +405,6 @@ XZColumnarClipPolygon getXZColumnarSideRegionPolygon(
 		glm::dot(
 			polygonNormal,
 			expectedNormal) > 0.0f);
-
-	setXZColumnarClipPolygonColor(
-		polygon,
-		getNormalColor(
-			polygonNormal));
 
 	return polygon;
 }

@@ -81,22 +81,6 @@ static TerrainTile classifyXZColumnarSurfaceTile(
 }
 
 /***********************************************************
-* Colorization Helpers
-************************************************************/
-
-static glm::vec3 getNormalColor(
-	const glm::vec3& normal)
-{
-	const glm::vec3 absoluteNormal =
-		glm::abs(normal);
-
-	return glm::vec3(
-		0.55f + 0.25f * absoluteNormal.x,
-		0.55f + 0.25f * absoluteNormal.y,
-		0.55f + 0.25f * absoluteNormal.z);
-}
-
-/***********************************************************
 * Planar Cell Grid Helpers
 ************************************************************/
 
@@ -174,10 +158,6 @@ static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 
 	cell.relativeX = relativeX;
 	cell.relativeZ = relativeZ;
-
-	cell.color =
-		getNormalColor(
-			cell.normal);
 
 	cell.surfaceCenterHeightMeters = 
 		patchSample.height;
@@ -347,19 +327,19 @@ XZColumnarClipPolygon getXZColumnarPlanarCellTopPolygon(
 
 	appendXZColumnarClipVertex(
 		polygon,
-		{ cell.p00, cell.color });
+		{ cell.p00 });
 
 	appendXZColumnarClipVertex(
 		polygon,
-		{ cell.p01, cell.color });
+		{ cell.p01 });
 
 	appendXZColumnarClipVertex(
 		polygon,
-		{ cell.p11, cell.color });
+		{ cell.p11 });
 
 	appendXZColumnarClipVertex(
 		polygon,
-		{ cell.p10, cell.color });
+		{ cell.p10 });
 
 	return polygon;
 }

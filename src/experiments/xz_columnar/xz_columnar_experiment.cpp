@@ -120,18 +120,20 @@ static StandardShadingMode getXZColumnarShadingMode(
 	switch (displayMode)
 	{
 	case XZColumnarDisplayMode::TexturedUnlit:
-	case XZColumnarDisplayMode::VoxelOwnership:
-		return StandardShadingMode::UnlitVertexColor;
+		return StandardShadingMode::TexturedUnlit;
 
 	case XZColumnarDisplayMode::TexturedLit:
-		return StandardShadingMode::LitVertexColor;
+		return StandardShadingMode::TexturedLit;
 
 	case XZColumnarDisplayMode::NormalVisualization:
 		return StandardShadingMode::NormalVisualization;
 
+	case XZColumnarDisplayMode::VoxelOwnership:
+		return StandardShadingMode::VertexColor;
+
 	default:
 		assert(false);
-		return StandardShadingMode::LitVertexColor;
+		return StandardShadingMode::TexturedLit;
 	}
 }
 
