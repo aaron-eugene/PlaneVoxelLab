@@ -70,8 +70,8 @@ struct XZColumnarMesh
 
 	// Mesh stats
 	bool hasSurfaceCenterHeightRange = false;
-	float minSurfaceCenterHeightMeters = 0.0f;
-	float maxSurfaceCenterHeightMeters = 0.0f;
+	float minSurfaceCenterHeightOffset = 0.0f;
+	float maxSurfaceCenterHeightOffset = 0.0f;
 };
 
 /***********************************************************

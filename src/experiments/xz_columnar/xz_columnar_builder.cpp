@@ -639,24 +639,24 @@ static void buildXZColumnarMeshForSurfaceChunk(
 			{
 				if (!mesh.hasSurfaceCenterHeightRange)
 				{
-					mesh.minSurfaceCenterHeightMeters =
+					mesh.minSurfaceCenterHeightOffset =
 						planarCell.surfaceCenterHeightOffset;
 
-					mesh.maxSurfaceCenterHeightMeters =
+					mesh.maxSurfaceCenterHeightOffset =
 						planarCell.surfaceCenterHeightOffset;
 
 					mesh.hasSurfaceCenterHeightRange = true;
 				}
 				else
 				{
-					mesh.minSurfaceCenterHeightMeters =
+					mesh.minSurfaceCenterHeightOffset =
 						std::min(
-							mesh.minSurfaceCenterHeightMeters,
+							mesh.minSurfaceCenterHeightOffset,
 							planarCell.surfaceCenterHeightOffset);
 
-					mesh.maxSurfaceCenterHeightMeters =
+					mesh.maxSurfaceCenterHeightOffset =
 						std::max(
-							mesh.maxSurfaceCenterHeightMeters,
+							mesh.maxSurfaceCenterHeightOffset,
 							planarCell.surfaceCenterHeightOffset);
 				}
 			}

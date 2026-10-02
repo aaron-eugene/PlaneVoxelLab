@@ -37,8 +37,8 @@ struct XZColumnarDebugStats
 	uint64_t sideFragmentCount = 0;
 
 	bool hasSurfaceCenterHeightRange = false;
-	float minSurfaceCenterHeightMeters = 0.0f;
-	float maxSurfaceCenterHeightMeters = 0.0f;
+	float minSurfaceCenterHeightOffset = 0.0f;
+	float maxSurfaceCenterHeightOffset = 0.0f;
 };
 
 /***********************************************************

@@ -176,26 +176,26 @@ static void updateXZColumnarDebugStats(
 
 		if (!stats.hasSurfaceCenterHeightRange)
 		{
-			stats.minSurfaceCenterHeightMeters =
-				mesh.minSurfaceCenterHeightMeters;
+			stats.minSurfaceCenterHeightOffset =
+				mesh.minSurfaceCenterHeightOffset;
 
-			stats.maxSurfaceCenterHeightMeters =
-				mesh.maxSurfaceCenterHeightMeters;
+			stats.maxSurfaceCenterHeightOffset =
+				mesh.maxSurfaceCenterHeightOffset;
 
 			stats.hasSurfaceCenterHeightRange = true;
 
 			continue;
 		}
 
-		stats.minSurfaceCenterHeightMeters =
+		stats.minSurfaceCenterHeightOffset =
 			std::min(
-				stats.minSurfaceCenterHeightMeters,
-				mesh.minSurfaceCenterHeightMeters);
+				stats.minSurfaceCenterHeightOffset,
+				mesh.minSurfaceCenterHeightOffset);
 
-		stats.maxSurfaceCenterHeightMeters =
+		stats.maxSurfaceCenterHeightOffset =
 			std::max(
-				stats.maxSurfaceCenterHeightMeters,
-				mesh.maxSurfaceCenterHeightMeters);
+				stats.maxSurfaceCenterHeightOffset,
+				mesh.maxSurfaceCenterHeightOffset);
 	}
 }
 
@@ -451,13 +451,13 @@ bool renderXZColumnarExperimentDebugUiContent(
 	{
 		ImGui::Text(
 			"Surface center height: %.2f to %.2f m",
-			stats.minSurfaceCenterHeightMeters,
-			stats.maxSurfaceCenterHeightMeters);
+			stats.minSurfaceCenterHeightOffset,
+			stats.maxSurfaceCenterHeightOffset);
 
 		ImGui::Text(
 			"Center height span: %.2f m",
-			stats.maxSurfaceCenterHeightMeters -
-			stats.minSurfaceCenterHeightMeters);
+			stats.maxSurfaceCenterHeightOffset -
+			stats.minSurfaceCenterHeightOffset);
 	}
 	else
 	{
