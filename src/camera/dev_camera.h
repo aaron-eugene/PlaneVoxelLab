@@ -11,6 +11,8 @@
 
 #include <glm/glm.hpp>
 
+#include "spatial/spatial_coordinates.h"
+
 /***********************************************************
 * Development Camera Controls
 ************************************************************/
@@ -37,7 +39,11 @@ struct DevelopmentCameraControls
 
 struct DevelopmentCamera
 {
-	glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f);
+	WorldPosition position =
+	{
+		{},
+		{ 0.0f, 0.0f, 3.0f }
+	};
 
 	float yawRadians = 0.0f;
 	float pitchRadians = 0.0f;

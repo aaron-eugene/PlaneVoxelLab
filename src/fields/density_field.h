@@ -10,7 +10,7 @@
 //
 // By convention, negative density is inside solid space, positive density is
 // outside solid space, and zero is on the surface.
-// 
+//
 // DensityField does not own userData. The caller must ensure the data object
 // outlives all sampling through the DensityField.
 //
@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <glm/ext/vector_double3.hpp>
+#include "spatial/spatial_coordinates.h"
 
 /***********************************************************
 * Density Field Constants
@@ -31,7 +31,7 @@ constexpr float DENSITY_SURFACE_VALUE = 0.0f;
 ************************************************************/
 
 using DensitySampleFunction = float (*)(
-	const glm::dvec3& worldPosition,
+	const WorldPosition& worldPosition,
 	const void* userData);
 
 struct DensityField
@@ -59,4 +59,4 @@ bool isDensityFieldValid(
 
 float sampleDensityField(
 	const DensityField& field,
-	const glm::dvec3& worldPosition);
+	const WorldPosition& worldPosition);

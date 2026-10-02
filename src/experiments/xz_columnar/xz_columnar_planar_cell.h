@@ -45,12 +45,14 @@ struct XZColumnarPlanarCell
 	int32_t relativeX = -1;
 	int32_t relativeZ = -1;
 
+	// Cell corner X/Z coordinates are local to the chunk column.
+	// Y coordinates are offsets from HeightmapDensityField::baseHeight.
 	glm::vec3 p00 = {};
 	glm::vec3 p01 = {};
 	glm::vec3 p11 = {};
 	glm::vec3 p10 = {};
 
-	float surfaceCenterHeightMeters = 0.0f;
+	float surfaceCenterHeightOffset = 0.0f;
 
 	TerrainTile surfaceTile =
 		TerrainTile::Grass;
@@ -58,6 +60,9 @@ struct XZColumnarPlanarCell
 
 struct XZColumnarPlanarCellGrid
 {
+	// Cell Y coordinates are offsets from this global height.
+	WorldMetricCoordinate baseHeight = {};
+
 	std::vector<XZColumnarPlanarCell> cells = {};
 };
 

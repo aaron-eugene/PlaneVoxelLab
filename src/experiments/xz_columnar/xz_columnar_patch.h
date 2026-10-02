@@ -18,13 +18,15 @@
 
 #include "fields/field_generators.h"
 
+#include <cstdint>
+
 /***********************************************************
 * XZ Columnar Patch Types
 ************************************************************/
 
 struct XZColumnarPatchSample
 {
-	float height = 0.0f;
+	float heightOffset = 0.0f;
 
 	float gradientX = 0.0f;
 	float gradientZ = 0.0f;
@@ -36,8 +38,10 @@ struct XZColumnarPatchSample
 
 XZColumnarPatchSample sampleXZColumnarPatchCenter(
 	const HeightmapDensityField& heightmap,
-	float minX,
-	float maxX,
-	float minZ,
-	float maxZ,
+	int32_t chunkX,
+	int32_t chunkZ,
+	float localMinX,
+	float localMaxX,
+	float localMinZ,
+	float localMaxZ,
 	float derivativeStepMeters);

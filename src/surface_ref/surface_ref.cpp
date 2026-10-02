@@ -17,8 +17,7 @@
 #include "surface_ref/marching_tetrahedra/tetrahedra_builder.h"
 
 #include <glm/ext/matrix_transform.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/vec3.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
 
 #include <cassert>
 #include <cstdint>
@@ -29,14 +28,14 @@
 ************************************************************/
 
 static glm::mat4 getChunkModelMatrix(
-	const ChunkCoord& chunkCoord)
+	const ChunkCoord& chunkCoord,
+	const ChunkCoord& renderOriginChunk)
 {
-	const glm::dvec3 chunkWorldMin =
-		getChunkWorldMin(chunkCoord);
-
 	return glm::translate(
 		glm::mat4(1.0f),
-		glm::vec3(chunkWorldMin));
+		getChunkRelativePosition(
+			chunkCoord,
+			renderOriginChunk));
 }
 
 static void destroySurfaceRefChunk(
@@ -174,9 +173,11 @@ bool rebuildSurfaceRef(
 void renderSurfaceRef(
 	const SurfaceRef& surfaceRef,
 	const Renderer& renderer,
+	const ChunkCoord& renderOriginChunk,
 	const glm::mat4& viewProjection)
 {
-	for (const SurfaceRefChunk& surfaceRefChunk : surfaceRef.chunks)
+	for (const SurfaceRefChunk& surfaceRefChunk :
+		surfaceRef.chunks)
 	{
 		if (surfaceRefChunk.gpuMesh.vertexArray == 0 ||
 			surfaceRefChunk.gpuMesh.indexCount == 0)
@@ -185,7 +186,9 @@ void renderSurfaceRef(
 		}
 
 		const glm::mat4 model =
-			getChunkModelMatrix(surfaceRefChunk.coord);
+			getChunkModelMatrix(
+				surfaceRefChunk.coord,
+				renderOriginChunk);
 
 		renderColoredMesh(
 			renderer,

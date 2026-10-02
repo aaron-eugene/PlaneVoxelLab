@@ -2,7 +2,7 @@
 // lab_debug/chunk_wireframes.cpp
 // ======================================
 //
-// Implements debug rendering for surface-containing chunk wireframes.
+// Implements debug rendering for loaded chunk wireframes.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -34,14 +34,14 @@ static constexpr uint32_t CHUNK_WIREFRAME_EDGE_COUNT = 12;
 ************************************************************/
 
 static glm::mat4 getChunkModelMatrix(
-	const ChunkCoord& chunkCoord)
+	const ChunkCoord& chunkCoord,
+	const ChunkCoord& renderOriginChunk)
 {
-	const glm::dvec3 chunkWorldMin =
-		getChunkWorldMin(chunkCoord);
-
 	return glm::translate(
 		glm::mat4(1.0f),
-		glm::vec3(chunkWorldMin));
+		getChunkRelativePosition(
+			chunkCoord,
+			renderOriginChunk));
 }
 
 static void buildChunkWireframeCpuMesh(
@@ -58,7 +58,7 @@ static void buildChunkWireframeCpuMesh(
 		glm::vec3(1.0f, 1.0f, 1.0f);
 
 	const float minCoord = 0.0f;
-	const float maxCoord = CHUNK_SIZE_METERS_F;
+	const float maxCoord = CHUNK_SIZE_METERS;
 
 	const glm::vec3 corners[CHUNK_WIREFRAME_CORNER_COUNT] =
 	{
@@ -183,6 +183,7 @@ void shutdownChunkWireframes(
 void renderChunkWireframes(
 	const ChunkWireframes& wireframes,
 	const Renderer& renderer,
+	const ChunkCoord& renderOriginChunk,
 	const glm::mat4& viewProjection)
 {
 	if (wireframes.mesh.vertexArray == 0 ||
@@ -191,10 +192,13 @@ void renderChunkWireframes(
 		return;
 	}
 
-	for (const ChunkCoord& chunkCoord : wireframes.chunkCoords)
+	for (const ChunkCoord& chunkCoord :
+		wireframes.chunkCoords)
 	{
 		const glm::mat4 model =
-			getChunkModelMatrix(chunkCoord);
+			getChunkModelMatrix(
+				chunkCoord,
+				renderOriginChunk);
 
 		renderColoredMesh(
 			renderer,

@@ -9,6 +9,7 @@
 #include "experiments/xz_columnar/xz_columnar_patch.h"
 
 #include "fields/field_generators.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <cassert>
 #include <cstdint>
@@ -24,7 +25,7 @@ namespace
 		float x = 0.0f;
 		float z = 0.0f;
 
-		float height = 0.0f;
+		float heightOffset = 0.0f;
 
 		float gradientX = 0.0f;
 		float gradientZ = 0.0f;
@@ -36,61 +37,95 @@ namespace
 * Height Sampling Helpers
 ************************************************************/
 
-static float sampleHeight(
+static float sampleHeightOffset(
 	const HeightmapDensityField& heightmap,
-	float x,
-	float z)
+	int32_t chunkX,
+	int32_t chunkZ,
+	float localX,
+	float localZ)
 {
-	return sampleHeightmapTerrainHeight(
-		heightmap,
-		x,
-		z);
+	const ChunkCoord chunkCoord =
+	{
+		chunkX,
+		0,
+		chunkZ
+	};
+
+	const WorldPosition worldPosition =
+		makeWorldPosition(
+			chunkCoord,
+			{
+				localX,
+				0.0f,
+				localZ
+			});
+
+	const WorldMetricCoordinate terrainHeight =
+		sampleHeightmapTerrainHeight(
+			heightmap,
+			worldPosition);
+
+	return getWorldMetricCoordinateOffset(
+		heightmap.baseHeight,
+		terrainHeight);
 }
 
 static XZColumnarPatchCorner samplePatchCorner(
 	const HeightmapDensityField& heightmap,
-	float x,
-	float z,
+	int32_t chunkX,
+	int32_t chunkZ,
+	float localX,
+	float localZ,
 	float derivativeStepMeters)
 {
 	assert(derivativeStepMeters > 0.0f);
 
 	XZColumnarPatchCorner corner = {};
-	corner.x = x;
-	corner.z = z;
+	corner.x = localX;
+	corner.z = localZ;
 
-	corner.height =
-		sampleHeight(
+	corner.heightOffset =
+		sampleHeightOffset(
 			heightmap,
-			x,
-			z);
+			chunkX,
+			chunkZ,
+			localX,
+			localZ);
 
 	const float step =
 		derivativeStepMeters;
 
 	const float heightX0 =
-		sampleHeight(
+		sampleHeightOffset(
 			heightmap,
-			x - step,
-			z);
+			chunkX,
+			chunkZ,
+			localX - step,
+			localZ);
 
 	const float heightX1 =
-		sampleHeight(
+		sampleHeightOffset(
 			heightmap,
-			x + step,
-			z);
+			chunkX,
+			chunkZ,
+			localX + step,
+			localZ);
 
 	const float heightZ0 =
-		sampleHeight(
+		sampleHeightOffset(
 			heightmap,
-			x,
-			z - step);
+			chunkX,
+			chunkZ,
+			localX,
+			localZ - step);
 
 	const float heightZ1 =
-		sampleHeight(
+		sampleHeightOffset(
 			heightmap,
-			x,
-			z + step);
+			chunkX,
+			chunkZ,
+			localX,
+			localZ + step);
 
 	corner.gradientX =
 		(heightX1 - heightX0) /
@@ -101,28 +136,36 @@ static XZColumnarPatchCorner samplePatchCorner(
 		(2.0f * step);
 
 	const float heightX0Z0 =
-		sampleHeight(
+		sampleHeightOffset(
 			heightmap,
-			x - step,
-			z - step);
+			chunkX,
+			chunkZ,
+			localX - step,
+			localZ - step);
 
 	const float heightX0Z1 =
-		sampleHeight(
+		sampleHeightOffset(
 			heightmap,
-			x - step,
-			z + step);
+			chunkX,
+			chunkZ,
+			localX - step,
+			localZ + step);
 
 	const float heightX1Z0 =
-		sampleHeight(
+		sampleHeightOffset(
 			heightmap,
-			x + step,
-			z - step);
+			chunkX,
+			chunkZ,
+			localX + step,
+			localZ - step);
 
 	const float heightX1Z1 =
-		sampleHeight(
+		sampleHeightOffset(
 			heightmap,
-			x + step,
-			z + step);
+			chunkX,
+			chunkZ,
+			localX + step,
+			localZ + step);
 
 	corner.gradientXZ =
 		(heightX1Z1 -
@@ -225,16 +268,16 @@ static XZColumnarPatchSample evaluateBicubicPatchCenter(
 	float patchData[4][4] = {};
 
 	patchData[0][0] =
-		corner00.height;
+		corner00.heightOffset;
 
 	patchData[1][0] =
-		corner10.height;
+		corner10.heightOffset;
 
 	patchData[0][1] =
-		corner01.height;
+		corner01.heightOffset;
 
 	patchData[1][1] =
-		corner11.height;
+		corner11.heightOffset;
 
 	patchData[2][0] =
 		corner00.gradientX *
@@ -304,7 +347,7 @@ static XZColumnarPatchSample evaluateBicubicPatchCenter(
 			const float value =
 				patchData[uIndex][vIndex];
 
-			sample.height +=
+			sample.heightOffset +=
 				basisU[uIndex] *
 				basisV[vIndex] *
 				value;
@@ -338,42 +381,52 @@ static XZColumnarPatchSample evaluateBicubicPatchCenter(
 
 XZColumnarPatchSample sampleXZColumnarPatchCenter(
 	const HeightmapDensityField& heightmap,
-	float minX,
-	float maxX,
-	float minZ,
-	float maxZ,
+	int32_t chunkX,
+	int32_t chunkZ,
+	float localMinX,
+	float localMaxX,
+	float localMinZ,
+	float localMaxZ,
 	float derivativeStepMeters)
 {
-	assert(maxX > minX);
-	assert(maxZ > minZ);
+	assert(localMaxX > localMinX);
+	assert(localMaxZ > localMinZ);
 	assert(derivativeStepMeters > 0.0f);
 
 	const XZColumnarPatchCorner corner00 =
 		samplePatchCorner(
 			heightmap,
-			minX,
-			minZ,
+			chunkX,
+			chunkZ,
+			localMinX,
+			localMinZ,
 			derivativeStepMeters);
 
 	const XZColumnarPatchCorner corner10 =
 		samplePatchCorner(
 			heightmap,
-			maxX,
-			minZ,
+			chunkX,
+			chunkZ,
+			localMaxX,
+			localMinZ,
 			derivativeStepMeters);
 
 	const XZColumnarPatchCorner corner01 =
 		samplePatchCorner(
 			heightmap,
-			minX,
-			maxZ,
+			chunkX,
+			chunkZ,
+			localMinX,
+			localMaxZ,
 			derivativeStepMeters);
 
 	const XZColumnarPatchCorner corner11 =
 		samplePatchCorner(
 			heightmap,
-			maxX,
-			maxZ,
+			chunkX,
+			chunkZ,
+			localMaxX,
+			localMaxZ,
 			derivativeStepMeters);
 
 	return evaluateBicubicPatchCenter(

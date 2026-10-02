@@ -28,13 +28,14 @@ void initializeLabWorld(
 {
 	world = {};
 
-	world.sphereField.center = glm::dvec3(0.0, 0.0, 0.0);
+	world.sphereField.center = {};
 	world.sphereField.radius =
-		CHUNK_SIZE_METERS_D * 1.75;
+		CHUNK_SIZE_METERS * 1.75f;
 
-	world.heightmapField.baseHeight = 0.0f;
+	world.heightmapField.baseHeight = {};
 	world.heightmapField.amplitude = 22.0f;
-	world.heightmapField.frequency = 0.04f;
+	
+	world.heightmapField.baseScale = { 1, 25 };
 
 	setLabWorldDensityFieldType(
 		world,

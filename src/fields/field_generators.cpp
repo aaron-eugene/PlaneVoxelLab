@@ -9,6 +9,7 @@
 #include "fields/field_generators.h"
 
 #include "math/noise.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <glm/geometric.hpp>
 
@@ -19,24 +20,54 @@
 ************************************************************/
 
 static float sampleSphereDensityField(
-	const glm::dvec3& worldPosition,
+	const WorldPosition& worldPosition,
 	const void* userData)
 {
 	assert(userData != nullptr);
+	assert(isWorldPositionCanonical(worldPosition));
 
 	const SphereDensityField& sphere =
 		*static_cast<const SphereDensityField*>(userData);
 
-	const double signedDistance =
-		glm::length(worldPosition - sphere.center) - sphere.radius;
+	const int64_t chunkDeltaX =
+		static_cast<int64_t>(worldPosition.chunk.x) -
+		static_cast<int64_t>(sphere.center.chunk.x);
 
-	return static_cast<float>(signedDistance);
+	const int64_t chunkDeltaY =
+		static_cast<int64_t>(worldPosition.chunk.y) -
+		static_cast<int64_t>(sphere.center.chunk.y);
+
+	const int64_t chunkDeltaZ =
+		static_cast<int64_t>(worldPosition.chunk.z) -
+		static_cast<int64_t>(sphere.center.chunk.z);
+
+	const glm::vec3 offset =
+	{
+		static_cast<float>(chunkDeltaX) *
+			CHUNK_SIZE_METERS +
+			worldPosition.localPosition.x -
+			sphere.center.localPosition.x,
+
+		static_cast<float>(chunkDeltaY) *
+			CHUNK_SIZE_METERS +
+			worldPosition.localPosition.y -
+			sphere.center.localPosition.y,
+
+		static_cast<float>(chunkDeltaZ) *
+			CHUNK_SIZE_METERS +
+			worldPosition.localPosition.z -
+			sphere.center.localPosition.z
+	};
+
+	return glm::length(offset) -
+		sphere.radius;
 }
 
 DensityField makeSphereDensityField(
 	const SphereDensityField& sphere)
 {
-	assert(sphere.radius > 0.0);
+	assert(isWorldPositionCanonical(sphere.center));
+	assert(sphere.radius > 0.0f);
 
 	DensityField field = {};
 	field.sample = sampleSphereDensityField;
@@ -50,64 +81,91 @@ DensityField makeSphereDensityField(
 ************************************************************/
 
 static float sampleHeightmapDensityField(
-	const glm::dvec3& worldPosition,
+	const WorldPosition& worldPosition,
 	const void* userData)
 {
 	assert(userData != nullptr);
 
 	const HeightmapDensityField& heightmap =
-		*static_cast<const HeightmapDensityField*>(userData);
+		*static_cast<const HeightmapDensityField*>(
+			userData);
 
-	const float terrainHeight =
+	const WorldMetricCoordinate terrainHeight =
 		sampleHeightmapTerrainHeight(
 			heightmap,
-			static_cast<float>(worldPosition.x),
-			static_cast<float>(worldPosition.z));
+			worldPosition);
 
-	const double signedHeightDelta =
-		worldPosition.y - static_cast<double>(terrainHeight);
+	const WorldMetricCoordinate worldY =
+		getWorldMetricCoordinate(
+			worldPosition.chunk.y,
+			worldPosition.localPosition.y);
 
-	return static_cast<float>(signedHeightDelta);
+	return getWorldMetricCoordinateOffset(
+		terrainHeight,
+		worldY);
 }
 
-float sampleHeightmapTerrainHeight(
+WorldMetricCoordinate sampleHeightmapTerrainHeight(
 	const HeightmapDensityField& heightmap,
-	float worldX,
-	float worldZ)
+	const WorldPosition& worldPosition)
 {
+	assert(isWorldPositionCanonical(worldPosition));
+
 	assert(heightmap.amplitude >= 0.0f);
-	assert(heightmap.frequency >= 0.0f);
+
+	assert(heightmap.baseScale.numerator > 0);
+	assert(heightmap.baseScale.denominator > 0);
+
 	assert(heightmap.octaveCount > 0);
 	assert(heightmap.persistence >= 0.0f);
-	assert(heightmap.lacunarity > 0.0f);
 
-	const float sampleX =
-		worldX * heightmap.frequency;
+	assert(heightmap.lacunarity.numerator > 0);
+	assert(heightmap.lacunarity.denominator > 0);
 
-	const float sampleZ =
-		worldZ * heightmap.frequency;
+	const WorldMetricCoordinate worldX =
+		getWorldMetricCoordinate(
+			worldPosition.chunk.x,
+			worldPosition.localPosition.x);
+
+	const WorldMetricCoordinate worldZ =
+		getWorldMetricCoordinate(
+			worldPosition.chunk.z,
+			worldPosition.localPosition.z);
 
 	const float noise =
 		sampleFractalValueNoise2d(
-			sampleX,
-			sampleZ,
+			worldX.wholeMeters,
+			worldZ.wholeMeters,
+			worldX.fractionalMeter,
+			worldZ.fractionalMeter,
+			heightmap.baseScale,
 			heightmap.octaveCount,
 			heightmap.persistence,
 			heightmap.lacunarity,
 			heightmap.seed);
 
-	return heightmap.baseHeight +
-		noise * heightmap.amplitude;
+	const float heightOffset =
+		noise *
+		heightmap.amplitude;
+
+	return offsetWorldMetricCoordinate(
+		heightmap.baseHeight,
+		heightOffset);
 }
 
 DensityField makeHeightmapDensityField(
 	const HeightmapDensityField& heightmap)
 {
 	assert(heightmap.amplitude >= 0.0f);
-	assert(heightmap.frequency >= 0.0f);
+
+	assert(heightmap.baseScale.numerator > 0);
+	assert(heightmap.baseScale.denominator > 0);
+
 	assert(heightmap.octaveCount > 0);
 	assert(heightmap.persistence >= 0.0f);
-	assert(heightmap.lacunarity > 0.0f);
+
+	assert(heightmap.lacunarity.numerator > 0);
+	assert(heightmap.lacunarity.denominator > 0);
 
 	DensityField field = {};
 	field.sample = sampleHeightmapDensityField;

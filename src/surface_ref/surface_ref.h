@@ -72,4 +72,5 @@ bool rebuildSurfaceRef(
 void renderSurfaceRef(
 	const SurfaceRef& surfaceRef,
 	const Renderer& renderer,
+	const ChunkCoord& renderOriginChunk,
 	const glm::mat4& viewProjection);

@@ -18,7 +18,6 @@
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
-#include <glm/ext/vector_double3.hpp>
 #include <glm/ext/vector_float3.hpp>
 
 #include <imgui/imgui.h>
@@ -34,14 +33,14 @@
 ************************************************************/
 
 static glm::mat4 getChunkModelMatrix(
-	const ChunkCoord& chunkCoord)
+	const ChunkCoord& chunkCoord,
+	const ChunkCoord& renderOriginChunk)
 {
-	const glm::dvec3 chunkWorldMin =
-		getChunkWorldMin(chunkCoord);
-
 	return glm::translate(
 		glm::mat4(1.0f),
-		glm::vec3(chunkWorldMin));
+		getChunkRelativePosition(
+			chunkCoord,
+			renderOriginChunk));
 }
 
 static void destroyXZColumnarRenderMesh(
@@ -310,6 +309,7 @@ void renderXZColumnarExperiment(
 	const Renderer& renderer,
 	const StandardRenderSettings& renderSettings,
 	const TerrainRenderResources& terrainRenderResources,
+	const ChunkCoord& renderOriginChunk,
 	const glm::mat4& viewProjection)
 {
 	StandardRenderSettings experimentRenderSettings =
@@ -318,7 +318,7 @@ void renderXZColumnarExperiment(
 	experimentRenderSettings.shadingMode =
 		getXZColumnarShadingMode(
 			experiment.displayMode);
-	
+
 	for (const XZColumnarRenderMesh& renderMesh :
 		experiment.meshes)
 	{
@@ -330,7 +330,8 @@ void renderXZColumnarExperiment(
 
 		const glm::mat4 model =
 			getChunkModelMatrix(
-				renderMesh.coord);
+				renderMesh.coord,
+				renderOriginChunk);
 
 		renderStandardMesh(
 			renderer,

@@ -32,28 +32,51 @@
 * Y-Range Helpers
 ************************************************************/
 
-static uint32_t getClampedLocalVoxelYFromWorldY(
-	float worldY,
-	float chunkMinY)
+static XZColumnarClipPolygon getChunkLocalPolygon(
+	const XZColumnarClipPolygon& polygon,
+	float baseHeightLocalY)
 {
-	const float localY =
-		(worldY - chunkMinY) /
-		VOXEL_SIZE_METERS;
+	XZColumnarClipPolygon result = {};
 
+	for (uint32_t vertexIndex = 0;
+		vertexIndex < polygon.vertexCount;
+		++vertexIndex)
+	{
+		glm::vec3 localPosition =
+			polygon.vertices[
+				vertexIndex].position;
+
+		localPosition.y +=
+			baseHeightLocalY;
+
+		appendXZColumnarClipVertex(
+			result,
+			{ localPosition });
+	}
+
+	return result;
+}
+
+static uint32_t getClampedLocalVoxelY(
+	float localY)
+{
 	const int32_t unclampedVoxelY =
 		static_cast<int32_t>(
-			std::floor(localY));
+			std::floor(
+				localY /
+				VOXEL_SIZE_METERS));
 
 	const int32_t clampedVoxelY =
 		std::max(
 			0,
 			std::min(
-				static_cast<int32_t>(CHUNK_SIZE - 1),
+				static_cast<int32_t>(
+					CHUNK_SIZE - 1),
 				unclampedVoxelY));
 
-	return static_cast<uint32_t>(clampedVoxelY);
+	return static_cast<uint32_t>(
+		clampedVoxelY);
 }
-
 
 /***********************************************************
 * Color Mode Helpers
@@ -102,47 +125,30 @@ static glm::vec3 getXZColumnarVertexColor(
 ************************************************************/
 
 static glm::vec2 getXZColumnarTopTileUv(
-	const glm::vec3& worldPosition,
-	const glm::vec3& chunkWorldMin,
+	const glm::vec3& localPosition,
 	const VoxelCoord& ownerVoxel)
 {
-	const float cellWorldMinX =
-		chunkWorldMin.x +
-		static_cast<float>(ownerVoxel.x) *
-		VOXEL_SIZE_METERS;
-
-	const float cellWorldMinZ =
-		chunkWorldMin.z +
-		static_cast<float>(ownerVoxel.z) *
-		VOXEL_SIZE_METERS;
+	const glm::vec3 voxelLocalMin =
+		getVoxelLocalMin(
+			ownerVoxel);
 
 	return glm::vec2(
-		(worldPosition.x - cellWorldMinX) /
+		(localPosition.x -
+			voxelLocalMin.x) /
 		VOXEL_SIZE_METERS,
-		(worldPosition.z - cellWorldMinZ) /
+		(localPosition.z -
+			voxelLocalMin.z) /
 		VOXEL_SIZE_METERS);
 }
 
 static glm::vec2 getXZColumnarSideTileUv(
-	const glm::vec3& worldPosition,
-	const glm::vec3& chunkWorldMin,
+	const glm::vec3& localPosition,
 	const VoxelCoord& ownerVoxel,
 	XZColumnarSide side)
 {
-	const float voxelWorldMinX =
-		chunkWorldMin.x +
-		static_cast<float>(ownerVoxel.x) *
-		VOXEL_SIZE_METERS;
-
-	const float voxelWorldMinY =
-		chunkWorldMin.y +
-		static_cast<float>(ownerVoxel.y) *
-		VOXEL_SIZE_METERS;
-
-	const float voxelWorldMinZ =
-		chunkWorldMin.z +
-		static_cast<float>(ownerVoxel.z) *
-		VOXEL_SIZE_METERS;
+	const glm::vec3 voxelLocalMin =
+		getVoxelLocalMin(
+			ownerVoxel);
 
 	float tileU = 0.0f;
 
@@ -152,21 +158,24 @@ static glm::vec2 getXZColumnarSideTileUv(
 	{
 		tileU =
 			1.0f -
-			(worldPosition.z - voxelWorldMinZ) /
+			(localPosition.z -
+				voxelLocalMin.z) /
 			VOXEL_SIZE_METERS;
 	} break;
 
 	case XZColumnarSide::PositiveX:
 	{
 		tileU =
-			(worldPosition.z - voxelWorldMinZ) /
+			(localPosition.z -
+				voxelLocalMin.z) /
 			VOXEL_SIZE_METERS;
 	} break;
 
 	case XZColumnarSide::NegativeZ:
 	{
 		tileU =
-			(worldPosition.x - voxelWorldMinX) /
+			(localPosition.x -
+				voxelLocalMin.x) /
 			VOXEL_SIZE_METERS;
 	} break;
 
@@ -174,7 +183,8 @@ static glm::vec2 getXZColumnarSideTileUv(
 	{
 		tileU =
 			1.0f -
-			(worldPosition.x - voxelWorldMinX) /
+			(localPosition.x -
+				voxelLocalMin.x) /
 			VOXEL_SIZE_METERS;
 	} break;
 
@@ -185,7 +195,8 @@ static glm::vec2 getXZColumnarSideTileUv(
 	}
 
 	const float tileV =
-		(worldPosition.y - voxelWorldMinY) /
+		(localPosition.y -
+			voxelLocalMin.y) /
 		VOXEL_SIZE_METERS;
 
 	return glm::vec2(
@@ -199,16 +210,15 @@ static glm::vec2 getXZColumnarSideTileUv(
 
 static uint32_t appendStandardVertexToMesh(
 	XZColumnarMesh& mesh,
-	const glm::vec3& worldPosition,
-	const glm::vec3& chunkWorldMin,
+	const glm::vec3& localPosition,
 	const glm::vec3& normal,
 	const glm::vec3& color,
 	const glm::vec2& tileUv)
 {
 	StandardVertex vertex = {};
 
-	vertex.position = worldPosition -
-		chunkWorldMin;
+	vertex.position =
+		localPosition;
 
 	vertex.normal = normal;
 	vertex.color = color;
@@ -218,7 +228,8 @@ static uint32_t appendStandardVertexToMesh(
 		static_cast<uint32_t>(
 			mesh.vertices.size());
 
-	mesh.vertices.push_back(vertex);
+	mesh.vertices.push_back(
+		vertex);
 
 	return vertexIndex;
 }
@@ -237,7 +248,6 @@ static void appendTriangleToMesh(
 static void emitVoxelOwnedTopPiece(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
-	const glm::vec3& chunkWorldMin,
 	const glm::vec3& normal,
 	const VoxelCoord& ownerVoxel,
 	TerrainTile terrainTile,
@@ -273,7 +283,6 @@ static void emitVoxelOwnedTopPiece(
 		const glm::vec2 tileUv =
 			getXZColumnarTopTileUv(
 				clipVertex.position,
-				chunkWorldMin,
 				ownerVoxel);
 
 		const glm::vec2 atlasUv =
@@ -284,7 +293,6 @@ static void emitVoxelOwnedTopPiece(
 		appendStandardVertexToMesh(
 			mesh,
 			clipVertex.position,
-			chunkWorldMin,
 			normal,
 			pieceColor,
 			atlasUv);
@@ -316,7 +324,6 @@ static void emitVoxelOwnedTopPiece(
 static bool sliceAndEmitTopPolygonByVoxelY(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
-	const glm::vec3& chunkWorldMin,
 	const glm::vec3& normal,
 	uint32_t localX,
 	uint32_t localZ,
@@ -330,17 +337,11 @@ static bool sliceAndEmitTopPolygonByVoxelY(
 		return emittedTopPiece;
 	}
 
-	const float chunkMinY =
-		chunkWorldMin.y;
-
-	const float chunkMaxY =
-		chunkWorldMin.y + CHUNK_SIZE_METERS_F;
-
 	const XZColumnarClipPolygon chunkClippedPolygon =
 		clipXZColumnarPolygonToYSlab(
 			polygon,
-			chunkMinY,
-			chunkMaxY);
+			0.0f,
+			CHUNK_SIZE_METERS);
 
 	if (!hasXZColumnarClipPolygonArea(
 		chunkClippedPolygon))
@@ -348,33 +349,27 @@ static bool sliceAndEmitTopPolygonByVoxelY(
 		return emittedTopPiece;
 	}
 
-	const float polygonMinY =
-		getXZColumnarPolygonMinY(chunkClippedPolygon);
-
-	const float polygonMaxY =
-		getXZColumnarPolygonMaxY(chunkClippedPolygon);
-
 	const uint32_t firstLocalY =
-		getClampedLocalVoxelYFromWorldY(
-			polygonMinY,
-			chunkMinY);
+		getClampedLocalVoxelY(
+			getXZColumnarPolygonMinY(
+				chunkClippedPolygon));
 
 	const uint32_t lastLocalY =
-		getClampedLocalVoxelYFromWorldY(
-			polygonMaxY,
-			chunkMinY);
+		getClampedLocalVoxelY(
+			getXZColumnarPolygonMaxY(
+				chunkClippedPolygon));
 
 	for (uint32_t localY = firstLocalY;
 		localY <= lastLocalY;
 		++localY)
 	{
 		const float voxelMinY =
-			chunkMinY +
 			static_cast<float>(localY) *
 			VOXEL_SIZE_METERS;
 
 		const float voxelMaxY =
-			voxelMinY + VOXEL_SIZE_METERS;
+			voxelMinY +
+			VOXEL_SIZE_METERS;
 
 		const XZColumnarClipPolygon voxelClippedPolygon =
 			clipXZColumnarPolygonToYSlab(
@@ -396,7 +391,6 @@ static bool sliceAndEmitTopPolygonByVoxelY(
 		emitVoxelOwnedTopPiece(
 			mesh,
 			voxelClippedPolygon,
-			chunkWorldMin,
 			normal,
 			ownerVoxel,
 			terrainTile,
@@ -411,7 +405,6 @@ static bool sliceAndEmitTopPolygonByVoxelY(
 static void emitVoxelOwnedSideFragment(
 	XZColumnarMesh& mesh,
 	const XZColumnarClipPolygon& polygon,
-	const glm::vec3& chunkWorldMin,
 	const VoxelCoord& ownerVoxel,
 	XZColumnarSide side,
 	TerrainTile terrainTile,
@@ -446,14 +439,13 @@ static void emitVoxelOwnedSideFragment(
 		vertexIndex < polygon.vertexCount;
 		++vertexIndex)
 	{
-		const glm::vec3& worldPosition =
+		const glm::vec3& localPosition =
 			polygon.vertices[
 				vertexIndex].position;
 
 		const glm::vec2 tileUv =
 			getXZColumnarSideTileUv(
-				worldPosition,
-				chunkWorldMin,
+				localPosition,
 				ownerVoxel,
 				side);
 
@@ -464,8 +456,7 @@ static void emitVoxelOwnedSideFragment(
 
 		appendStandardVertexToMesh(
 			mesh,
-			worldPosition,
-			chunkWorldMin,
+			localPosition,
 			fragmentNormal,
 			fragmentColor,
 			atlasUv);
@@ -497,31 +488,29 @@ static void emitVoxelOwnedSideFragment(
 static void sliceAndEmitOwnedSideRegion(
 	XZColumnarMesh& mesh,
 	const XZColumnarSideRegion& region,
-	const glm::vec3& chunkWorldMin,
+	float baseHeightLocalY,
 	TerrainTile terrainTile,
 	const XZColumnarBuildSettings& settings)
 {
-	const XZColumnarClipPolygon sidePolygon =
+	const XZColumnarClipPolygon baseRelativePolygon =
 		getXZColumnarSideRegionPolygon(
 			region);
 
-	if (sidePolygon.vertexCount < 3)
+	const XZColumnarClipPolygon polygon =
+		getChunkLocalPolygon(
+			baseRelativePolygon,
+			baseHeightLocalY);
+
+	if (polygon.vertexCount < 3)
 	{
 		return;
 	}
 
-	const float chunkMinY =
-		chunkWorldMin.y;
-
-	const float chunkMaxY =
-		chunkMinY +
-		CHUNK_SIZE_METERS_F;
-
 	const XZColumnarClipPolygon chunkClippedPolygon =
 		clipXZColumnarPolygonToYSlab(
-			sidePolygon,
-			chunkMinY,
-			chunkMaxY);
+			polygon,
+			0.0f,
+			CHUNK_SIZE_METERS);
 
 	if (!hasXZColumnarClipPolygonArea(
 		chunkClippedPolygon))
@@ -530,23 +519,20 @@ static void sliceAndEmitOwnedSideRegion(
 	}
 
 	const uint32_t firstLocalY =
-		getClampedLocalVoxelYFromWorldY(
+		getClampedLocalVoxelY(
 			getXZColumnarPolygonMinY(
-				chunkClippedPolygon),
-			chunkMinY);
+				chunkClippedPolygon));
 
 	const uint32_t lastLocalY =
-		getClampedLocalVoxelYFromWorldY(
+		getClampedLocalVoxelY(
 			getXZColumnarPolygonMaxY(
-				chunkClippedPolygon),
-			chunkMinY);
+				chunkClippedPolygon));
 
 	for (uint32_t localY = firstLocalY;
 		localY <= lastLocalY;
 		++localY)
 	{
 		const float voxelMinY =
-			chunkMinY +
 			static_cast<float>(localY) *
 			VOXEL_SIZE_METERS;
 
@@ -582,7 +568,6 @@ static void sliceAndEmitOwnedSideRegion(
 		emitVoxelOwnedSideFragment(
 			mesh,
 			voxelClippedPolygon,
-			chunkWorldMin,
 			ownerVoxel,
 			region.ownerSide,
 			terrainTile,
@@ -603,12 +588,15 @@ static void buildXZColumnarMeshForSurfaceChunk(
 	mesh = {};
 	mesh.coord = surfaceChunk.coord;
 
-	const glm::dvec3 chunkWorldMinD =
-		getChunkWorldMin(
-			surfaceChunk.coord);
+	const WorldMetricCoordinate chunkMinY =
+		getWorldMetricCoordinate(
+			surfaceChunk.coord.y,
+			0.0f);
 
-	const glm::vec3 chunkWorldMin =
-		glm::vec3(chunkWorldMinD);
+	const float baseHeightLocalY =
+		getWorldMetricCoordinateOffset(
+			chunkMinY,
+			grid.baseHeight);
 
 	//--------------------------------------------------
 	// Emit Owned Top Pieces
@@ -627,15 +615,19 @@ static void buildXZColumnarMeshForSurfaceChunk(
 					static_cast<int32_t>(localX),
 					static_cast<int32_t>(localZ));
 
-			const XZColumnarClipPolygon topPolygon =
+			const XZColumnarClipPolygon baseRelativeTopPolygon =
 				getXZColumnarPlanarCellTopPolygon(
 					planarCell);
+
+			const XZColumnarClipPolygon localTopPolygon =
+				getChunkLocalPolygon(
+					baseRelativeTopPolygon,
+					baseHeightLocalY);
 
 			const bool emittedTopPiece =
 				sliceAndEmitTopPolygonByVoxelY(
 					mesh,
-					topPolygon,
-					chunkWorldMin,
+					localTopPolygon,
 					planarCell.normal,
 					localX,
 					localZ,
@@ -648,10 +640,10 @@ static void buildXZColumnarMeshForSurfaceChunk(
 				if (!mesh.hasSurfaceCenterHeightRange)
 				{
 					mesh.minSurfaceCenterHeightMeters =
-						planarCell.surfaceCenterHeightMeters;
+						planarCell.surfaceCenterHeightOffset;
 
 					mesh.maxSurfaceCenterHeightMeters =
-						planarCell.surfaceCenterHeightMeters;
+						planarCell.surfaceCenterHeightOffset;
 
 					mesh.hasSurfaceCenterHeightRange = true;
 				}
@@ -660,12 +652,12 @@ static void buildXZColumnarMeshForSurfaceChunk(
 					mesh.minSurfaceCenterHeightMeters =
 						std::min(
 							mesh.minSurfaceCenterHeightMeters,
-							planarCell.surfaceCenterHeightMeters);
+							planarCell.surfaceCenterHeightOffset);
 
 					mesh.maxSurfaceCenterHeightMeters =
 						std::max(
 							mesh.maxSurfaceCenterHeightMeters,
-							planarCell.surfaceCenterHeightMeters);
+							planarCell.surfaceCenterHeightOffset);
 				}
 			}
 		}
@@ -730,7 +722,7 @@ static void buildXZColumnarMeshForSurfaceChunk(
 				sliceAndEmitOwnedSideRegion(
 					mesh,
 					region,
-					chunkWorldMin,
+					baseHeightLocalY,
 					ownerCell.surfaceTile,
 					settings);
 			}
@@ -796,7 +788,7 @@ static void buildXZColumnarMeshForSurfaceChunk(
 				sliceAndEmitOwnedSideRegion(
 					mesh,
 					region,
-					chunkWorldMin,
+					baseHeightLocalY,
 					ownerCell.surfaceTile,
 					settings);
 			}

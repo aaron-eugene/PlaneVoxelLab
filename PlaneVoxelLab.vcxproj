@@ -173,6 +173,7 @@
     <ClCompile Include="src\renderer\renderer.cpp" />
     <ClCompile Include="src\renderer\shader.cpp" />
     <ClCompile Include="src\renderer\texture_2d.cpp" />
+    <ClCompile Include="src\spatial\spatial_coordinates.cpp" />
     <ClCompile Include="src\surface_map\surface_map.cpp" />
     <ClCompile Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.cpp" />
     <ClCompile Include="src\surface_ref\surface_ref.cpp" />

@@ -8,8 +8,6 @@
 
 #include "fields/density_field.h"
 
-#include <glm/ext/vector_double3.hpp>
-
 #include <cassert>
 
 /***********************************************************
@@ -24,9 +22,10 @@ bool isDensityFieldValid(
 
 float sampleDensityField(
 	const DensityField& field,
-	const glm::dvec3& worldPosition)
+	const WorldPosition& worldPosition)
 {
 	assert(isDensityFieldValid(field));
+	assert(isWorldPositionCanonical(worldPosition));
 
 	return field.sample(
 		worldPosition,

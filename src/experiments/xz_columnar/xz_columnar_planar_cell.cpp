@@ -26,14 +26,26 @@
 * Surface Tile Classification Constants
 ************************************************************/
 
-static constexpr float SAND_MAX_WORLD_HEIGHT_METERS =
--3.0f;
+static constexpr WorldMetricCoordinate
+SAND_MAX_WORLD_HEIGHT =
+{
+	-3,
+	0.0f
+};
 
-static constexpr float GRASS_MAX_WORLD_HEIGHT_METERS =
-6.0f;
+static constexpr WorldMetricCoordinate
+GRASS_MAX_WORLD_HEIGHT =
+{
+	6,
+	0.0f
+};
 
-static constexpr float ROCK_MAX_WORLD_HEIGHT_METERS =
-12.0f;
+static constexpr WorldMetricCoordinate
+ROCK_MAX_WORLD_HEIGHT =
+{
+	12,
+	0.0f
+};
 
 /***********************************************************
 * Local Planar Cell Constants
@@ -57,22 +69,25 @@ static constexpr size_t XZ_COLUMNAR_PLANAR_CELL_COUNT =
 ************************************************************/
 
 static TerrainTile classifyXZColumnarSurfaceTile(
-	float worldHeight)
+	const WorldMetricCoordinate& worldHeight)
 {
-	if (worldHeight <
-		SAND_MAX_WORLD_HEIGHT_METERS)
+	if (compareWorldMetricCoordinates(
+		worldHeight,
+		SAND_MAX_WORLD_HEIGHT) < 0)
 	{
 		return TerrainTile::Sand;
 	}
 
-	if (worldHeight <
-		GRASS_MAX_WORLD_HEIGHT_METERS)
+	if (compareWorldMetricCoordinates(
+		worldHeight,
+		GRASS_MAX_WORLD_HEIGHT) < 0)
 	{
 		return TerrainTile::Grass;
 	}
 
-	if (worldHeight <
-		ROCK_MAX_WORLD_HEIGHT_METERS)
+	if (compareWorldMetricCoordinates(
+		worldHeight,
+		ROCK_MAX_WORLD_HEIGHT) < 0)
 	{
 		return TerrainTile::Rock;
 	}
@@ -109,26 +124,28 @@ static uint32_t getPlanarCellGridIndex(
 * Cell Construction Helpers
 ************************************************************/
 
-static float evaluateTangentPlaneHeight(
+static float evaluateTangentPlaneHeightOffset(
 	float x,
 	float z,
 	float centerX,
 	float centerZ,
 	const XZColumnarPatchSample& sample)
 {
-	return sample.height +
+	return sample.heightOffset +
 		sample.gradientX * (x - centerX) +
 		sample.gradientZ * (z - centerZ);
 }
 
 static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 	const HeightmapDensityField& heightmap,
+	int32_t chunkX,
+	int32_t chunkZ,
 	int32_t relativeX,
 	int32_t relativeZ,
-	float x0,
-	float x1,
-	float z0,
-	float z1,
+	float localX0,
+	float localX1,
+	float localZ0,
+	float localZ1,
 	float derivativeStepMeters)
 {
 	assert(derivativeStepMeters > 0.0f);
@@ -136,17 +153,19 @@ static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 	const XZColumnarPatchSample patchSample =
 		sampleXZColumnarPatchCenter(
 			heightmap,
-			x0,
-			x1,
-			z0,
-			z1,
+			chunkX,
+			chunkZ,
+			localX0,
+			localX1,
+			localZ0,
+			localZ1,
 			derivativeStepMeters);
 
-	const float centerX =
-		(x0 + x1) * 0.5f;
+	const float localCenterX =
+		(localX0 + localX1) * 0.5f;
 
-	const float centerZ =
-		(z0 + z1) * 0.5f;
+	const float localCenterZ =
+		(localZ0 + localZ1) * 0.5f;
 
 	XZColumnarPlanarCell cell = {};
 	
@@ -159,56 +178,62 @@ static XZColumnarPlanarCell buildXZColumnarPlanarCell(
 	cell.relativeX = relativeX;
 	cell.relativeZ = relativeZ;
 
-	cell.surfaceCenterHeightMeters = 
-		patchSample.height;
+	cell.surfaceCenterHeightOffset =
+		patchSample.heightOffset;
+
+	// Tile classification
+	const WorldMetricCoordinate surfaceCenterHeight =
+		offsetWorldMetricCoordinate(
+			heightmap.baseHeight,
+			patchSample.heightOffset);
 
 	cell.surfaceTile =
 		classifyXZColumnarSurfaceTile(
-			patchSample.height);
+			surfaceCenterHeight);
 
 	cell.p00 =
 		glm::vec3(
-			x0,
-			evaluateTangentPlaneHeight(
-				x0,
-				z0,
-				centerX,
-				centerZ,
+			localX0,
+			evaluateTangentPlaneHeightOffset(
+				localX0,
+				localZ0,
+				localCenterX,
+				localCenterZ,
 				patchSample),
-			z0);
+			localZ0);
 
 	cell.p01 =
 		glm::vec3(
-			x0,
-			evaluateTangentPlaneHeight(
-				x0,
-				z1,
-				centerX,
-				centerZ,
+			localX0,
+			evaluateTangentPlaneHeightOffset(
+				localX0,
+				localZ1,
+				localCenterX,
+				localCenterZ,
 				patchSample),
-			z1);
+			localZ1);
 
 	cell.p11 =
 		glm::vec3(
-			x1,
-			evaluateTangentPlaneHeight(
-				x1,
-				z1,
-				centerX,
-				centerZ,
+			localX1,
+			evaluateTangentPlaneHeightOffset(
+				localX1,
+				localZ1,
+				localCenterX,
+				localCenterZ,
 				patchSample),
-			z1);
+			localZ1);
 
 	cell.p10 =
 		glm::vec3(
-			x1,
-			evaluateTangentPlaneHeight(
-				x1,
-				z0,
-				centerX,
-				centerZ,
+			localX1,
+			evaluateTangentPlaneHeightOffset(
+				localX1,
+				localZ0,
+				localCenterX,
+				localCenterZ,
 				patchSample),
-			z0);
+			localZ0);
 
 	return cell;
 }
@@ -238,37 +263,35 @@ void buildXZColumnarPlanarCellGrid(
 
 	assert(derivativeStepMeters > 0.0f);
 
-	const float chunkWorldMinX =
-		static_cast<float>(chunkX) *
-		CHUNK_SIZE_METERS_F;
+	grid.baseHeight = heightmap.baseHeight;
 
-	const float chunkWorldMinZ =
-		static_cast<float>(chunkZ) *
-		CHUNK_SIZE_METERS_F;
-	
-	for (int32_t relativeZ = XZ_COLUMNAR_PLANAR_CELL_MIN_COORD;
-		relativeZ <= XZ_COLUMNAR_PLANAR_CELL_MAX_COORD;
+	for (int32_t relativeZ =
+		XZ_COLUMNAR_PLANAR_CELL_MIN_COORD;
+		relativeZ <=
+		XZ_COLUMNAR_PLANAR_CELL_MAX_COORD;
 		++relativeZ)
 	{
-		for (int32_t relativeX = XZ_COLUMNAR_PLANAR_CELL_MIN_COORD;
-			relativeX <= XZ_COLUMNAR_PLANAR_CELL_MAX_COORD;
+		for (int32_t relativeX =
+			XZ_COLUMNAR_PLANAR_CELL_MIN_COORD;
+			relativeX <=
+			XZ_COLUMNAR_PLANAR_CELL_MAX_COORD;
 			++relativeX)
 		{
-			const float x0 =
-				chunkWorldMinX +
+			const float localX0 =
 				static_cast<float>(relativeX) *
 				VOXEL_SIZE_METERS;
 
-			const float x1 =
-				x0 + VOXEL_SIZE_METERS;
+			const float localX1 =
+				localX0 +
+				VOXEL_SIZE_METERS;
 
-			const float z0 =
-				chunkWorldMinZ +
+			const float localZ0 =
 				static_cast<float>(relativeZ) *
 				VOXEL_SIZE_METERS;
 
-			const float z1 =
-				z0 + VOXEL_SIZE_METERS;
+			const float localZ1 =
+				localZ0 +
+				VOXEL_SIZE_METERS;
 
 			const uint32_t cellIndex =
 				getPlanarCellGridIndex(
@@ -278,12 +301,14 @@ void buildXZColumnarPlanarCellGrid(
 			grid.cells[cellIndex] =
 				buildXZColumnarPlanarCell(
 					heightmap,
+					chunkX,
+					chunkZ,
 					relativeX,
 					relativeZ,
-					x0,
-					x1,
-					z0,
-					z1,
+					localX0,
+					localX1,
+					localZ0,
+					localZ1,
 					derivativeStepMeters);
 		}
 	}

@@ -13,6 +13,7 @@
 #include "lab_debug/chunk_wireframes.h"
 #include "lab_world/lab_world.h"
 #include "renderer/renderer.h"
+#include "spatial/spatial_coordinates.h"
 #include "surface_map/surface_map.h"
 #include "surface_ref/surface_ref.h"
 
@@ -163,6 +164,7 @@ bool updateLab(
 void renderLab(
 	const Lab& lab,
 	const Renderer& renderer,
+	const ChunkCoord& renderOriginChunk,
 	const glm::mat4& viewProjection)
 {
 	if (lab.showSurfaceReference)
@@ -170,6 +172,7 @@ void renderLab(
 		renderSurfaceRef(
 			lab.surfaceRef,
 			renderer,
+			renderOriginChunk,
 			viewProjection);
 	}
 
@@ -180,6 +183,7 @@ void renderLab(
 			renderer,
 			lab.standardRenderSettings,
 			lab.terrainRenderResources,
+			renderOriginChunk,
 			viewProjection);
 	}
 
@@ -188,6 +192,7 @@ void renderLab(
 		renderChunkWireframes(
 			lab.chunkWireframes,
 			renderer,
+			renderOriginChunk,
 			viewProjection);
 	}
 }

@@ -112,7 +112,6 @@ static bool doesVoxelContainSurfaceCrossing(
 {
 	bool hasInside = false;
 	bool hasOutside = false;
-	bool hasZero = false;
 
 	for (uint32_t cornerIndex = 0;
 		cornerIndex < VOXEL_CORNER_COUNT;

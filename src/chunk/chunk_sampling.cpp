@@ -13,8 +13,6 @@
 #include "spatial/spatial_constants.h"
 #include "spatial/spatial_coordinates.h"
 
-#include <glm/ext/vector_double3.hpp>
-
 #include <cstdint>
 
 /***********************************************************
@@ -44,7 +42,7 @@ void sampleChunkDensityField(
 					sampleZ
 				};
 
-				const glm::dvec3 sampleWorldPosition =
+				const WorldPosition sampleWorldPosition =
 					getSampleWorldPosition(
 						chunk.coord,
 						sampleCoord);

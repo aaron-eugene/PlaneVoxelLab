@@ -32,12 +32,8 @@ constexpr float VOXEL_SIZE_METERS =
 
 constexpr uint32_t CHUNK_SIZE = 16;
 
-constexpr float CHUNK_SIZE_METERS_F =
+constexpr float CHUNK_SIZE_METERS =
 VOXEL_SIZE_METERS * static_cast<float>(CHUNK_SIZE);
-
-constexpr double CHUNK_SIZE_METERS_D =
-static_cast<double>(VOXEL_SIZE_METERS) *
-static_cast<double>(CHUNK_SIZE);
 
 constexpr uint32_t CHUNK_VOXEL_COUNT =
 CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;

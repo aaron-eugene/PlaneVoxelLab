@@ -75,6 +75,7 @@ void renderActiveExperiment(
 	const Renderer& renderer,
 	const StandardRenderSettings& renderSettings,
 	const TerrainRenderResources& terrainRenderResources,
+	const ChunkCoord& renderOriginChunk,
 	const glm::mat4& viewProjection);
 
 /***********************************************************

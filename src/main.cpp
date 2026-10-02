@@ -19,6 +19,7 @@
 #include "input/input.h"
 #include "lab/lab.h"
 #include "renderer/renderer.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
@@ -315,11 +316,44 @@ static bool renderDebugUi(
 
 	ImGui::Separator();
 
+	const WorldPosition& cameraPosition =
+		app.developmentCamera.position;
+
 	ImGui::Text(
-		"Camera Position: %.2f, %.2f, %.2f",
-		app.developmentCamera.position.x,
-		app.developmentCamera.position.y,
-		app.developmentCamera.position.z);
+		"Camera Chunk: %d, %d, %d",
+		cameraPosition.chunk.x,
+		cameraPosition.chunk.y,
+		cameraPosition.chunk.z);
+
+	ImGui::Text(
+		"Camera Local: %.2f, %.2f, %.2f",
+		cameraPosition.localPosition.x,
+		cameraPosition.localPosition.y,
+		cameraPosition.localPosition.z);
+
+	const WorldMetricCoordinate cameraX =
+		getWorldMetricCoordinate(
+			cameraPosition.chunk.x,
+			cameraPosition.localPosition.x);
+
+	const WorldMetricCoordinate cameraY =
+		getWorldMetricCoordinate(
+			cameraPosition.chunk.y,
+			cameraPosition.localPosition.y);
+
+	const WorldMetricCoordinate cameraZ =
+		getWorldMetricCoordinate(
+			cameraPosition.chunk.z,
+			cameraPosition.localPosition.z);
+
+	ImGui::Text(
+		"Camera Meters: %lld + %.2f, %lld + %.2f, %lld + %.2f",
+		static_cast<long long>(cameraX.wholeMeters),
+		cameraX.fractionalMeter,
+		static_cast<long long>(cameraY.wholeMeters),
+		cameraY.fractionalMeter,
+		static_cast<long long>(cameraZ.wholeMeters),
+		cameraZ.fractionalMeter);
 
 	ImGui::Separator();
 
@@ -466,13 +500,15 @@ static void renderApp(
 {
 	(void)interpolationAlpha;
 
-	glm::mat4 viewProjection = buildDevelopmentCameraViewProjectionMatrix(
-		app.developmentCamera,
-		frameRenderInfo.aspectRatio);
+	const glm::mat4 viewProjection =
+		buildDevelopmentCameraViewProjectionMatrix(
+			app.developmentCamera,
+			frameRenderInfo.aspectRatio);
 
 	renderLab(
 		app.lab,
 		app.renderer,
+		app.developmentCamera.position.chunk,
 		viewProjection);
 }
 

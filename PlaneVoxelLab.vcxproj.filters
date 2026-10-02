@@ -215,6 +215,9 @@
     <ClCompile Include="src\renderer\texture_2d.cpp">
       <Filter>src\renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\spatial\spatial_coordinates.cpp">
+      <Filter>src\spatial</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">

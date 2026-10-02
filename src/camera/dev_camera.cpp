@@ -9,6 +9,7 @@
 #include "camera/dev_camera.h"
 
 #include "camera/camera_math.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
@@ -55,11 +56,15 @@ static glm::vec3 calculateWorldMovementDirection(
 * Development Camera Interface
 ************************************************************/
 
-void initializeDevelopmentCamera(DevelopmentCamera& camera)
+void initializeDevelopmentCamera(
+	DevelopmentCamera& camera)
 {
 	camera = {};
 
-	camera.position = glm::vec3(0.0f, 0.0f, 3.0f);
+	camera.position =
+		makeWorldPosition(
+			{},
+			{ 0.0f, 0.0f, 3.0f });
 
 	camera.yawRadians = 0.0f;
 	camera.pitchRadians = 0.0f;
@@ -99,13 +104,27 @@ void updateDevelopmentCamera(
 		currentMoveSpeed *= camera.speedBoostMultiplier;
 	}
 
-	camera.position += movementDirection * currentMoveSpeed * deltaTime;
+	const glm::vec3 movement =
+		movementDirection *
+		currentMoveSpeed *
+		deltaTime;
+
+	camera.position =
+		makeWorldPosition(
+			camera.position.chunk,
+			camera.position.localPosition +
+			movement);
 }
 
-glm::mat4 buildDevelopmentCameraViewMatrix(const DevelopmentCamera& camera)
+glm::mat4 buildDevelopmentCameraViewMatrix(
+	const DevelopmentCamera& camera)
 {
+	assert(
+		isWorldPositionCanonical(
+			camera.position));
+
 	return buildCameraViewMatrix(
-		camera.position,
+		camera.position.localPosition,
 		camera.yawRadians,
 		camera.pitchRadians);
 }

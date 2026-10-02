@@ -103,6 +103,7 @@ void renderActiveExperiment(
 	const Renderer& renderer,
 	const StandardRenderSettings& renderSettings,
 	const TerrainRenderResources& terrainRenderResources,
+	const ChunkCoord& renderOriginChunk,
 	const glm::mat4& viewProjection)
 {
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
@@ -110,14 +111,22 @@ void renderActiveExperiment(
 	(void)renderer;
 	(void)renderSettings;
 	(void)terrainRenderResources;
+	(void)renderOriginChunk;
 	(void)viewProjection;
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
-	renderXZColumnarExperiment(experiment, renderer, renderSettings,
-		terrainRenderResources, viewProjection);
+	renderXZColumnarExperiment(
+		experiment,
+		renderer,
+		renderSettings,
+		terrainRenderResources,
+		renderOriginChunk,
+		viewProjection);
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
-	renderMarchingTetrahedraExperiment(experiment, renderer);
+	renderMarchingTetrahedraExperiment(
+		experiment,
+		renderer);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT

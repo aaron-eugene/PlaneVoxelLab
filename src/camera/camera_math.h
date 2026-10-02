@@ -4,6 +4,9 @@
 //
 // Declares camera math helpers for building camera direction vectors and view /
 // projection matrices.
+//
+// View-matrix positions are expressed in the caller's local render coordinate
+// system.
 // 
 // Notes:
 // - Yaw/pitch are in radians
@@ -34,7 +37,7 @@ glm::vec3 calculateCameraUp(
 	const glm::vec3& forward);
 
 glm::mat4 buildCameraViewMatrix(
-	const glm::vec3& position,
+	const glm::vec3& localPosition,
 	float yawRadians,
 	float pitchRadians);
 

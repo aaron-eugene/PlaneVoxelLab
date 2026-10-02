@@ -9,8 +9,8 @@
 #pragma once
 
 #include "fields/density_field.h"
-
-#include <glm/ext/vector_double3.hpp>
+#include "math/noise.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <cstdint>
 
@@ -20,8 +20,8 @@
 
 struct SphereDensityField
 {
-	glm::dvec3 center = {};
-	double radius = 1.0;
+	WorldPosition center = {};
+	float radius = 1.0f;
 };
 
 DensityField makeSphereDensityField(
@@ -33,21 +33,31 @@ DensityField makeSphereDensityField(
 
 struct HeightmapDensityField
 {
-	float baseHeight = 0.0f;
+	WorldMetricCoordinate baseHeight = {};
+	
 	float amplitude = 8.0f;
-	float frequency = 0.05f;
+
+	NoiseScale baseScale =
+	{
+		1,
+		20
+	};
 
 	uint32_t octaveCount = 5;
 	float persistence = 0.5f;
-	float lacunarity = 2.0f;
 
-	uint32_t seed = 1337;
+	NoiseScale lacunarity =
+	{
+		2,
+		1
+	};
+
+	uint32_t seed = 9109;
 };
 
-float sampleHeightmapTerrainHeight(
+WorldMetricCoordinate sampleHeightmapTerrainHeight(
 	const HeightmapDensityField& heightmap,
-	float worldX,
-	float worldZ);
+	const WorldPosition& worldPosition);
 
 DensityField makeHeightmapDensityField(
 	const HeightmapDensityField& heightmap);

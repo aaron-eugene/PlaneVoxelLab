@@ -23,7 +23,9 @@ glm::vec3 getCameraWorldUp()
 	return glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
-glm::vec3 calculateCameraForward(float yawRadians, float pitchRadians)
+glm::vec3 calculateCameraForward(
+	float yawRadians, 
+	float pitchRadians)
 {
 	float cosPitch = std::cos(pitchRadians);
 
@@ -56,7 +58,7 @@ glm::vec3 calculateCameraUp(
 }
 
 glm::mat4 buildCameraViewMatrix(
-	const glm::vec3& position,
+	const glm::vec3& localPosition,
 	float yawRadians,
 	float pitchRadians)
 {
@@ -66,8 +68,8 @@ glm::mat4 buildCameraViewMatrix(
 	glm::vec3 up = calculateCameraUp(right, forward);
 
 	return glm::lookAt(
-		position,
-		position + forward,
+		localPosition,
+		localPosition + forward,
 		up);
 }
 

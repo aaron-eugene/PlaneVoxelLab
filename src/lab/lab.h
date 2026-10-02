@@ -68,6 +68,7 @@ bool updateLab(
 void renderLab(
 	const Lab& lab,
 	const Renderer& renderer,
+	const ChunkCoord& renderOriginChunk,
 	const glm::mat4& viewProjection);
 
 /***********************************************************

@@ -53,4 +53,5 @@ void shutdownChunkWireframes(
 void renderChunkWireframes(
 	const ChunkWireframes& wireframes,
 	const Renderer& renderer,
+	const ChunkCoord& renderOriginChunk,
 	const glm::mat4& viewProjection);
