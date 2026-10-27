@@ -346,13 +346,8 @@ static bool renderDensityFieldSelection(
 }
 
 static bool rebuildLabDensityData(
-	Lab& lab,
-	LabWorldDensityFieldType fieldType)
+	Lab& lab)
 {
-	setLabWorldDensityFieldType(
-		lab.world,
-		fieldType);
-
 	rebuildLabWorldDensityData(
 		lab.world);
 
@@ -362,7 +357,7 @@ static bool rebuildLabDensityData(
 		lab.world.surfaceMap))
 	{
 		std::printf(
-			"Failed to rebuild surface reference after density-field change.\n");
+			"Failed to rebuild surface reference after density change.\n");
 
 		return false;
 	}
@@ -372,7 +367,7 @@ static bool rebuildLabDensityData(
 		lab.world))
 	{
 		std::printf(
-			"Failed to rebuild active experiment after density-field change.\n");
+			"Failed to rebuild active experiment after density change.\n");
 
 		return false;
 	}
@@ -397,15 +392,34 @@ bool renderLabDebugUiContent(
 	ImGui::SeparatorText(
 		"Density Field");
 
+	bool densityChanged = false;
+
 	LabWorldDensityFieldType selectedFieldType =
 		lab.world.activeDensityFieldType;
 
 	if (renderDensityFieldSelection(
 		selectedFieldType))
 	{
-		if (!rebuildLabDensityData(
-			lab,
-			selectedFieldType))
+		setLabWorldDensityFieldType(
+			lab.world,
+			selectedFieldType);
+
+		densityChanged = true;
+	}
+
+	if (lab.world.activeDensityFieldType ==
+		LabWorldDensityFieldType::Sphere)
+	{
+		densityChanged |= ImGui::SliderFloat(
+			"Sphere Radius",
+			&lab.world.sphereField.radius,
+			1.0f,
+			60.0f);
+	}
+
+	if (densityChanged)
+	{
+		if (!rebuildLabDensityData(lab))
 		{
 			return false;
 		}

@@ -218,6 +218,7 @@
     <ClInclude Include="src\surface_ref\surface_ref.h" />
     <ClInclude Include="src\terrain_render\terrain_render_resources.h" />
     <ClInclude Include="src\terrain_render\terrain_tile_atlas.h" />
+    <ClInclude Include="voxel_surface_optimization_experiment.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

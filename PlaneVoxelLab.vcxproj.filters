@@ -76,6 +76,9 @@
     <Filter Include="src\terrain_render">
       <UniqueIdentifier>{ef2001c7-ab84-4376-a93c-fbbc86905179}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\experiments\voxel_surface_optimization">
+      <UniqueIdentifier>{7a504260-61b0-41c6-90bb-510351987c57}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\color.frag">
@@ -330,6 +333,9 @@
     </ClInclude>
     <ClInclude Include="src\renderer\texture_2d.h">
       <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="voxel_surface_optimization_experiment.h">
+      <Filter>src\experiments\voxel_surface_optimization</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
