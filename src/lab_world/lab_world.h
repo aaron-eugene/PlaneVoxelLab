@@ -36,7 +36,7 @@ struct LabWorld
 	// Density Configuration
 	//--------------------------------------------------
 	LabWorldDensityFieldType activeDensityFieldType =
-		LabWorldDensityFieldType::Sphere;
+		LabWorldDensityFieldType::Heightmap;
 	
 	SphereDensityField sphereField = {};
 	HeightmapDensityField heightmapField = {};

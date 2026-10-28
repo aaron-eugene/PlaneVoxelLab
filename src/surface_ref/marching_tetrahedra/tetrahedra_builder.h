@@ -13,6 +13,8 @@
 #pragma once
 
 #include "renderer/render_vertex.h"
+#include "spatial/spatial_constants.h"
+#include "spatial/spatial_coordinates.h"
 
 #include <cstdint>
 #include <vector>
@@ -36,6 +38,11 @@ struct TetrahedraMesh
 
 void clearTetrahedraMesh(
 	TetrahedraMesh& mesh);
+
+void appendVoxelTetrahedra(
+	TetrahedraMesh& mesh,
+	const Chunk& chunk,
+	const VoxelCoord& voxelCoord);
 
 void buildTetrahedraMesh(
 	TetrahedraMesh& mesh,

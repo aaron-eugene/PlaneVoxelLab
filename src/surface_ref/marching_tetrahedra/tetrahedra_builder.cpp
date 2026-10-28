@@ -494,7 +494,18 @@ static void gatherVoxelCorners(
 	}
 }
 
-static void polygonizeVoxel(
+/***********************************************************
+* Tetrahedra Builder Interface
+************************************************************/
+
+void clearTetrahedraMesh(
+	TetrahedraMesh& mesh)
+{
+	mesh.vertices.clear();
+	mesh.indices.clear();
+}
+
+void appendVoxelTetrahedra(
 	TetrahedraMesh& mesh,
 	const Chunk& chunk,
 	const VoxelCoord& voxelCoord)
@@ -520,17 +531,6 @@ static void polygonizeVoxel(
 	}
 }
 
-/***********************************************************
-* Tetrahedra Builder Interface
-************************************************************/
-
-void clearTetrahedraMesh(
-	TetrahedraMesh& mesh)
-{
-	mesh.vertices.clear();
-	mesh.indices.clear();
-}
-
 void buildTetrahedraMesh(
 	TetrahedraMesh& mesh,
 	const Chunk& chunk,
@@ -544,7 +544,7 @@ void buildTetrahedraMesh(
 
 	for (const SurfaceVoxel& surfaceVoxel : surfaceChunk.voxels)
 	{
-		polygonizeVoxel(
+		appendVoxelTetrahedra(
 			mesh,
 			chunk,
 			surfaceVoxel.coord);
