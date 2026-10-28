@@ -18,8 +18,8 @@
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 #include "experiments/xz_columnar/xz_columnar_experiment.h"
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
-#include "experiments/marching_tetrahedra/marching_tetrahedra_experiment.h"
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
+#include "experiments/fragment_cleanup/fragment_cleanup_experiment.h"
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -42,8 +42,10 @@ bool initializeActiveExperiment(
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 	return initializeXZColumnarExperiment(experiment, world);
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
-	return initializeMarchingTetrahedraExperiment(experiment, world);
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
+	return initializeFragmentCleanupExperiment(
+		experiment,
+		world);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -60,8 +62,8 @@ void shutdownActiveExperiment(
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 	shutdownXZColumnarExperiment(experiment);
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
-	shutdownMarchingTetrahedraExperiment(experiment);
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
+	shutdownFragmentCleanupExperiment(experiment);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -85,8 +87,10 @@ bool rebuildActiveExperiment(
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 	return rebuildXZColumnarExperiment(experiment, world);
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
-	return rebuildMarchingTetrahedraExperiment(experiment, world);
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
+	return rebuildFragmentCleanupExperiment(
+		experiment,
+		world);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -123,10 +127,14 @@ void renderActiveExperiment(
 		renderOriginChunk,
 		viewProjection);
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
-	renderMarchingTetrahedraExperiment(
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
+	renderFragmentCleanupExperiment(
 		experiment,
-		renderer);
+		renderer,
+		renderSettings,
+		terrainRenderResources,
+		renderOriginChunk,
+		viewProjection);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -152,8 +160,8 @@ bool renderActiveExperimentDebugUiContent(
 	return renderXZColumnarExperimentDebugUiContent(
 		experiment);
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
-	return renderMarchingTetrahedraExperimentDebugUiContent(
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
+	return renderFragmentCleanupExperimentDebugUiContent(
 		experiment,
 		world);
 

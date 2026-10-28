@@ -19,9 +19,9 @@
 
 #define LAB_EXPERIMENT_NONE 0
 #define LAB_EXPERIMENT_XZ_COLUMNAR 1	
-#define LAB_EXPERIMENT_MARCHING_TETRAHEDRA 2
+#define LAB_EXPERIMENT_FRAGMENT_CLEANUP 2
 
-#define LAB_ACTIVE_EXPERIMENT LAB_EXPERIMENT_XZ_COLUMNAR
+#define LAB_ACTIVE_EXPERIMENT LAB_EXPERIMENT_FRAGMENT_CLEANUP
 
 struct Renderer;
 struct StandardRenderSettings;
@@ -38,9 +38,9 @@ typedef EmptyExperiment ActiveExperiment;
 #include "experiments/xz_columnar/xz_columnar_experiment.h"
 typedef XZColumnarExperiment ActiveExperiment;
 
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_MARCHING_TETRAHEDRA
-#include "experiments/marching_tetrahedra/marching_tetrahedra_experiment.h"
-typedef MarchingTetrahedraExperiment ActiveExperiment;
+#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
+#include "experiments/fragment_cleanup/fragment_cleanup_experiment.h"
+typedef FragmentCleanupExperiment ActiveExperiment;
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT

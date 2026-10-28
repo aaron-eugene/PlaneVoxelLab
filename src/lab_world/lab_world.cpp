@@ -39,7 +39,7 @@ void initializeLabWorld(
 
 	setLabWorldDensityFieldType(
 		world,
-		LabWorldDensityFieldType::Heightmap);
+		LabWorldDensityFieldType::Sphere);
 
 	world.chunks.reserve(CHUNK_LOAD_COUNT);
 
