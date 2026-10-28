@@ -503,6 +503,7 @@ void clearTetrahedraMesh(
 {
 	mesh.vertices.clear();
 	mesh.indices.clear();
+	mesh.voxelRanges.clear();
 }
 
 void appendVoxelTetrahedra(
@@ -510,6 +511,10 @@ void appendVoxelTetrahedra(
 	const Chunk& chunk,
 	const VoxelCoord& voxelCoord)
 {
+	const uint32_t firstIndex =
+		static_cast<uint32_t>(
+			mesh.indices.size());
+
 	glm::vec3 voxelCornerPositions[VOXEL_CORNER_COUNT] = {};
 	float voxelCornerDensities[VOXEL_CORNER_COUNT] = {};
 
@@ -528,6 +533,22 @@ void appendVoxelTetrahedra(
 			voxelCornerPositions,
 			voxelCornerDensities,
 			tetrahedronIndex);
+	}
+
+	const uint32_t indexCount =
+		static_cast<uint32_t>(
+			mesh.indices.size()) - firstIndex;
+
+	if (indexCount > 0)
+	{
+		TetrahedraVoxelRange voxelRange = {};
+
+		voxelRange.coord = voxelCoord;
+		voxelRange.firstIndex = firstIndex;
+		voxelRange.indexCount = indexCount;
+
+		mesh.voxelRanges.push_back(
+			voxelRange);
 	}
 }
 

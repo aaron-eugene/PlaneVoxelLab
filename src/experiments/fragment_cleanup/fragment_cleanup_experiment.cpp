@@ -112,6 +112,9 @@ static void updateFragmentCleanupDebugStats(
 	for (const FragmentCleanupRenderMesh& renderMesh :
 		experiment.meshes)
 	{
+		stats.voxelRangeCount +=
+			renderMesh.cpuMesh.voxelRanges.size();
+		
 		stats.vertexCount +=
 			renderMesh.cpuMesh.vertices.size();
 
@@ -273,6 +276,11 @@ bool renderFragmentCleanupExperimentDebugUiContent(
 		"Mesh indices: %llu",
 		static_cast<unsigned long long>(
 			stats.indexCount));
+
+	ImGui::Text(
+		"Surface voxel ranges: %llu",
+		static_cast<unsigned long long>(
+			stats.voxelRangeCount));
 
 	return false;
 }

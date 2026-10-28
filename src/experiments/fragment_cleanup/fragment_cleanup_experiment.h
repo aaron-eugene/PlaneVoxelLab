@@ -29,6 +29,7 @@ struct TerrainRenderResources;
 struct FragmentCleanupDebugStats
 {
 	uint64_t meshCount = 0;
+	uint64_t voxelRangeCount = 0;
 	uint64_t vertexCount = 0;
 	uint64_t indexCount = 0;
 };

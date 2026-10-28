@@ -79,6 +79,9 @@
     <Filter Include="src\experiments\voxel_surface_optimization">
       <UniqueIdentifier>{7a504260-61b0-41c6-90bb-510351987c57}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\experiments\fragment_cleanup">
+      <UniqueIdentifier>{835476c9-602e-442b-8270-966e3cfda7a4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\color.frag">
@@ -221,6 +224,9 @@
     <ClCompile Include="src\spatial\spatial_coordinates.cpp">
       <Filter>src\spatial</Filter>
     </ClCompile>
+    <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_experiment.cpp">
+      <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">
@@ -334,8 +340,8 @@
     <ClInclude Include="src\renderer\texture_2d.h">
       <Filter>src\renderer</Filter>
     </ClInclude>
-    <ClInclude Include="voxel_surface_optimization_experiment.h">
-      <Filter>src\experiments\voxel_surface_optimization</Filter>
+    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_experiment.h">
+      <Filter>src\experiments\fragment_cleanup</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
