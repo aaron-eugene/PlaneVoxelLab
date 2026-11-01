@@ -17,6 +17,7 @@
 #include "lab_world/lab_world.h"
 #include "renderer/standard_render_settings.h"
 #include "surface_ref/surface_ref.h"
+#include "terrain_edit/terrain_edit.h"
 #include "terrain_render/terrain_render_resources.h"
 
 #include <glm/mat4x4.hpp>
@@ -31,6 +32,7 @@ struct Renderer;
 struct Lab
 {	
 	LabWorld world = {};
+	TerrainEdits terrainEdits = {};
 
 	SurfaceRef surfaceRef = {};
 	ChunkWireframes chunkWireframes = {};

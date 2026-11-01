@@ -75,7 +75,8 @@ bool initializeLab(
 	
 	if (!initializeActiveExperiment(
 		lab.activeExperiment,
-		lab.world))
+		lab.world,
+		lab.terrainEdits))
 	{
 		shutdownLab(lab);
 		return false;
@@ -348,6 +349,9 @@ static bool renderDensityFieldSelection(
 static bool rebuildLabDensityData(
 	Lab& lab)
 {
+	clearTerrainEdits(
+		lab.terrainEdits);
+	
 	rebuildLabWorldDensityData(
 		lab.world);
 
@@ -364,7 +368,8 @@ static bool rebuildLabDensityData(
 
 	if (!rebuildActiveExperiment(
 		lab.activeExperiment,
-		lab.world))
+		lab.world,
+		lab.terrainEdits))
 	{
 		std::printf(
 			"Failed to rebuild active experiment after density change.\n");
@@ -426,6 +431,57 @@ bool renderLabDebugUiContent(
 	}
 
 	//--------------------------------------------------
+	// Temporary Excavation Test
+	//--------------------------------------------------
+
+	ImGui::SeparatorText("Terrain Editing");
+
+	if (ImGui::Button("Excavate Test Voxels"))
+	{
+		const ChunkCoord chunkCoord = { 0, 0, 0 };
+
+		const VoxelCoord voxelCoords[] =
+		{
+			{ 8, 0, 0 },
+			{ 9, 0, 0 },
+			{ 7, 0, 0 },
+			{ 8, 1, 0 },
+			{ 8, 0, 1 }
+		};
+
+		TerrainEditChunk& editChunk =
+			getOrCreateTerrainEditChunk(
+				lab.terrainEdits,
+				chunkCoord);
+
+		bool editsChanged = false;
+
+		for (const VoxelCoord& voxelCoord : voxelCoords)
+		{
+			if (excavateVoxel(
+				editChunk,
+				voxelCoord))
+			{
+				editsChanged = true;
+			}
+		}
+
+		if (editsChanged)
+		{
+			if (!rebuildActiveExperiment(
+				lab.activeExperiment,
+				lab.world,
+				lab.terrainEdits))
+			{
+				std::printf(
+					"Failed to rebuild experiment after excavation.\n");
+
+				return false;
+			}
+		}
+	} 
+
+	//--------------------------------------------------
 	// Statistics
 	//--------------------------------------------------
 
@@ -448,7 +504,8 @@ bool renderLabDebugUiContent(
 	{
 		if (!rebuildActiveExperiment(
 			lab.activeExperiment,
-			lab.world))
+			lab.world,
+			lab.terrainEdits))
 		{
 			std::printf(
 				"Failed to rebuild active experiment after settings change.\n");

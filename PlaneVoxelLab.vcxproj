@@ -152,6 +152,7 @@
     <ClCompile Include="src\camera\dev_camera.cpp" />
     <ClCompile Include="src\chunk\chunk.cpp" />
     <ClCompile Include="src\chunk\chunk_sampling.cpp" />
+    <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_builder.cpp" />
     <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_experiment.cpp" />
     <ClCompile Include="src\experiments\xz_columnar\xz_columnar_builder.cpp" />
     <ClCompile Include="src\experiments\xz_columnar\xz_columnar_clipping.cpp" />
@@ -178,6 +179,7 @@
     <ClCompile Include="src\surface_map\surface_map.cpp" />
     <ClCompile Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.cpp" />
     <ClCompile Include="src\surface_ref\surface_ref.cpp" />
+    <ClCompile Include="src\terrain_edit\terrain_edit.cpp" />
     <ClCompile Include="src\terrain_render\terrain_render_resources.cpp" />
     <ClCompile Include="src\terrain_render\terrain_tile_atlas.cpp" />
   </ItemGroup>
@@ -186,7 +188,9 @@
     <ClInclude Include="src\camera\dev_camera.h" />
     <ClInclude Include="src\chunk\chunk.h" />
     <ClInclude Include="src\chunk\chunk_sampling.h" />
+    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_builder.h" />
     <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_experiment.h" />
+    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_tables.h" />
     <ClInclude Include="src\experiments\xz_columnar\xz_columnar_builder.h" />
     <ClInclude Include="src\experiments\xz_columnar\xz_columnar_clipping.h" />
     <ClInclude Include="src\experiments\xz_columnar\xz_columnar_experiment.h" />
@@ -218,6 +222,7 @@
     <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_builder.h" />
     <ClInclude Include="src\surface_ref\marching_tetrahedra\tetrahedra_tables.h" />
     <ClInclude Include="src\surface_ref\surface_ref.h" />
+    <ClInclude Include="src\terrain_edit\terrain_edit.h" />
     <ClInclude Include="src\terrain_render\terrain_render_resources.h" />
     <ClInclude Include="src\terrain_render\terrain_tile_atlas.h" />
   </ItemGroup>

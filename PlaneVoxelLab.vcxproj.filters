@@ -76,11 +76,11 @@
     <Filter Include="src\terrain_render">
       <UniqueIdentifier>{ef2001c7-ab84-4376-a93c-fbbc86905179}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\experiments\voxel_surface_optimization">
-      <UniqueIdentifier>{7a504260-61b0-41c6-90bb-510351987c57}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\experiments\fragment_cleanup">
       <UniqueIdentifier>{835476c9-602e-442b-8270-966e3cfda7a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\terrain_edit">
+      <UniqueIdentifier>{ccfe6d4c-3672-413f-be78-7a471ae1a99e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -227,6 +227,12 @@
     <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_experiment.cpp">
       <Filter>src\experiments\fragment_cleanup</Filter>
     </ClCompile>
+    <ClCompile Include="src\terrain_edit\terrain_edit.cpp">
+      <Filter>src\terrain_edit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_builder.cpp">
+      <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">
@@ -341,6 +347,15 @@
       <Filter>src\renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_experiment.h">
+      <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_edit\terrain_edit.h">
+      <Filter>src\terrain_edit</Filter>
+    </ClInclude>
+    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_builder.h">
+      <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClInclude>
+    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_tables.h">
       <Filter>src\experiments\fragment_cleanup</Filter>
     </ClInclude>
   </ItemGroup>

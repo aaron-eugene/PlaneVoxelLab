@@ -43,6 +43,16 @@ struct TetrahedraMesh
 };
 
 /***********************************************************
+* Excavation Mesh Building Interface
+************************************************************/
+
+void appendExposedVoxelFace(
+	TetrahedraMesh& mesh,
+	const Chunk& chunk,
+	const VoxelCoord& voxelCoord,
+	uint32_t faceIndex);
+
+/***********************************************************
 * Marching Tetrahedra Builder Interface
 ************************************************************/
 

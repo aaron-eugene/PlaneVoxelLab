@@ -13,7 +13,7 @@
 #include "renderer/renderer.h"
 #include "renderer/standard_render_settings.h"
 #include "surface_map/surface_map.h"
-#include "surface_ref/marching_tetrahedra/tetrahedra_builder.h"
+#include "terrain_edit/terrain_edit.h"
 #include "terrain_render/terrain_render_resources.h"
 
 #include <imgui/imgui.h>
@@ -25,7 +25,7 @@
 #include <utility>
 
 /***********************************************************
-* Fragment Cleanup Render-Mesh Helpers
+* Render-Mesh Helpers
 ************************************************************/
 
 static void destroyFragmentCleanupRenderMesh(
@@ -95,7 +95,7 @@ static glm::mat4 getChunkModelMatrix(
 }
 
 /***********************************************************
-* Fragment Cleanup Debug-Stats Helpers
+* Debug-Stats Helpers
 ************************************************************/
 
 static void updateFragmentCleanupDebugStats(
@@ -124,12 +124,43 @@ static void updateFragmentCleanupDebugStats(
 }
 
 /***********************************************************
+* Mesh Building Helpers
+************************************************************/
+
+static void buildEditedTetrahedraMesh(
+	FragmentCleanupMesh& mesh,
+	const Chunk& chunk,
+	const SurfaceChunk& surfaceChunk,
+	const TerrainEditChunk* editChunk)
+{
+	clearFragmentCleanupMesh(mesh);
+
+	for (const SurfaceVoxel& surfaceVoxel :
+		surfaceChunk.voxels)
+	{
+		if (editChunk != nullptr &&
+			isVoxelExcavated(
+				*editChunk,
+				surfaceVoxel.coord))
+		{
+			continue;
+		}
+
+		appendFragmentCleanupVoxel(
+			mesh,
+			chunk,
+			surfaceVoxel.coord);
+	}
+}
+
+/***********************************************************
 * Fragment Cleanup Lifecycle
 ************************************************************/
 
 bool initializeFragmentCleanupExperiment(
 	FragmentCleanupExperiment& experiment,
-	const LabWorld& world)
+	const LabWorld& world,
+	const TerrainEdits& edits)
 {
 	assert(experiment.meshes.empty());
 
@@ -137,7 +168,8 @@ bool initializeFragmentCleanupExperiment(
 
 	return rebuildFragmentCleanupExperiment(
 		experiment,
-		world);
+		world,
+		edits);
 }
 
 void shutdownFragmentCleanupExperiment(
@@ -150,12 +182,13 @@ void shutdownFragmentCleanupExperiment(
 }
 
 /***********************************************************
-* Fragment Cleanup Mesh Building
+* Mesh Building
 ************************************************************/
 
 bool rebuildFragmentCleanupExperiment(
 	FragmentCleanupExperiment& experiment,
-	const LabWorld& world)
+	const LabWorld& world,
+	const TerrainEdits& edits)
 {
 	destroyFragmentCleanupExperimentMeshes(
 		experiment);
@@ -181,10 +214,16 @@ bool rebuildFragmentCleanupExperiment(
 
 		renderMesh.coord = surfaceChunk.coord;
 
-		buildTetrahedraMesh(
+		const TerrainEditChunk* editChunk =
+			findTerrainEditChunk(
+				edits,
+				surfaceChunk.coord);
+
+		buildEditedTetrahedraMesh(
 			renderMesh.cpuMesh,
 			chunk,
-			surfaceChunk);
+			surfaceChunk,
+			editChunk);
 
 		if (!uploadFragmentCleanupRenderMesh(
 			renderMesh))

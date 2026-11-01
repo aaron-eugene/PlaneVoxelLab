@@ -495,7 +495,203 @@ static void gatherVoxelCorners(
 }
 
 /***********************************************************
-* Tetrahedra Builder Interface
+* Exposed Face Helpers
+************************************************************/
+
+static void appendClippedFaceTriangle(
+	TetrahedraMesh& mesh,
+	const glm::vec3 positions[3],
+	const float densities[3],
+	const glm::vec3& outwardNormal)
+{
+	uint32_t insideCorners[3] = {};
+	uint32_t outsideCorners[3] = {};
+
+	uint32_t insideCount = 0;
+	uint32_t outsideCount = 0;
+
+	for (uint32_t cornerIndex = 0;
+		cornerIndex < 3;
+		++cornerIndex)
+	{
+		if (isDensityInside(densities[cornerIndex]))
+		{
+			insideCorners[insideCount++] = cornerIndex;
+		}
+		else
+		{
+			outsideCorners[outsideCount++] = cornerIndex;
+		}
+	}
+
+	if (insideCount == 0)
+	{
+		return;
+	}
+
+	if (insideCount == 3)
+	{
+		addOrientedTriangle(
+			mesh,
+			positions[0],
+			positions[1],
+			positions[2],
+			outwardNormal);
+
+		return;
+	}
+
+	if (insideCount == 1)
+	{
+		const uint32_t inside = insideCorners[0];
+		const uint32_t outsideA = outsideCorners[0];
+		const uint32_t outsideB = outsideCorners[1];
+
+		const glm::vec3 pointA =
+			interpolateSurfacePoint(
+				positions[inside],
+				densities[inside],
+				positions[outsideA],
+				densities[outsideA]);
+
+		const glm::vec3 pointB =
+			interpolateSurfacePoint(
+				positions[inside],
+				densities[inside],
+				positions[outsideB],
+				densities[outsideB]);
+
+		addOrientedTriangle(
+			mesh,
+			positions[inside],
+			pointA,
+			pointB,
+			outwardNormal);
+
+		return;
+	}
+
+	assert(insideCount == 2);
+	assert(outsideCount == 1);
+
+	const uint32_t insideA = insideCorners[0];
+	const uint32_t insideB = insideCorners[1];
+	const uint32_t outside = outsideCorners[0];
+
+	const glm::vec3 pointA =
+		interpolateSurfacePoint(
+			positions[insideA],
+			densities[insideA],
+			positions[outside],
+			densities[outside]);
+
+	const glm::vec3 pointB =
+		interpolateSurfacePoint(
+			positions[insideB],
+			densities[insideB],
+			positions[outside],
+			densities[outside]);
+
+	addOrientedTriangle(
+		mesh,
+		positions[insideA],
+		positions[insideB],
+		pointB,
+		outwardNormal);
+
+	addOrientedTriangle(
+		mesh,
+		positions[insideA],
+		pointB,
+		pointA,
+		outwardNormal);
+}
+
+/***********************************************************
+* Excavation Mesh Building Interface
+************************************************************/
+
+void appendExposedVoxelFace(
+	TetrahedraMesh& mesh,
+	const Chunk& chunk,
+	const VoxelCoord& voxelCoord,
+	uint32_t faceIndex)
+{
+	assert(isVoxelCoordInChunkBounds(voxelCoord));
+	assert(faceIndex < VOXEL_FACE_COUNT);
+
+	const VoxelFace face =
+		getVoxelFace(faceIndex);
+
+	glm::vec3 positions[4] = {};
+	float densities[4] = {};
+
+	for (uint32_t cornerIndex = 0;
+		cornerIndex < 4;
+		++cornerIndex)
+	{
+		const uint32_t voxelCornerIndex =
+			face.corners[cornerIndex];
+
+		const SampleCoord sampleCoord =
+			getVoxelCornerSampleCoord(
+				voxelCoord,
+				voxelCornerIndex);
+
+		positions[cornerIndex] =
+			getVoxelCornerLocalPosition(
+				voxelCoord,
+				voxelCornerIndex);
+
+		densities[cornerIndex] =
+			getChunkDensitySample(
+				chunk,
+				sampleCoord);
+	}
+
+	const uint32_t triangleCorners[2][3] =
+	{
+		{ 0, 1, 2 },
+		{ 0, 2, 3 }
+	};
+
+	const glm::vec3 outwardNormal =
+		glm::normalize(
+			glm::cross(
+				positions[1] - positions[0],
+				positions[2] - positions[0]));
+
+	for (uint32_t triangleIndex = 0;
+		triangleIndex < 2;
+		++triangleIndex)
+	{
+		glm::vec3 trianglePositions[3] = {};
+		float triangleDensities[3] = {};
+
+		for (uint32_t cornerIndex = 0;
+			cornerIndex < 3;
+			++cornerIndex)
+		{
+			const uint32_t faceCornerIndex =
+				triangleCorners[triangleIndex][cornerIndex];
+
+			trianglePositions[cornerIndex] =
+				positions[faceCornerIndex];
+
+			triangleDensities[cornerIndex] =
+				densities[faceCornerIndex];
+		}
+
+		appendClippedFaceTriangle(
+			mesh,
+			trianglePositions,
+			triangleDensities,
+			outwardNormal);
+	}
+}
+
+/***********************************************************
+* Exposed Voxel Face Building
 ************************************************************/
 
 void clearTetrahedraMesh(

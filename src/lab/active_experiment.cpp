@@ -32,20 +32,26 @@
 
 bool initializeActiveExperiment(
 	ActiveExperiment& experiment,
-	const LabWorld& world)
+	const LabWorld& world,
+	const TerrainEdits& edits)
 {
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 	(void)experiment;
 	(void)world;
+	(void)edits;
 	return true;
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
-	return initializeXZColumnarExperiment(experiment, world);
+	return initializeXZColumnarExperiment(
+		experiment, 
+		world,
+		edits);
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
 	return initializeFragmentCleanupExperiment(
 		experiment,
-		world);
+		world,
+		edits);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT
@@ -77,20 +83,26 @@ void shutdownActiveExperiment(
 
 bool rebuildActiveExperiment(
 	ActiveExperiment& experiment,
-	const LabWorld& world)
+	const LabWorld& world,
+	const TerrainEdits& edits)
 {
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 	(void)experiment;
 	(void)world;
+	(void)edits;
 	return true;
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
-	return rebuildXZColumnarExperiment(experiment, world);
+	return rebuildXZColumnarExperiment(
+		experiment, 
+		world,
+		edits);
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
 	return rebuildFragmentCleanupExperiment(
 		experiment,
-		world);
+		world,
+		edits);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT

@@ -8,9 +8,9 @@
 
 #pragma once
 
+#include "experiments/fragment_cleanup/fragment_cleanup_builder.h"
 #include "renderer/gpu_mesh.h"
 #include "spatial/spatial_coordinates.h"
-#include "surface_ref/marching_tetrahedra/tetrahedra_builder.h"
 
 #include <cstdint>
 #include <vector>
@@ -20,6 +20,7 @@
 struct LabWorld;
 struct Renderer;
 struct StandardRenderSettings;
+struct TerrainEdits;
 struct TerrainRenderResources;
 
 /***********************************************************
@@ -42,7 +43,7 @@ struct FragmentCleanupRenderMesh
 {
 	ChunkCoord coord = {};
 
-	TetrahedraMesh cpuMesh = {};
+	FragmentCleanupMesh cpuMesh = {};
 	GpuMesh gpuMesh = {};
 };
 
@@ -59,7 +60,8 @@ struct FragmentCleanupExperiment
 
 bool initializeFragmentCleanupExperiment(
 	FragmentCleanupExperiment& experiment,
-	const LabWorld& world);
+	const LabWorld& world,
+	const TerrainEdits& edits);
 
 void shutdownFragmentCleanupExperiment(
 	FragmentCleanupExperiment& experiment);
@@ -70,7 +72,8 @@ void shutdownFragmentCleanupExperiment(
 
 bool rebuildFragmentCleanupExperiment(
 	FragmentCleanupExperiment& experiment,
-	const LabWorld& world);
+	const LabWorld& world,
+	const TerrainEdits& edits);
 
 /***********************************************************
 * Fragment Cleanup Rendering

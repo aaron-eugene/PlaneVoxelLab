@@ -13,6 +13,7 @@
 #pragma once
 
 #include "lab_world/lab_world.h"
+#include "terrain_edit/terrain_edit.h"
 #include "terrain_render/terrain_render_resources.h"
 
 #include <glm/mat4x4.hpp>
@@ -53,7 +54,8 @@ typedef FragmentCleanupExperiment ActiveExperiment;
 
 bool initializeActiveExperiment(
 	ActiveExperiment& experiment,
-	const LabWorld& world);
+	const LabWorld& world,
+	const TerrainEdits& edits);
 
 void shutdownActiveExperiment(
 	ActiveExperiment& experiment);
@@ -64,7 +66,8 @@ void shutdownActiveExperiment(
 
 bool rebuildActiveExperiment(
 	ActiveExperiment& experiment,
-	const LabWorld& world);
+	const LabWorld& world,
+	const TerrainEdits& edits);
 
 /***********************************************************
 * Active Experiment Rendering

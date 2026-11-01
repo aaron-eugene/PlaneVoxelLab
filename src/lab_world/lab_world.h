@@ -55,6 +55,18 @@ struct LabWorld
 };
 
 /***********************************************************
+* Lab World Chunk Lookup
+************************************************************/
+
+Chunk* findLabWorldChunk(
+	LabWorld& world,
+	const ChunkCoord& coord);
+
+const Chunk* findLabWorldChunk(
+	const LabWorld& world,
+	const ChunkCoord& coord);
+
+/***********************************************************
 * Lab World Lifecycle
 ************************************************************/
 

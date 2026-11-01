@@ -20,6 +20,44 @@
 #include <cstdint>
 
 /***********************************************************
+* Lab World Chunk Lookup
+************************************************************/
+
+Chunk* findLabWorldChunk(
+	LabWorld& world,
+	const ChunkCoord& coord)
+{
+	for (Chunk& chunk : world.chunks)
+	{
+		if (chunk.coord.x == coord.x &&
+			chunk.coord.y == coord.y &&
+			chunk.coord.z == coord.z)
+		{
+			return &chunk;
+		}
+	}
+
+	return nullptr;
+}
+
+const Chunk* findLabWorldChunk(
+	const LabWorld& world,
+	const ChunkCoord& coord)
+{
+	for (const Chunk& chunk : world.chunks)
+	{
+		if (chunk.coord.x == coord.x &&
+			chunk.coord.y == coord.y &&
+			chunk.coord.z == coord.z)
+		{
+			return &chunk;
+		}
+	}
+
+	return nullptr;
+}
+
+/***********************************************************
 * Lab World Lifecycle
 ************************************************************/
 
