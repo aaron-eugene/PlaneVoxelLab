@@ -74,7 +74,7 @@ static bool uploadFragmentCleanupRenderMesh(
 		static_cast<uint32_t>(
 			renderMesh.cpuMesh.indices.size());
 
-	return createColoredGpuMesh(
+	return createStandardGpuMesh(
 		renderMesh.gpuMesh,
 		renderMesh.cpuMesh.vertices.data(),
 		vertexCount,
@@ -258,9 +258,12 @@ void renderFragmentCleanupExperiment(
 	const ChunkCoord& renderOriginChunk,
 	const glm::mat4& viewProjection)
 {
-	(void)renderSettings;
-	(void)terrainRenderResources;
+	StandardRenderSettings experimentRenderSettings =
+		renderSettings;
 
+	experimentRenderSettings.shadingMode =
+		StandardShadingMode::TexturedLit;
+	
 	for (const FragmentCleanupRenderMesh& renderMesh :
 		experiment.meshes)
 	{
@@ -275,9 +278,11 @@ void renderFragmentCleanupExperiment(
 				renderMesh.coord,
 				renderOriginChunk);
 
-		renderColoredMesh(
+		renderStandardMesh(
 			renderer,
 			renderMesh.gpuMesh,
+			experimentRenderSettings,
+			terrainRenderResources.tileAtlas,
 			model,
 			viewProjection);
 	}

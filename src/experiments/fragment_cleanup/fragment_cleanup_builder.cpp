@@ -16,7 +16,9 @@
 #include "spatial/spatial_constants.h"
 #include "spatial/spatial_coordinates.h"
 #include "surface_map/surface_map.h"
+#include "terrain_render/terrain_tile_atlas.h"
 
+#include <glm/common.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/geometric.hpp>
 
@@ -28,6 +30,19 @@
 ************************************************************/
 
 static constexpr float TRIANGLE_AREA_EPSILON = 0.00001f;
+
+/***********************************************************
+* Terrain Material Constants
+************************************************************/
+
+static constexpr WorldMetricCoordinate
+SAND_TO_GRASS_HEIGHT = { -6, 0.0f };
+
+static constexpr WorldMetricCoordinate
+GRASS_TO_ROCK_HEIGHT = { 2, 0.0f };
+
+static constexpr WorldMetricCoordinate
+ROCK_TO_SNOW_HEIGHT = { 16, 0.0f };
 
 /***********************************************************
 * Local Types
@@ -73,6 +88,101 @@ static glm::vec3 getVoxelCornerLocalPosition(
 	return
 		getVoxelLocalMin(voxelCoord) +
 		getVoxelCornerMetricOffset(cornerIndex);
+}
+
+/***********************************************************
+* Terrain Material Helpers
+************************************************************/
+
+static TerrainTile getFragmentCleanupTerrainTile(
+	const ChunkCoord& chunkCoord,
+	const glm::vec3& position,
+	const glm::vec3& normal)
+{
+	static constexpr float MATERIAL_HEIGHT_VARIATION = 4.0f;
+	static constexpr float REFERENCE_NORMAL_Y = 0.7f;
+
+	const WorldMetricCoordinate worldHeight =
+		getWorldMetricCoordinate(
+			chunkCoord.y,
+			position.y);
+
+	const float heightOffset =
+		(REFERENCE_NORMAL_Y - normal.y) *
+		MATERIAL_HEIGHT_VARIATION;
+
+	const WorldMetricCoordinate classificationHeight =
+		offsetWorldMetricCoordinate(
+			worldHeight,
+			heightOffset);
+
+	if (compareWorldMetricCoordinates(
+		classificationHeight,
+		SAND_TO_GRASS_HEIGHT) < 0)
+	{
+		return TerrainTile::Sand;
+	}
+
+	if (compareWorldMetricCoordinates(
+		classificationHeight,
+		GRASS_TO_ROCK_HEIGHT) < 0)
+	{
+		return TerrainTile::Grass;
+	}
+
+	if (compareWorldMetricCoordinates(
+		classificationHeight,
+		ROCK_TO_SNOW_HEIGHT) < 0)
+	{
+		return TerrainTile::Rock;
+	}
+
+	return TerrainTile::Snow;
+}
+
+/***********************************************************
+* Texture Coordinate Helpers
+************************************************************/
+
+static glm::vec2 getVoxelProjectedUv(
+	const glm::vec3& position,
+	const glm::vec3& normal,
+	const VoxelCoord& voxelCoord)
+{
+	const glm::vec3 voxelLocalPosition =
+		position - getVoxelLocalMin(voxelCoord);
+
+	const glm::vec3 absoluteNormal =
+		glm::abs(normal);
+
+	glm::vec2 projectedUv = {};
+
+	if (absoluteNormal.y >= absoluteNormal.x &&
+		absoluteNormal.y >= absoluteNormal.z)
+	{
+		projectedUv = glm::vec2(
+			voxelLocalPosition.x,
+			voxelLocalPosition.z);
+	}
+	else if (absoluteNormal.x >= absoluteNormal.z)
+	{
+		projectedUv = glm::vec2(
+			voxelLocalPosition.z,
+			voxelLocalPosition.y);
+	}
+	else
+	{
+		projectedUv = glm::vec2(
+			voxelLocalPosition.x,
+			voxelLocalPosition.y);
+	}
+
+	projectedUv /= VOXEL_SIZE_METERS;
+
+	return glm::clamp(
+		projectedUv,
+		glm::vec2(0.0f),
+		glm::vec2(1.0f));
 }
 
 /***********************************************************
@@ -152,6 +262,8 @@ static glm::vec3 interpolateSurfacePoint(
 
 static void addOrientedTriangle(
 	FragmentCleanupMesh& mesh,
+	const ChunkCoord& chunkCoord,
+	const VoxelCoord& voxelCoord,
 	const glm::vec3& pointA,
 	const glm::vec3& pointB,
 	const glm::vec3& pointC,
@@ -184,18 +296,49 @@ static void addOrientedTriangle(
 		static_cast<uint32_t>(
 			mesh.vertices.size());
 
-	const glm::vec3 color =
-		getFragmentCleanupNormalColor(
+	const glm::vec3 color = glm::vec3(1.0f);
+
+	const glm::vec3 triangleCentroid =
+		(pointA + finalPointB + finalPointC) / 3.0f;
+
+	const TerrainTile tile =
+		getFragmentCleanupTerrainTile(
+			chunkCoord,
+			triangleCentroid,
 			normal);
 
-	mesh.vertices.push_back(
-		{ pointA, color });
+	const glm::vec2 uvA =
+		getTerrainAtlasUv(
+			getVoxelProjectedUv(
+				pointA,
+				normal,
+				voxelCoord),
+			tile);
+
+	const glm::vec2 uvB =
+		getTerrainAtlasUv(
+			getVoxelProjectedUv(
+				finalPointB,
+				normal,
+				voxelCoord),
+			tile);
+
+	const glm::vec2 uvC =
+		getTerrainAtlasUv(
+			getVoxelProjectedUv(
+				finalPointC,
+				normal,
+				voxelCoord),
+			tile);
 
 	mesh.vertices.push_back(
-		{ finalPointB, color });
+		{ pointA, normal, color, uvA });
 
 	mesh.vertices.push_back(
-		{ finalPointC, color });
+		{ finalPointB, normal, color, uvB });
+
+	mesh.vertices.push_back(
+		{ finalPointC, normal, color, uvC });
 
 	mesh.indices.push_back(baseIndex + 0);
 	mesh.indices.push_back(baseIndex + 1);
@@ -323,6 +466,8 @@ static void gatherTetrahedronCorners(
 
 static void polygonizeTetrahedron(
 	FragmentCleanupMesh& mesh,
+	const ChunkCoord& chunkCoord,
+	const VoxelCoord& voxelCoord,
 	const glm::vec3 voxelCornerPositions[VOXEL_CORNER_COUNT],
 	const float voxelCornerDensities[VOXEL_CORNER_COUNT],
 	uint32_t tetrahedronIndex)
@@ -383,6 +528,8 @@ static void polygonizeTetrahedron(
 
 		addOrientedTriangle(
 			mesh,
+			chunkCoord,
+			voxelCoord,
 			pointA,
 			pointB,
 			pointC,
@@ -410,6 +557,8 @@ static void polygonizeTetrahedron(
 
 		addOrientedTriangle(
 			mesh,
+			chunkCoord,
+			voxelCoord,
 			pointA,
 			pointB,
 			pointC,
@@ -454,6 +603,8 @@ static void polygonizeTetrahedron(
 
 		addOrientedTriangle(
 			mesh,
+			chunkCoord,
+			voxelCoord,
 			pointA,
 			pointB,
 			pointC,
@@ -461,6 +612,8 @@ static void polygonizeTetrahedron(
 
 		addOrientedTriangle(
 			mesh,
+			chunkCoord,
+			voxelCoord,
 			pointA,
 			pointC,
 			pointD,
@@ -503,6 +656,8 @@ static void gatherVoxelCorners(
 
 static void appendClippedFaceTriangle(
 	FragmentCleanupMesh& mesh,
+	const ChunkCoord& chunkCoord,
+	const VoxelCoord& voxelCoord,
 	const glm::vec3 positions[3],
 	const float densities[3],
 	const glm::vec3& outwardNormal)
@@ -536,6 +691,8 @@ static void appendClippedFaceTriangle(
 	{
 		addOrientedTriangle(
 			mesh,
+			chunkCoord,
+			voxelCoord,
 			positions[0],
 			positions[1],
 			positions[2],
@@ -566,6 +723,8 @@ static void appendClippedFaceTriangle(
 
 		addOrientedTriangle(
 			mesh,
+			chunkCoord,
+			voxelCoord,
 			positions[inside],
 			pointA,
 			pointB,
@@ -597,6 +756,8 @@ static void appendClippedFaceTriangle(
 
 	addOrientedTriangle(
 		mesh,
+		chunkCoord,
+		voxelCoord,
 		positions[insideA],
 		positions[insideB],
 		pointB,
@@ -604,6 +765,8 @@ static void appendClippedFaceTriangle(
 
 	addOrientedTriangle(
 		mesh,
+		chunkCoord,
+		voxelCoord,
 		positions[insideA],
 		pointB,
 		pointA,
@@ -687,6 +850,8 @@ void appendFragmentCleanupExposedFace(
 
 		appendClippedFaceTriangle(
 			mesh,
+			chunk.coord,
+			voxelCoord,
 			trianglePositions,
 			triangleDensities,
 			outwardNormal);
@@ -729,6 +894,8 @@ void appendFragmentCleanupVoxel(
 	{
 		polygonizeTetrahedron(
 			mesh,
+			chunk.coord,
+			voxelCoord,
 			voxelCornerPositions,
 			voxelCornerDensities,
 			tetrahedronIndex);

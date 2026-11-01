@@ -26,31 +26,11 @@ struct SurfaceChunk;
 * Marching Tetrahedra Mesh Types
 ************************************************************/
 
-struct TetrahedraVoxelRange
-{
-	VoxelCoord coord = {};
-
-	uint32_t firstIndex = 0;
-	uint32_t indexCount = 0;
-};
-
 struct TetrahedraMesh
 {
 	std::vector<ColoredVertex> vertices = {};
 	std::vector<uint32_t> indices = {};
-
-	std::vector<TetrahedraVoxelRange> voxelRanges = {};
 };
-
-/***********************************************************
-* Excavation Mesh Building Interface
-************************************************************/
-
-void appendExposedVoxelFace(
-	TetrahedraMesh& mesh,
-	const Chunk& chunk,
-	const VoxelCoord& voxelCoord,
-	uint32_t faceIndex);
 
 /***********************************************************
 * Marching Tetrahedra Builder Interface
@@ -58,11 +38,6 @@ void appendExposedVoxelFace(
 
 void clearTetrahedraMesh(
 	TetrahedraMesh& mesh);
-
-void appendVoxelTetrahedra(
-	TetrahedraMesh& mesh,
-	const Chunk& chunk,
-	const VoxelCoord& voxelCoord);
 
 void buildTetrahedraMesh(
 	TetrahedraMesh& mesh,

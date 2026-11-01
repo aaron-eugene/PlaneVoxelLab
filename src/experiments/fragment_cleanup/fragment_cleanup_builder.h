@@ -32,7 +32,7 @@ struct FragmentCleanupVoxelRange
 
 struct FragmentCleanupMesh
 {
-	std::vector<ColoredVertex> vertices = {};
+	std::vector<StandardVertex> vertices = {};
 	std::vector<uint32_t> indices = {};
 
 	std::vector<FragmentCleanupVoxelRange> voxelRanges = {};
