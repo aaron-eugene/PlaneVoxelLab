@@ -20,6 +20,37 @@
 #include <cstdint>
 
 /***********************************************************
+* Field Sampling Helpers
+************************************************************/
+
+static void sampleLabWorldChunkDensity(
+	Chunk& chunk,
+	const LabWorld& world)
+{
+	switch (world.activeDensityFieldType)
+	{
+	case LabWorldDensityFieldType::Sphere:
+	{
+		sampleChunkDensityField(
+			chunk,
+			world.densityField);
+	} break;
+
+	case LabWorldDensityFieldType::Heightmap:
+	{
+		sampleChunkHeightmapDensityField(
+			chunk,
+			world.heightmapField);
+	} break;
+
+	default:
+	{
+		assert(false);
+	} break;
+	}
+}
+
+/***********************************************************
 * Lab World Chunk Lookup
 ************************************************************/
 
@@ -72,7 +103,7 @@ void initializeLabWorld(
 
 	world.heightmapField.baseHeight = {};
 	world.heightmapField.amplitude = 22.0f;
-	
+
 	world.heightmapField.baseScale = { 1, 25 };
 
 	setLabWorldDensityFieldType(
@@ -108,9 +139,10 @@ void initializeLabWorld(
 					chunk,
 					coord);
 
-				sampleChunkDensityField(
+				sampleLabWorldChunkDensity(
 					chunk,
-					world.densityField);
+					world
+				);
 			}
 		}
 	}
@@ -168,9 +200,10 @@ void rebuildLabWorldDensityData(
 
 	for (Chunk& chunk : world.chunks)
 	{
-		sampleChunkDensityField(
+		sampleLabWorldChunkDensity(
 			chunk,
-			world.densityField);
+			world
+		);
 	}
 
 	rebuildSurfaceMap(

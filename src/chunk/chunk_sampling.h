@@ -10,10 +10,16 @@
 
 struct Chunk;
 struct DensityField;
+struct HeightmapDensityField;
 
 /***********************************************************
 * Chunk Sampling Interface
 ************************************************************/
+
+// Optimized for single heightmap
+void sampleChunkHeightmapDensityField(
+	Chunk& chunk,
+	const HeightmapDensityField& heightmap);
 
 void sampleChunkDensityField(
 	Chunk& chunk,

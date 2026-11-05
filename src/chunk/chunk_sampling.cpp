@@ -10,6 +10,7 @@
 
 #include "chunk/chunk.h"
 #include "fields/density_field.h"
+#include "fields/field_generators.h"
 #include "spatial/spatial_constants.h"
 #include "spatial/spatial_coordinates.h"
 
@@ -18,6 +19,70 @@
 /***********************************************************
 * Chunk Sampling
 ************************************************************/
+
+void sampleChunkHeightmapDensityField(
+	Chunk& chunk,
+	const HeightmapDensityField& heightmap)
+{
+	for (uint32_t sampleZ = 0;
+		sampleZ < CHUNK_SAMPLE_SIZE;
+		++sampleZ)
+	{
+		for (uint32_t sampleX = 0;
+			sampleX < CHUNK_SAMPLE_SIZE;
+			++sampleX)
+		{
+			const SampleCoord columnSample =
+			{
+				sampleX,
+				0,
+				sampleZ
+			};
+
+			const WorldPosition columnWorldPosition =
+				getSampleWorldPosition(
+					chunk.coord,
+					columnSample);
+
+			const WorldMetricCoordinate terrainHeight =
+				sampleHeightmapTerrainHeight(
+					heightmap,
+					columnWorldPosition);
+
+			for (uint32_t sampleY = 0;
+				sampleY < CHUNK_SAMPLE_SIZE;
+				++sampleY)
+			{
+				const SampleCoord sampleCoord =
+				{
+					sampleX,
+					sampleY,
+					sampleZ
+				};
+
+				const WorldPosition sampleWorldPosition =
+					getSampleWorldPosition(
+						chunk.coord,
+						sampleCoord);
+
+				const WorldMetricCoordinate worldY =
+					getWorldMetricCoordinate(
+						sampleWorldPosition.chunk.y,
+						sampleWorldPosition.localPosition.y);
+
+				const float density =
+					getWorldMetricCoordinateOffset(
+						terrainHeight,
+						worldY);
+
+				setChunkDensitySample(
+					chunk,
+					sampleCoord,
+					density);
+			}
+		}
+	}
+}
 
 void sampleChunkDensityField(
 	Chunk& chunk,
