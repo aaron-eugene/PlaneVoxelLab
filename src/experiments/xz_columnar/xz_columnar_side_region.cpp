@@ -29,6 +29,7 @@ static constexpr float XZ_COLUMNAR_SIDE_EPSILON = 0.00001f;
 * Side Direction Helpers
 ************************************************************/
 
+// Used by assertions
 static bool areOpposingColumnarSides(
 	XZColumnarSide sideA,
 	XZColumnarSide sideB)

@@ -224,7 +224,7 @@ static uint64_t getSurfaceVoxelCount(
 {
 	uint64_t surfaceVoxelCount = 0;
 
-	for (const SurfaceChunk& surfaceChunk :
+	for (const DiscoveredSurfaceChunk& surfaceChunk :
 		surfaceMap.chunks)
 	{
 		surfaceVoxelCount +=

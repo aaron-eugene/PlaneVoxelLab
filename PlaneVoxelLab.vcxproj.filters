@@ -82,6 +82,9 @@
     <Filter Include="src\terrain_edit">
       <UniqueIdentifier>{ccfe6d4c-3672-413f-be78-7a471ae1a99e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\surface_discovery">
+      <UniqueIdentifier>{8744b1b9-ed2e-4fc1-ae9a-19086ba4ff1d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\color.frag">
@@ -233,6 +236,9 @@
     <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_builder.cpp">
       <Filter>src\experiments\fragment_cleanup</Filter>
     </ClCompile>
+    <ClCompile Include="src\surface_discovery\surface_discovery.cpp">
+      <Filter>src\surface_discovery</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">
@@ -357,6 +363,9 @@
     </ClInclude>
     <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_tables.h">
       <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClInclude>
+    <ClInclude Include="src\surface_discovery\surface_discovery.h">
+      <Filter>src\surface_discovery</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

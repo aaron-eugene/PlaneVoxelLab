@@ -16,7 +16,7 @@
 #include <vector>
 
 struct Chunk;
-struct SurfaceChunk;
+struct DiscoveredSurfaceChunk;
 
 /***********************************************************
 * Fragment Cleanup Mesh Types
@@ -59,4 +59,4 @@ void appendFragmentCleanupExposedFace(
 void buildFragmentCleanupMesh(
 	FragmentCleanupMesh& mesh,
 	const Chunk& chunk,
-	const SurfaceChunk& surfaceChunk);
+	const DiscoveredSurfaceChunk& surfaceChunk);

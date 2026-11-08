@@ -2,16 +2,12 @@
 // surface_map/surface_map.cpp
 // ===========================
 //
-// Implements surface-crossing lookup generation from sampled chunk density data.
+// Implements XZ column organization of discovered surface voxels.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "surface_map/surface_map.h"
 
-#include "chunk/chunk.h"
-#include "fields/density_field.h"
-#include "geometry/voxel_topology.h"
-#include "spatial/spatial_constants.h"
 #include "spatial/spatial_coordinates.h"
 
 #include <algorithm>
@@ -19,12 +15,6 @@
 #include <cstdint>
 #include <utility>
 #include <vector>
-
-/***********************************************************
-* Constants
-************************************************************/
-
-static constexpr float SURFACE_MAP_DENSITY_EPSILON = 0.00001f;
 
 /***********************************************************
 * Local Helpers
@@ -47,39 +37,8 @@ static bool isChunkCoordBeforeInSurfaceMapOrder(
 	return coordA.y < coordB.y;
 }
 
-static bool isChunkIndexBeforeInSurfaceMapOrder(
-	const std::vector<Chunk>& chunks,
-	uint32_t chunkIndexA,
-	uint32_t chunkIndexB)
-{
-	assert(chunkIndexA < chunks.size());
-	assert(chunkIndexB < chunks.size());
-
-	const ChunkCoord& coordA =
-		chunks[chunkIndexA].coord;
-
-	const ChunkCoord& coordB =
-		chunks[chunkIndexB].coord;
-
-	if (isChunkCoordBeforeInSurfaceMapOrder(
-		coordA,
-		coordB))
-	{
-		return true;
-	}
-
-	if (isChunkCoordBeforeInSurfaceMapOrder(
-		coordB,
-		coordA))
-	{
-		return false;
-	}
-
-	return chunkIndexA < chunkIndexB;
-}
-
 static bool isSurfaceChunkInColumn(
-	const SurfaceChunk& surfaceChunk,
+	const DiscoveredSurfaceChunk& surfaceChunk,
 	const SurfaceChunkColumn& column)
 {
 	return
@@ -89,90 +48,25 @@ static bool isSurfaceChunkInColumn(
 		column.chunkZ;
 }
 
-static SampleCoord getVoxelCornerSampleCoord(
-	const VoxelCoord& voxelCoord,
-	uint32_t cornerIndex)
+static bool isDiscoveredSurfaceChunkBefore(
+	const DiscoveredSurfaceChunk& chunkA,
+	const DiscoveredSurfaceChunk& chunkB)
 {
-	const VoxelCornerGridOffset cornerOffset =
-		getVoxelCornerGridOffset(cornerIndex);
-
-	const SampleCoord sampleCoord =
+	if (isChunkCoordBeforeInSurfaceMapOrder(
+		chunkA.coord,
+		chunkB.coord))
 	{
-		voxelCoord.x + cornerOffset.x,
-		voxelCoord.y + cornerOffset.y,
-		voxelCoord.z + cornerOffset.z
-	};
-
-	return sampleCoord;
-}
-
-static bool doesVoxelContainSurfaceCrossing(
-	const Chunk& chunk,
-	const VoxelCoord& voxelCoord)
-{
-	bool hasInside = false;
-	bool hasOutside = false;
-
-	for (uint32_t cornerIndex = 0;
-		cornerIndex < VOXEL_CORNER_COUNT;
-		++cornerIndex)
-	{
-		const SampleCoord sampleCoord =
-			getVoxelCornerSampleCoord(
-				voxelCoord,
-				cornerIndex);
-
-		const float density =
-			getChunkDensitySample(
-				chunk,
-				sampleCoord);
-
-		if (isDensityInside(density))
-		{
-			hasInside = true;
-		}
-		else
-		{
-			hasOutside = true;
-		}
-
-		if (hasInside && hasOutside)
-		{
-			return true;
-		}
+		return true;
 	}
 
-	return false;
-}
-
-static void rebuildSurfaceChunk(
-	SurfaceChunk& surfaceChunk,
-	const Chunk& chunk,
-	uint32_t chunkIndex)
-{
-	surfaceChunk = {};
-	surfaceChunk.chunkIndex = chunkIndex;
-	surfaceChunk.coord = chunk.coord;
-
-	for (uint32_t voxelIndex = 0;
-		voxelIndex < CHUNK_VOXEL_COUNT;
-		++voxelIndex)
+	if (isChunkCoordBeforeInSurfaceMapOrder(
+		chunkB.coord,
+		chunkA.coord))
 	{
-		const VoxelCoord voxelCoord =
-			getVoxelCoordFromIndex(voxelIndex);
-
-		if (!doesVoxelContainSurfaceCrossing(
-			chunk,
-			voxelCoord))
-		{
-			continue;
-		}
-
-		SurfaceVoxel surfaceVoxel = {};
-		surfaceVoxel.coord = voxelCoord;
-
-		surfaceChunk.voxels.push_back(surfaceVoxel);
+		return false;
 	}
+
+	return chunkA.chunkIndex < chunkB.chunkIndex;
 }
 
 /***********************************************************
@@ -187,85 +81,50 @@ void clearSurfaceMap(
 
 void rebuildSurfaceMap(
 	SurfaceMap& surfaceMap,
-	const std::vector<Chunk>& chunks)
+	std::vector<DiscoveredSurfaceChunk>&& discoveredChunks)
 {
 	clearSurfaceMap(surfaceMap);
 
-	surfaceMap.chunks.reserve(
-		chunks.size());
+	std::sort(
+		discoveredChunks.begin(),
+		discoveredChunks.end(),
+		isDiscoveredSurfaceChunkBefore);
+
+	surfaceMap.chunks =
+		std::move(discoveredChunks);
 
 	surfaceMap.columns.reserve(
-		chunks.size());
-
-	std::vector<uint32_t> orderedChunkIndices = {};
-
-	orderedChunkIndices.reserve(
-		chunks.size());
+		surfaceMap.chunks.size());
 
 	for (uint32_t chunkIndex = 0;
-		chunkIndex < chunks.size();
+		chunkIndex < surfaceMap.chunks.size();
 		++chunkIndex)
 	{
-		orderedChunkIndices.push_back(
-			chunkIndex);
-	}
+		const DiscoveredSurfaceChunk& chunk =
+			surfaceMap.chunks[chunkIndex];
 
-	std::sort(
-		orderedChunkIndices.begin(),
-		orderedChunkIndices.end(),
-		[&chunks](
-			uint32_t chunkIndexA,
-			uint32_t chunkIndexB)
-		{
-			return isChunkIndexBeforeInSurfaceMapOrder(
-				chunks,
-				chunkIndexA,
-				chunkIndexB);
-		});
-
-	for (uint32_t chunkIndex :
-	orderedChunkIndices)
-	{
-		assert(chunkIndex < chunks.size());
-
-		SurfaceChunk surfaceChunk = {};
-
-		rebuildSurfaceChunk(
-			surfaceChunk,
-			chunks[chunkIndex],
-			chunkIndex);
-
-		if (surfaceChunk.voxels.empty())
-		{
-			continue;
-		}
+		assert(!chunk.voxels.empty());
 
 		const bool beginsNewColumn =
 			surfaceMap.columns.empty() ||
-			!isSurfaceChunkInColumn(
-				surfaceChunk,
-				surfaceMap.columns.back());
+			chunk.coord.x !=
+			surfaceMap.columns.back().chunkX ||
+			chunk.coord.z !=
+			surfaceMap.columns.back().chunkZ;
 
 		if (beginsNewColumn)
 		{
 			SurfaceChunkColumn column = {};
 
-			column.chunkX =
-				surfaceChunk.coord.x;
-
-			column.chunkZ =
-				surfaceChunk.coord.z;
+			column.chunkX = chunk.coord.x;
+			column.chunkZ = chunk.coord.z;
 
 			column.firstSurfaceChunkIndex =
-				static_cast<uint32_t>(
-					surfaceMap.chunks.size());
+				chunkIndex;
 
 			surfaceMap.columns.push_back(
 				column);
 		}
-
-		surfaceMap.chunks.push_back(
-			std::move(surfaceChunk));
 
 		++surfaceMap.columns.back()
 			.surfaceChunkCount;

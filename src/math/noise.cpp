@@ -97,6 +97,7 @@ static float getGridRandomValue(
 	return normalized * 2.0f - 1.0f;
 }
 
+// Used by assertions
 static bool canMultiplyPositiveInt64(
 	int64_t a,
 	int64_t b)
@@ -110,6 +111,7 @@ static bool canMultiplyPositiveInt64(
 		b;
 }
 
+// Used by assertions
 static bool canMultiplyInt64ByPositive(
 	int64_t value,
 	int64_t multiplier)

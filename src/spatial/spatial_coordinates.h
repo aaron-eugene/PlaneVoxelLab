@@ -63,6 +63,7 @@ WorldMetricCoordinate getWorldMetricCoordinate(
 	int32_t chunkCoordinate,
 	float localPosition);
 
+// NOTE: Possible floating-point precision loss
 WorldMetricCoordinate offsetWorldMetricCoordinate(
 	const WorldMetricCoordinate& axis,
 	float offsetMeters);

@@ -538,7 +538,7 @@ void clearTetrahedraMesh(
 void buildTetrahedraMesh(
 	TetrahedraMesh& mesh,
 	const Chunk& chunk,
-	const SurfaceChunk& surfaceChunk)
+	const DiscoveredSurfaceChunk& surfaceChunk)
 {
 	clearTetrahedraMesh(mesh);
 

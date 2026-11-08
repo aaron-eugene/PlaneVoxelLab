@@ -21,6 +21,7 @@
 * File-Local Helpers
 ************************************************************/
 
+// NOTE: Possible floating-point precision loss
 static void normalizeWorldPositionAxis(
 	int32_t& chunkCoordinate,
 	float& localPosition)
@@ -90,6 +91,7 @@ WorldMetricCoordinate getWorldMetricCoordinate(
 	return axis;
 }
 
+// NOTE: Possible floating-point precision loss
 WorldMetricCoordinate offsetWorldMetricCoordinate(
 	const WorldMetricCoordinate& axis,
 	float offsetMeters)
@@ -151,6 +153,12 @@ int32_t compareWorldMetricCoordinates(
 	const WorldMetricCoordinate& a,
 	const WorldMetricCoordinate& b)
 {
+	assert(a.fractionalMeter >= 0.0f);
+	assert(a.fractionalMeter < 1.0f);
+
+	assert(b.fractionalMeter >= 0.0f);
+	assert(b.fractionalMeter < 1.0f);
+	
 	if (a.wholeMeters < b.wholeMeters)
 	{
 		return -1;

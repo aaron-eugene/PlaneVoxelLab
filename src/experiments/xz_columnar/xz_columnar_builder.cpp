@@ -582,7 +582,7 @@ static void sliceAndEmitOwnedSideRegion(
 static void buildXZColumnarMeshForSurfaceChunk(
 	XZColumnarMesh& mesh,
 	const XZColumnarPlanarCellGrid& grid,
-	const SurfaceChunk& surfaceChunk,
+	const DiscoveredSurfaceChunk& surfaceChunk,
 	const XZColumnarBuildSettings& settings)
 {	
 	mesh = {};
@@ -837,7 +837,7 @@ void buildXZColumnarMeshes(
 			columnEndIndex <=
 			surfaceMap.chunks.size());
 
-		const SurfaceChunk& firstSurfaceChunk =
+		const DiscoveredSurfaceChunk& firstSurfaceChunk =
 			surfaceMap.chunks[
 				column.firstSurfaceChunkIndex];
 
@@ -861,7 +861,7 @@ void buildXZColumnarMeshes(
 			surfaceChunkIndex < columnEndIndex;
 			++surfaceChunkIndex)
 		{
-			const SurfaceChunk& surfaceChunk =
+			const DiscoveredSurfaceChunk& surfaceChunk =
 				surfaceMap.chunks[
 					surfaceChunkIndex];
 

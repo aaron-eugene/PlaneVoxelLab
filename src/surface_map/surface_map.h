@@ -18,28 +18,14 @@
 #pragma once
 
 #include "spatial/spatial_coordinates.h"
+#include "surface_discovery/surface_discovery.h"
 
 #include <cstdint>
 #include <vector>
 
-struct Chunk;
-
 /***********************************************************
 * Surface Map Types
 ************************************************************/
-
-struct SurfaceVoxel
-{
-	VoxelCoord coord = {};
-};
-
-struct SurfaceChunk
-{
-	uint32_t chunkIndex = 0;
-	ChunkCoord coord = {};
-
-	std::vector<SurfaceVoxel> voxels = {};
-};
 
 struct SurfaceChunkColumn
 {
@@ -52,7 +38,7 @@ struct SurfaceChunkColumn
 
 struct SurfaceMap
 {
-	std::vector<SurfaceChunk> chunks = {};
+	std::vector<DiscoveredSurfaceChunk> chunks = {};
 	std::vector<SurfaceChunkColumn> columns = {};
 };
 
@@ -69,4 +55,4 @@ void clearSurfaceMap(
 
 void rebuildSurfaceMap(
 	SurfaceMap& surfaceMap,
-	const std::vector<Chunk>& chunks);
+	std::vector<DiscoveredSurfaceChunk>&& discoveredChunks);

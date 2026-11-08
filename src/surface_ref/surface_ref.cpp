@@ -50,7 +50,7 @@ static void destroySurfaceRefChunk(
 static bool rebuildSurfaceRefChunk(
 	SurfaceRefChunk& surfaceRefChunk,
 	const Chunk& chunk,
-	const SurfaceChunk& surfaceChunk)
+	const DiscoveredSurfaceChunk& surfaceChunk)
 {
 	assert(surfaceChunk.coord.x == chunk.coord.x);
 	assert(surfaceChunk.coord.y == chunk.coord.y);
@@ -135,7 +135,7 @@ bool rebuildSurfaceRef(
 
 	surfaceRef.chunks.reserve(surfaceMap.chunks.size());
 
-	for (const SurfaceChunk& surfaceChunk : surfaceMap.chunks)
+	for (const DiscoveredSurfaceChunk& surfaceChunk : surfaceMap.chunks)
 	{
 		assert(surfaceChunk.chunkIndex < chunks.size());
 

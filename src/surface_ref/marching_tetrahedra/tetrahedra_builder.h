@@ -20,7 +20,7 @@
 #include <vector>
 
 struct Chunk;
-struct SurfaceChunk;
+struct DiscoveredSurfaceChunk;
 
 /***********************************************************
 * Marching Tetrahedra Mesh Types
@@ -42,4 +42,4 @@ void clearTetrahedraMesh(
 void buildTetrahedraMesh(
 	TetrahedraMesh& mesh,
 	const Chunk& chunk,
-	const SurfaceChunk& surfaceChunk);
+	const DiscoveredSurfaceChunk& surfaceChunk);

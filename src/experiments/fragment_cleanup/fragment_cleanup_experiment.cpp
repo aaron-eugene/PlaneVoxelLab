@@ -130,7 +130,7 @@ static void updateFragmentCleanupDebugStats(
 static void buildEditedTetrahedraMesh(
 	FragmentCleanupMesh& mesh,
 	const Chunk& chunk,
-	const SurfaceChunk& surfaceChunk,
+	const DiscoveredSurfaceChunk& surfaceChunk,
 	const TerrainEditChunk* editChunk)
 {
 	clearFragmentCleanupMesh(mesh);
@@ -196,7 +196,7 @@ bool rebuildFragmentCleanupExperiment(
 	experiment.meshes.reserve(
 		world.surfaceMap.chunks.size());
 
-	for (const SurfaceChunk& surfaceChunk :
+	for (const DiscoveredSurfaceChunk& surfaceChunk :
 		world.surfaceMap.chunks)
 	{
 		assert(

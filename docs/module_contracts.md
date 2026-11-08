@@ -515,7 +515,7 @@ by surface extraction and terrain systems.
 ### Owns
 
 - `SurfaceMap`
-- `SurfaceChunk`
+- `DiscoveredSurfaceChunk`
 - `SurfaceChunkColumn`
 - `SurfaceVoxel`
 - Surface-crossing classification

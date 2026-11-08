@@ -921,7 +921,7 @@ void appendFragmentCleanupVoxel(
 void buildFragmentCleanupMesh(
 	FragmentCleanupMesh& mesh,
 	const Chunk& chunk,
-	const SurfaceChunk& surfaceChunk)
+	const DiscoveredSurfaceChunk& surfaceChunk)
 {
 	clearFragmentCleanupMesh(mesh);
 

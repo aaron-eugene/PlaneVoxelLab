@@ -34,7 +34,7 @@ static constexpr uint32_t VERTEX_BUFFER_BINDING_INDEX = 0;
 ************************************************************/
 
 static void assertEmptyGpuMesh(
-	const GpuMesh& mesh)
+	[[maybe_unused]] const GpuMesh& mesh)
 {
 	assert(mesh.vertexArray == 0);
 	assert(mesh.vertexBuffer == 0);
@@ -44,11 +44,11 @@ static void assertEmptyGpuMesh(
 }
 
 static void assertValidGpuMeshSource(
-	const void* vertices,
-	uint32_t vertexCount,
-	const uint32_t* indices,
-	uint32_t indexCount,
-	uint32_t vertexStride)
+	[[maybe_unused]] const void* vertices,
+	[[maybe_unused]] uint32_t vertexCount,
+	[[maybe_unused]] const uint32_t* indices,
+	[[maybe_unused]] uint32_t indexCount,
+	[[maybe_unused]] uint32_t vertexStride)
 {
 	assert(vertices != nullptr);
 	assert(vertexCount > 0);
