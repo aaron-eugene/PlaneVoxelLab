@@ -18,9 +18,20 @@ struct DensityField;
 struct HeightmapDensityField;
 
 /***********************************************************
+* General Density Sampling
+************************************************************/
+
+void sampleChunkDensityField(
+	Chunk& chunk,
+	const DensityField& field);
+
+/***********************************************************
 * Heightmap Sampling Types
 ************************************************************/
 
+// Temporary XZ height samples for one horizontal chunk footprint.
+// Includes the shared boundary samples on the positive X and Z edges.
+// Indexing is X-major; the grid can be reused across vertical chunks.
 struct ChunkHeightRange
 {
 	WorldMetricCoordinate minHeight = {};
@@ -38,6 +49,9 @@ struct ChunkHeightGrid
 * Heightmap Sampling
 ************************************************************/
 
+// Samples terrain heights over the XZ footprint of chunkCoord.
+// Requires sampleHeightmapTerrainHeight() to be independent of Y.
+// Callers conventionally pass chunkCoord.y = 0.
 void sampleChunkHeightGrid(
 	ChunkHeightGrid& heightGrid,
 	const ChunkCoord& chunkCoord,
@@ -50,10 +64,3 @@ void populateChunkDensityFromHeightGrid(
 ChunkHeightRange getChunkHeightRange(
 	const ChunkHeightGrid& heightGrid);
 
-/***********************************************************
-* General Density Sampling
-************************************************************/
-
-void sampleChunkDensityField(
-	Chunk& chunk,
-	const DensityField& field);

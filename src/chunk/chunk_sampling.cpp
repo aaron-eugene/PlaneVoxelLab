@@ -17,6 +17,52 @@
 #include <cstdint>
 
 /***********************************************************
+* General Density Sampling
+************************************************************/
+
+void sampleChunkDensityField(
+	Chunk& chunk,
+	const DensityField& field)
+{
+	for (uint32_t sampleZ = 0;
+		sampleZ < CHUNK_SAMPLE_SIZE;
+		++sampleZ)
+	{
+		for (uint32_t sampleY = 0;
+			sampleY < CHUNK_SAMPLE_SIZE;
+			++sampleY)
+		{
+			for (uint32_t sampleX = 0;
+				sampleX < CHUNK_SAMPLE_SIZE;
+				++sampleX)
+			{
+				const SampleCoord sampleCoord =
+				{
+					sampleX,
+					sampleY,
+					sampleZ
+				};
+
+				const WorldPosition sampleWorldPosition =
+					getSampleWorldPosition(
+						chunk.coord,
+						sampleCoord);
+
+				const float density =
+					sampleDensityField(
+						field,
+						sampleWorldPosition);
+
+				setChunkDensitySample(
+					chunk,
+					sampleCoord,
+					density);
+			}
+		}
+	}
+}
+
+/***********************************************************
 * Heightmap Sampling
 ************************************************************/
 
@@ -148,50 +194,4 @@ ChunkHeightRange getChunkHeightRange(
 	}
 
 	return range;
-}
-
-/***********************************************************
-* General Density Sampling
-************************************************************/
-
-void sampleChunkDensityField(
-	Chunk& chunk,
-	const DensityField& field)
-{
-	for (uint32_t sampleZ = 0;
-		sampleZ < CHUNK_SAMPLE_SIZE;
-		++sampleZ)
-	{
-		for (uint32_t sampleY = 0;
-			sampleY < CHUNK_SAMPLE_SIZE;
-			++sampleY)
-		{
-			for (uint32_t sampleX = 0;
-				sampleX < CHUNK_SAMPLE_SIZE;
-				++sampleX)
-			{
-				const SampleCoord sampleCoord =
-				{
-					sampleX,
-					sampleY,
-					sampleZ
-				};
-
-				const WorldPosition sampleWorldPosition =
-					getSampleWorldPosition(
-						chunk.coord,
-						sampleCoord);
-
-				const float density =
-					sampleDensityField(
-						field,
-						sampleWorldPosition);
-
-				setChunkDensitySample(
-					chunk,
-					sampleCoord,
-					density);
-			}
-		}
-	}
 }

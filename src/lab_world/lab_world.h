@@ -1,9 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////////
-// lab_world.h
-// ===========
+// lab_world/lab_world.h
+// =====================
 //
-// Defines the shared world data consumed by the surface reference and active
-// terrain experiments.
+// Defines shared procedural terrain configuration, loaded chunk data,
+// and derived surface lookup data for the lab.
+//
+// LabWorld coordinates density sampling and surface discovery but does
+// not own experiment-specific geometry or render resources.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -41,6 +44,8 @@ struct LabWorld
 	SphereDensityField sphereField = {};
 	HeightmapDensityField heightmapField = {};
 
+	// Borrows the active field configuration stored above.
+	// Copying or moving LabWorld requires rebinding this interface.
 	DensityField densityField = {};
 
 	//--------------------------------------------------
@@ -53,18 +58,6 @@ struct LabWorld
 	//--------------------------------------------------
 	SurfaceMap surfaceMap = {};
 };
-
-/***********************************************************
-* Lab World Chunk Lookup
-************************************************************/
-
-Chunk* findLabWorldChunk(
-	LabWorld& world,
-	const ChunkCoord& coord);
-
-const Chunk* findLabWorldChunk(
-	const LabWorld& world,
-	const ChunkCoord& coord);
 
 /***********************************************************
 * Lab World Lifecycle
@@ -84,3 +77,15 @@ void setLabWorldDensityFieldType(
 
 void rebuildLabWorldDensityData(
 	LabWorld& world);
+
+/***********************************************************
+* Lab World Chunk Lookup
+************************************************************/
+
+Chunk* findLabWorldChunk(
+	LabWorld& world,
+	const ChunkCoord& coord);
+
+const Chunk* findLabWorldChunk(
+	const LabWorld& world,
+	const ChunkCoord& coord);

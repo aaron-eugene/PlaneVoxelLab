@@ -26,7 +26,53 @@
 #include <cstdio>
 
 /***********************************************************
-* Field Sampling Helpers
+* Lab World Chunk Initialization
+************************************************************/
+
+static void initializeLabWorldChunks(
+	LabWorld& world)
+{
+	world.chunks.reserve(
+		CHUNK_LOAD_COUNT);
+
+	for (int32_t chunkZ = -CHUNK_LOAD_RADIUS_Z;
+		chunkZ < CHUNK_LOAD_RADIUS_Z;
+		++chunkZ)
+	{
+		for (int32_t chunkY = -CHUNK_LOAD_RADIUS_Y;
+			chunkY < CHUNK_LOAD_RADIUS_Y;
+			++chunkY)
+		{
+			for (int32_t chunkX = -CHUNK_LOAD_RADIUS_X;
+				chunkX < CHUNK_LOAD_RADIUS_X;
+				++chunkX)
+			{
+				const ChunkCoord coord =
+				{
+					chunkX,
+					chunkY,
+					chunkZ
+				};
+
+				world.chunks.emplace_back();
+
+				Chunk& chunk =
+					world.chunks.back();
+
+				initializeChunk(
+					chunk,
+					coord);
+			}
+		}
+	}
+
+	assert(
+		world.chunks.size() ==
+		CHUNK_LOAD_COUNT);
+}
+
+/***********************************************************
+* Lab World Density Sampling
 ************************************************************/
 
 static void sampleLabWorldGeneralDensity(
@@ -40,6 +86,8 @@ static void sampleLabWorldGeneralDensity(
 	}
 }
 
+// Samples the complete fixed lab region.
+// Requires all configured chunk coordinates to be initialized.
 static void sampleLabWorldHeightmapDensity(
 	LabWorld& world)
 {
@@ -64,9 +112,6 @@ static void sampleLabWorldHeightmapDensity(
 				heightGrid,
 				columnCoord,
 				world.heightmapField);
-
-			const ChunkHeightRange heightRange =
-				getChunkHeightRange(heightGrid);
 
 			for (int32_t chunkY = -CHUNK_LOAD_RADIUS_Y;
 				chunkY < CHUNK_LOAD_RADIUS_Y;
@@ -119,52 +164,6 @@ static void sampleLabWorldDensity(
 }
 
 /***********************************************************
-* Lab World Chunk Initialization
-************************************************************/
-
-static void initializeLabWorldChunks(
-	LabWorld& world)
-{
-	world.chunks.reserve(
-		CHUNK_LOAD_COUNT);
-
-	for (int32_t chunkZ = -CHUNK_LOAD_RADIUS_Z;
-		chunkZ < CHUNK_LOAD_RADIUS_Z;
-		++chunkZ)
-	{
-		for (int32_t chunkY = -CHUNK_LOAD_RADIUS_Y;
-			chunkY < CHUNK_LOAD_RADIUS_Y;
-			++chunkY)
-		{
-			for (int32_t chunkX = -CHUNK_LOAD_RADIUS_X;
-				chunkX < CHUNK_LOAD_RADIUS_X;
-				++chunkX)
-			{
-				const ChunkCoord coord =
-				{
-					chunkX,
-					chunkY,
-					chunkZ
-				};
-
-				world.chunks.emplace_back();
-
-				Chunk& chunk =
-					world.chunks.back();
-
-				initializeChunk(
-					chunk,
-					coord);
-			}
-		}
-	}
-
-	assert(
-		world.chunks.size() ==
-		CHUNK_LOAD_COUNT);
-}
-
-/***********************************************************
 * Lab World Surface Discovery
 ************************************************************/
 
@@ -199,44 +198,6 @@ static void rebuildLabWorldSurfaceMap(
 	rebuildSurfaceMap(
 		world.surfaceMap,
 		std::move(discoveredChunks));
-}
-
-/***********************************************************
-* Lab World Chunk Lookup
-************************************************************/
-
-Chunk* findLabWorldChunk(
-	LabWorld& world,
-	const ChunkCoord& coord)
-{
-	for (Chunk& chunk : world.chunks)
-	{
-		if (chunk.coord.x == coord.x &&
-			chunk.coord.y == coord.y &&
-			chunk.coord.z == coord.z)
-		{
-			return &chunk;
-		}
-	}
-
-	return nullptr;
-}
-
-const Chunk* findLabWorldChunk(
-	const LabWorld& world,
-	const ChunkCoord& coord)
-{
-	for (const Chunk& chunk : world.chunks)
-	{
-		if (chunk.coord.x == coord.x &&
-			chunk.coord.y == coord.y &&
-			chunk.coord.z == coord.z)
-		{
-			return &chunk;
-		}
-	}
-
-	return nullptr;
 }
 
 /***********************************************************
@@ -294,7 +255,7 @@ void initializeLabWorld(
 	std::printf(
 		"LabWorld initialization:\n"
 		"  Density sampling:        %.2f ms\n"
-		"  SurfaceMap construction: %.2f ms\n"
+		"  Surface discovery + map: %.2f ms\n"
 		"  Total:                   %.2f ms\n",
 		samplingMs,
 		surfaceMapMs,
@@ -352,4 +313,42 @@ void rebuildLabWorldDensityData(
 
 	rebuildLabWorldSurfaceMap(
 		world);
+}
+
+/***********************************************************
+* Lab World Chunk Lookup
+************************************************************/
+
+Chunk* findLabWorldChunk(
+	LabWorld& world,
+	const ChunkCoord& coord)
+{
+	for (Chunk& chunk : world.chunks)
+	{
+		if (chunk.coord.x == coord.x &&
+			chunk.coord.y == coord.y &&
+			chunk.coord.z == coord.z)
+		{
+			return &chunk;
+		}
+	}
+
+	return nullptr;
+}
+
+const Chunk* findLabWorldChunk(
+	const LabWorld& world,
+	const ChunkCoord& coord)
+{
+	for (const Chunk& chunk : world.chunks)
+	{
+		if (chunk.coord.x == coord.x &&
+			chunk.coord.y == coord.y &&
+			chunk.coord.z == coord.z)
+		{
+			return &chunk;
+		}
+	}
+
+	return nullptr;
 }
