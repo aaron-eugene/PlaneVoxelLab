@@ -20,12 +20,15 @@
 #include <vector>
 
 struct Chunk;
+struct ChunkHeightGrid;
 struct HeightmapDensityField;
 
 /***********************************************************
 * Surface Discovery Types
 ************************************************************/
 
+// Identifies a surface-crossing voxel by its chunk-local coordinate.
+// Discovered surface voxels have no guaranteed traversal order.
 struct SurfaceVoxel
 {
 	VoxelCoord coord = {};
@@ -40,12 +43,21 @@ struct DiscoveredSurfaceChunk
 };
 
 /***********************************************************
-* Surface Discovery
+* Voxel Surface Discovery
 ************************************************************/
 
 void discoverChunkSurfaceVoxels(
 	std::vector<SurfaceVoxel>& surfaceVoxels,
 	const Chunk& chunk);
+
+void discoverHeightmapChunkSurfaceVoxels(
+	std::vector<SurfaceVoxel>& surfaceVoxels,
+	const Chunk& chunk,
+	const ChunkHeightGrid& heightGrid);
+
+/***********************************************************
+* Chunk Surface Discovery
+************************************************************/
 
 void discoverSurfaceChunks(
 	std::vector<DiscoveredSurfaceChunk>& discoveredChunks,
