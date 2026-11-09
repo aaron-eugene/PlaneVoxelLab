@@ -20,6 +20,8 @@
 
 #include "spatial/spatial_coordinates.h"
 
+#include <glm/ext/vector_float3.hpp>
+
 /***********************************************************
 * Density Field Constants
 ************************************************************/
@@ -41,7 +43,7 @@ struct DensityField
 };
 
 /***********************************************************
-* Field Classification
+* Density Field Classification
 ************************************************************/
 
 inline bool isDensityInside(
@@ -49,6 +51,18 @@ inline bool isDensityInside(
 {
 	return density < DENSITY_SURFACE_VALUE;
 }
+
+/***********************************************************
+* Density Field Gradient
+************************************************************/
+
+// Estimates the density field gradient using central differences.
+// Returns an unnormalized vector, which may be zero or near zero.
+// Callers must validate the gradient before normalizing it.
+glm::vec3 sampleDensityFieldGradient(
+	const DensityField& field,
+	const WorldPosition& worldPosition,
+	float sampleStepMeters);
 
 /***********************************************************
 * Density Field Interface

@@ -317,66 +317,6 @@ static bool getHeightmapCandidateVoxelYRange(
 	return firstVoxelY < endVoxelY;
 }
 
-// TEMP
-static bool isHeightmapSurfaceVoxelCandidate(
-	const ChunkHeightRange& range,
-	const ChunkCoord& chunkCoord,
-	uint32_t voxelY)
-{
-	const SampleCoord bottomSample =
-	{
-		0,
-		voxelY,
-		0
-	};
-
-	const SampleCoord topSample =
-	{
-		0,
-		voxelY + 1,
-		0
-	};
-
-	const WorldPosition bottomPosition =
-		getSampleWorldPosition(
-			chunkCoord,
-			bottomSample);
-
-	const WorldPosition topPosition =
-		getSampleWorldPosition(
-			chunkCoord,
-			topSample);
-
-	const WorldMetricCoordinate voxelBottom =
-		getWorldMetricCoordinate(
-			bottomPosition.chunk.y,
-			bottomPosition.localPosition.y);
-
-	const WorldMetricCoordinate voxelTop =
-		getWorldMetricCoordinate(
-			topPosition.chunk.y,
-			topPosition.localPosition.y);
-
-	// Inclusive bounds preserve potential crossings
-	// at exact voxel boundaries.
-
-	if (compareWorldMetricCoordinates(
-		range.maxHeight,
-		voxelBottom) < 0)
-	{
-		return false;
-	}
-
-	if (compareWorldMetricCoordinates(
-		range.minHeight,
-		voxelTop) > 0)
-	{
-		return false;
-	}
-
-	return true;
-}
-
 /***********************************************************
 * Voxel Surface Discovery
 ************************************************************/
