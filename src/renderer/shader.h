@@ -40,6 +40,10 @@ bool loadShaderSource(
 	const char* vertexShaderPath,
 	const char* fragmentShaderPath);
 
+bool loadComputeShaderSource(
+	std::string& computeSource,
+	const char* computeShaderPath);
+
 void clearShaderSource(ShaderSource& shaderSource);
 
 /***********************************************************
@@ -54,6 +58,10 @@ bool createShaderProgram(
 	ShaderProgram& shaderProgram,
 	const char* vertexShaderSource,
 	const char* fragmentShaderSource);
+
+bool createComputeShaderProgram(
+	ShaderProgram& shaderProgram,
+	const char* computeShaderSource);
 
 void destroyShaderProgram(ShaderProgram& shaderProgram);
 

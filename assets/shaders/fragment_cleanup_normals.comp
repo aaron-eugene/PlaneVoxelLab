@@ -1,0 +1,73 @@
+///////////////////////////////////////////////////////////////////////////////
+// fragment_cleanup_normals.comp
+// =============================
+//
+// Generates continuous sphere normals for existing mesh vertices.
+//
+// This initial implementation validates GPU normal generation.
+// Terrain discovery and geometry remain CPU-owned.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#version 450 core
+
+layout(local_size_x = 128) in;
+
+layout(std430, binding = 0) readonly buffer VertexData
+{
+	float vertexData[];
+};
+
+layout(std430, binding = 1) writeonly buffer SmoothNormalData
+{
+	vec4 smoothNormals[];
+};
+
+uniform uint uVertexCount;
+uniform vec3 uSphereCenter;
+
+/***********************************************************
+* Vertex Layout
+************************************************************/
+
+const uint VERTEX_FLOAT_STRIDE = 11u;
+
+/***********************************************************
+* Normal Generation
+************************************************************/
+
+void main()
+{
+	uint vertexIndex =
+		gl_GlobalInvocationID.x;
+
+	if (vertexIndex >= uVertexCount)
+	{
+		return;
+	}
+
+	uint firstFloat =
+		vertexIndex * VERTEX_FLOAT_STRIDE;
+
+	vec3 position = vec3(
+		vertexData[firstFloat + 0u],
+		vertexData[firstFloat + 1u],
+		vertexData[firstFloat + 2u]);
+
+	vec3 direction =
+		position - uSphereCenter;
+
+	float lengthSquared =
+		dot(direction, direction);
+
+	vec3 normal = vec3(0.0, 1.0, 0.0);
+
+	if (lengthSquared > 0.000001)
+	{
+		normal =
+			normalize(direction);
+	}
+
+	smoothNormals[vertexIndex] =
+		vec4(normal, 0.0);
+}

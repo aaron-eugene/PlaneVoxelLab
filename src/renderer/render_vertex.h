@@ -11,6 +11,9 @@
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
 
+#include <cstddef>
+#include <type_traits>
+
 /***********************************************************
 * Render Vertex Types
 ************************************************************/
@@ -30,3 +33,17 @@ struct StandardVertex
 };
 
 // struct MaterialVertex
+
+/***********************************************************
+* Standard Vertex Layout Validation
+************************************************************/
+
+static_assert(std::is_standard_layout_v<StandardVertex>);
+
+static_assert(sizeof(StandardVertex) == 44);
+
+static_assert(offsetof(StandardVertex, position) == 0);
+static_assert(offsetof(StandardVertex, normal) == 12);
+static_assert(offsetof(StandardVertex, color) == 24);
+static_assert(offsetof(StandardVertex, tileUv) == 36);
+

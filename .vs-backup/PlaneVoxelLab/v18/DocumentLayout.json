@@ -1,0 +1,153 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "E:\\PlaneVoxelLab\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|E:\\PlaneVoxelLab\\src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|solutionrelative:src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|E:\\PlaneVoxelLab\\src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|solutionrelative:src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|E:\\PlaneVoxelLab\\assets\\shaders\\fragment_cleanup.frag||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|solutionrelative:assets\\shaders\\fragment_cleanup.frag||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|E:\\PlaneVoxelLab\\assets\\shaders\\fragment_cleanup.vert||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|solutionrelative:assets\\shaders\\fragment_cleanup.vert||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|E:\\PlaneVoxelLab\\src\\renderer\\gpu_mesh.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|solutionrelative:src\\renderer\\gpu_mesh.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|E:\\PlaneVoxelLab\\src\\renderer\\gpu_mesh.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|solutionrelative:src\\renderer\\gpu_mesh.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|E:\\PlaneVoxelLab\\docs\\module_contracts.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{929E8471-149C-47DB-81BA-EC5F655EB45F}|PlaneVoxelLab.vcxproj|solutionrelative:docs\\module_contracts.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 359,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "module_contracts.md",
+              "DocumentMoniker": "E:\\PlaneVoxelLab\\docs\\module_contracts.md",
+              "RelativeDocumentMoniker": "docs\\module_contracts.md",
+              "ToolTip": "E:\\PlaneVoxelLab\\docs\\module_contracts.md",
+              "RelativeToolTip": "docs\\module_contracts.md",
+              "ViewState": "AgIAAIcAAAAAAAAAAAAawJcAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2026-10-03T02:18:00.574Z",
+              "IsPinned": true
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{c6f34f0d-7ae5-4f3a-be61-fe0c21ae9eb8}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "fragment_cleanup_experiment.h",
+              "DocumentMoniker": "E:\\PlaneVoxelLab\\src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.h",
+              "RelativeDocumentMoniker": "src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.h",
+              "ToolTip": "E:\\PlaneVoxelLab\\src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.h",
+              "RelativeToolTip": "src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.h",
+              "ViewState": "AgIAAEcAAAAAAAAAAAAwwFYAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-11-10T18:13:30.257Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "fragment_cleanup_experiment.cpp",
+              "DocumentMoniker": "E:\\PlaneVoxelLab\\src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.cpp",
+              "RelativeDocumentMoniker": "src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.cpp",
+              "ToolTip": "E:\\PlaneVoxelLab\\src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.cpp",
+              "RelativeToolTip": "src\\experiments\\fragment_cleanup\\fragment_cleanup_experiment.cpp",
+              "ViewState": "AgIAAGkDAAAAAAAAAAAqwHQDAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-11-10T05:21:38.689Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "fragment_cleanup.frag",
+              "DocumentMoniker": "E:\\PlaneVoxelLab\\assets\\shaders\\fragment_cleanup.frag",
+              "RelativeDocumentMoniker": "assets\\shaders\\fragment_cleanup.frag",
+              "ToolTip": "E:\\PlaneVoxelLab\\assets\\shaders\\fragment_cleanup.frag",
+              "RelativeToolTip": "assets\\shaders\\fragment_cleanup.frag",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAiwEEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2026-11-10T13:05:01.048Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "fragment_cleanup.vert",
+              "DocumentMoniker": "E:\\PlaneVoxelLab\\assets\\shaders\\fragment_cleanup.vert",
+              "RelativeDocumentMoniker": "assets\\shaders\\fragment_cleanup.vert",
+              "ToolTip": "E:\\PlaneVoxelLab\\assets\\shaders\\fragment_cleanup.vert",
+              "RelativeToolTip": "assets\\shaders\\fragment_cleanup.vert",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2026-11-10T13:04:38.811Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "gpu_mesh.cpp",
+              "DocumentMoniker": "E:\\PlaneVoxelLab\\src\\renderer\\gpu_mesh.cpp",
+              "RelativeDocumentMoniker": "src\\renderer\\gpu_mesh.cpp",
+              "ToolTip": "E:\\PlaneVoxelLab\\src\\renderer\\gpu_mesh.cpp",
+              "RelativeToolTip": "src\\renderer\\gpu_mesh.cpp",
+              "ViewState": "AgIAAK8AAAAAAAAAAAAAAPMAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-11-10T12:55:36.877Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "gpu_mesh.h",
+              "DocumentMoniker": "E:\\PlaneVoxelLab\\src\\renderer\\gpu_mesh.h",
+              "RelativeDocumentMoniker": "src\\renderer\\gpu_mesh.h",
+              "ToolTip": "E:\\PlaneVoxelLab\\src\\renderer\\gpu_mesh.h",
+              "RelativeToolTip": "src\\renderer\\gpu_mesh.h",
+              "ViewState": "AgIAABsAAAAAAAAAAAAAACsAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-11-10T12:58:08.677Z"
+            }
+          ]
+        },
+        {
+          "DockedHeight": 41,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -223,7 +223,7 @@ void initializeLabWorld(
 
 	setLabWorldDensityFieldType(
 		world,
-		LabWorldDensityFieldType::Heightmap);
+		LabWorldDensityFieldType::Sphere);
 
 	initializeLabWorldChunks(
 		world);

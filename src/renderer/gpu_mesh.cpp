@@ -12,6 +12,8 @@
 
 #include <glad/glad.h>
 
+#include <glm/ext/vector_float4.hpp>
+
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -24,10 +26,12 @@ static constexpr uint32_t POSITION_ATTRIBUTE_LOCATION = 0;
 static constexpr uint32_t NORMAL_ATTRIBUTE_LOCATION = 1;
 static constexpr uint32_t COLOR_ATTRIBUTE_LOCATION = 2;
 static constexpr uint32_t TILE_UV_ATTRIBUTE_LOCATION = 3;
+static constexpr uint32_t SMOOTH_NORMAL_ATTRIBUTE_LOCATION = 4;
 
 static constexpr uint32_t COLORED_VERTEX_COLOR_ATTRIBUTE_LOCATION = 1;
 
 static constexpr uint32_t VERTEX_BUFFER_BINDING_INDEX = 0;
+static constexpr uint32_t SMOOTH_NORMAL_BUFFER_BINDING_INDEX = 1;
 
 /***********************************************************
 * GPU Mesh Creation Helpers
@@ -235,6 +239,38 @@ static void configureStandardVertexLayout(
 /***********************************************************
 * GPU Mesh Interface
 ************************************************************/
+
+void attachGpuMeshSmoothNormals(
+	const GpuMesh& mesh,
+	uint32_t normalBuffer)
+{
+	assert(mesh.vertexArray != 0);
+	assert(normalBuffer != 0);
+
+	glVertexArrayVertexBuffer(
+		mesh.vertexArray,
+		SMOOTH_NORMAL_BUFFER_BINDING_INDEX,
+		normalBuffer,
+		0,
+		static_cast<GLsizei>(sizeof(glm::vec4)));
+
+	glEnableVertexArrayAttrib(
+		mesh.vertexArray,
+		SMOOTH_NORMAL_ATTRIBUTE_LOCATION);
+
+	glVertexArrayAttribFormat(
+		mesh.vertexArray,
+		SMOOTH_NORMAL_ATTRIBUTE_LOCATION,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		0);
+
+	glVertexArrayAttribBinding(
+		mesh.vertexArray,
+		SMOOTH_NORMAL_ATTRIBUTE_LOCATION,
+		SMOOTH_NORMAL_BUFFER_BINDING_INDEX);
+}
 
 bool createColoredGpuMesh(
 	GpuMesh& mesh,

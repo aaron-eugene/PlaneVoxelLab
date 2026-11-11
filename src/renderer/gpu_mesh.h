@@ -40,6 +40,10 @@ struct GpuMesh
 * GPU Mesh Interface
 ************************************************************/
 
+void attachGpuMeshSmoothNormals(
+	const GpuMesh& mesh,
+	uint32_t normalBuffer);
+
 bool createColoredGpuMesh(
 	GpuMesh& mesh,
 	const ColoredVertex* vertices,

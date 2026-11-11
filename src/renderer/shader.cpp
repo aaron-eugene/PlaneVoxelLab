@@ -50,7 +50,8 @@ static uint32_t compileShader(
 
 	assert(
 		shaderType == GL_VERTEX_SHADER ||
-		shaderType == GL_FRAGMENT_SHADER);
+		shaderType == GL_FRAGMENT_SHADER ||
+		shaderType == GL_COMPUTE_SHADER);
 
 	uint32_t shader = glCreateShader(shaderType);
 
@@ -118,6 +119,18 @@ bool loadShaderSource(
 	}
 
 	return true;
+}
+
+bool loadComputeShaderSource(
+	std::string& computeSource,
+	const char* computeShaderPath)
+{
+	assert(computeSource.empty());
+	assert(computeShaderPath != nullptr);
+
+	return loadTextFile(
+		computeSource,
+		computeShaderPath);
 }
 
 void clearShaderSource(ShaderSource& shaderSource)
@@ -197,6 +210,64 @@ bool createShaderProgram(
 	}
 
 	shaderProgram.handle = program;
+	return true;
+}
+
+bool createComputeShaderProgram(
+	ShaderProgram& shaderProgram,
+	const char* computeShaderSource)
+{
+	assert(shaderProgram.handle == 0);
+	assert(computeShaderSource != nullptr);
+
+	const uint32_t computeShader =
+		compileShader(
+			GL_COMPUTE_SHADER,
+			computeShaderSource);
+
+	if (computeShader == 0)
+	{
+		return false;
+	}
+
+	const uint32_t program =
+		glCreateProgram();
+
+	if (program == 0)
+	{
+		glDeleteShader(computeShader);
+
+		std::printf(
+			"Failed to create compute shader program.\n");
+
+		return false;
+	}
+
+	glAttachShader(
+		program,
+		computeShader);
+
+	glLinkProgram(program);
+
+	glDeleteShader(computeShader);
+
+	int linkSucceeded = 0;
+
+	glGetProgramiv(
+		program,
+		GL_LINK_STATUS,
+		&linkSucceeded);
+
+	if (!linkSucceeded)
+	{
+		printProgramLinkError(program);
+
+		glDeleteProgram(program);
+		return false;
+	}
+
+	shaderProgram.handle = program;
+
 	return true;
 }
 

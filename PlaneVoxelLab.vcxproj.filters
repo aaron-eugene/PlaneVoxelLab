@@ -108,6 +108,15 @@
     <None Include="assets\shaders\standard.vert">
       <Filter>assets\shaders</Filter>
     </None>
+    <None Include="assets\shaders\fragment_cleanup_normals.comp">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="assets\shaders\fragment_cleanup.vert">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="assets\shaders\fragment_cleanup.frag">
+      <Filter>assets\shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
