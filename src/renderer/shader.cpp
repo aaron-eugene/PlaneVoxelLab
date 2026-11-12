@@ -95,6 +95,35 @@ static void printProgramLinkError(uint32_t shaderProgram)
 * Shader Source Interface
 ************************************************************/
 
+bool insertShaderSource(
+	std::string& targetSource,
+	const char* marker,
+	const std::string& source)
+{
+	assert(marker != nullptr);
+	assert(marker[0] != '\0');
+	assert(!source.empty());
+
+	const size_t markerPosition =
+		targetSource.find(marker);
+
+	if (markerPosition == std::string::npos)
+	{
+		std::printf(
+			"Shader source marker not found: %s\n",
+			marker);
+
+		return false;
+	}
+
+	targetSource.replace(
+		markerPosition,
+		std::string(marker).size(),
+		source);
+
+	return true;
+}
+
 bool loadShaderSource(
 	ShaderSource& shaderSource,
 	const char* vertexShaderPath,
@@ -121,16 +150,16 @@ bool loadShaderSource(
 	return true;
 }
 
-bool loadComputeShaderSource(
-	std::string& computeSource,
-	const char* computeShaderPath)
+bool loadShaderSourceFile(
+	std::string& source,
+	const char* filePath)
 {
-	assert(computeSource.empty());
-	assert(computeShaderPath != nullptr);
+	assert(source.empty());
+	assert(filePath != nullptr);
 
 	return loadTextFile(
-		computeSource,
-		computeShaderPath);
+		source,
+		filePath);
 }
 
 void clearShaderSource(ShaderSource& shaderSource)

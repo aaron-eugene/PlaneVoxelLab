@@ -10,6 +10,7 @@
 
 #include "experiments/fragment_cleanup/fragment_cleanup_builder.h"
 #include "renderer/gpu_mesh.h"
+#include "renderer/gpu_surface_normals.h"
 #include "renderer/shader.h"
 #include "spatial/spatial_coordinates.h"
 
@@ -40,12 +41,6 @@ struct FragmentCleanupDebugStats
 * Fragment Cleanup Experiment Types
 ************************************************************/
 
-struct FragmentCleanupSmoothNormalBuffer
-{
-	uint32_t handle = 0;
-	uint32_t normalCount = 0;
-};
-
 struct FragmentCleanupShader
 {
 	ShaderProgram program = {};
@@ -69,7 +64,7 @@ struct FragmentCleanupRenderMesh
 	FragmentCleanupMesh cpuMesh = {};
 	GpuMesh gpuMesh = {};
 
-	FragmentCleanupSmoothNormalBuffer smoothNormals = {};
+	GpuSurfaceNormalBuffer smoothNormals = {};
 	bool hasSmoothNormals = false;
 };
 
@@ -77,11 +72,7 @@ struct FragmentCleanupExperiment
 {
 	std::vector<FragmentCleanupRenderMesh> meshes = {};
 
-	ShaderProgram normalComputeProgram = {};
-
-	int vertexCountLocation = -1;
-	int sphereCenterLocation = -1;
-
+	GpuSurfaceNormalGenerator normalGenerator = {};
 	FragmentCleanupShader shader = {};
 
 	float normalBlend = 0.0f;

@@ -12,6 +12,7 @@
 #include "fields/field_generators.h"
 #include "lab_world/lab_world.h"
 #include "renderer/gpu_mesh.h"
+#include "renderer/gpu_surface_normals.h"
 #include "renderer/renderer.h"
 #include "renderer/standard_render_settings.h"
 #include "surface_map/surface_map.h"
@@ -32,195 +33,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <limits>
-#include <string>
 #include <utility>
 
-/***********************************************************
-* Smooth-Normal Buffer Helpers
-************************************************************/
-
-static bool createFragmentCleanupSmoothNormalBuffer(
-	FragmentCleanupSmoothNormalBuffer& buffer,
-	uint32_t normalCount)
-{
-	assert(buffer.handle == 0);
-	assert(normalCount > 0);
-
-	const uint64_t bufferSize =
-		static_cast<uint64_t>(normalCount) *
-		sizeof(glm::vec4);
-
-	if (bufferSize >
-		static_cast<uint64_t>(
-			std::numeric_limits<GLsizeiptr>::max()))
-	{
-		std::printf(
-			"Smooth-normal buffer size exceeds GLsizeiptr.\n");
-
-		return false;
-	}
-
-	glCreateBuffers(
-		1,
-		&buffer.handle);
-
-	if (buffer.handle == 0)
-	{
-		std::printf(
-			"Failed to create smooth-normal buffer.\n");
-
-		return false;
-	}
-
-	glNamedBufferData(
-		buffer.handle,
-		static_cast<GLsizeiptr>(bufferSize),
-		nullptr,
-		GL_STATIC_DRAW);
-
-	buffer.normalCount = normalCount;
-
-	return true;
-}
-
-static void destroyFragmentCleanupSmoothNormalBuffer(
-	FragmentCleanupSmoothNormalBuffer& buffer)
-{
-	if (buffer.handle != 0)
-	{
-		glDeleteBuffers(
-			1,
-			&buffer.handle);
-	}
-
-	buffer = {};
-}
 
 /***********************************************************
-* Normal Compute Program Helpers
+* GPU Surface Normal Validation
 ************************************************************/
 
-static bool initializeFragmentCleanupNormalComputeProgram(
-	FragmentCleanupExperiment& experiment)
-{
-	assert(experiment.normalComputeProgram.handle == 0);
-
-	std::string computeSource = {};
-
-	if (!loadComputeShaderSource(
-		computeSource,
-		"assets/shaders/fragment_cleanup_normals.comp"))
-	{
-		return false;
-	}
-
-	if (!createComputeShaderProgram(
-		experiment.normalComputeProgram,
-		computeSource.c_str()))
-	{
-		return false;
-	}
-
-	experiment.vertexCountLocation =
-		getShaderUniformLocation(
-			experiment.normalComputeProgram,
-			"uVertexCount");
-
-	experiment.sphereCenterLocation =
-		getShaderUniformLocation(
-			experiment.normalComputeProgram,
-			"uSphereCenter");
-
-	if (experiment.vertexCountLocation < 0 ||
-		experiment.sphereCenterLocation < 0)
-	{
-		destroyShaderProgram(
-			experiment.normalComputeProgram);
-
-		experiment.vertexCountLocation = -1;
-		experiment.sphereCenterLocation = -1;
-
-		return false;
-	}
-
-	return true;
-}
-
-static void computeFragmentCleanupSphereNormals(
-	const FragmentCleanupExperiment& experiment,
-	const FragmentCleanupRenderMesh& renderMesh,
-	const SphereDensityField& sphere)
-{
-	assert(experiment.normalComputeProgram.handle != 0);
-	assert(renderMesh.gpuMesh.vertexBuffer != 0);
-	assert(renderMesh.smoothNormals.handle != 0);
-
-	assert(
-		renderMesh.smoothNormals.normalCount ==
-		renderMesh.cpuMesh.vertices.size());
-
-	const uint32_t vertexCount =
-		renderMesh.smoothNormals.normalCount;
-
-	if (vertexCount == 0)
-	{
-		return;
-	}
-
-	const glm::vec3 sphereCenterLocal =
-		getChunkRelativePosition(
-			sphere.center.chunk,
-			renderMesh.coord) +
-		sphere.center.localPosition;
-
-	glUseProgram(
-		experiment.normalComputeProgram.handle);
-
-	glBindBufferBase(
-		GL_SHADER_STORAGE_BUFFER,
-		0,
-		renderMesh.gpuMesh.vertexBuffer);
-
-	glBindBufferBase(
-		GL_SHADER_STORAGE_BUFFER,
-		1,
-		renderMesh.smoothNormals.handle);
-
-	glUniform1ui(
-		experiment.vertexCountLocation,
-		vertexCount);
-
-	glUniform3fv(
-		experiment.sphereCenterLocation,
-		1,
-		&sphereCenterLocal.x);
-
-	const uint32_t workGroupSize = 128;
-
-	const uint32_t groupCount =
-		vertexCount / workGroupSize +
-		(vertexCount % workGroupSize != 0 ? 1u : 0u);
-
-	glDispatchCompute(
-		groupCount,
-		1,
-		1);
-
-	glMemoryBarrier(
-		GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT |
-		GL_BUFFER_UPDATE_BARRIER_BIT);
-
-	glBindBufferBase(
-		GL_SHADER_STORAGE_BUFFER,
-		0,
-		0);
-
-	glBindBufferBase(
-		GL_SHADER_STORAGE_BUFFER,
-		1,
-		0);
-}
+#ifndef NDEBUG
 
 static void validateFragmentCleanupSphereNormals(
 	const FragmentCleanupRenderMesh& renderMesh,
@@ -278,9 +98,11 @@ static void validateFragmentCleanupSphereNormals(
 			glm::length(
 				actualNormal - expectedNormal);
 
-		assert(error < 0.0001f);
+		assert(error < 0.001f);
 	}
 }
+
+#endif
 
 /***********************************************************
 * Fragment Cleanup Shader Helpers
@@ -387,7 +209,7 @@ static bool initializeFragmentCleanupShader(
 static void destroyFragmentCleanupRenderMesh(
 	FragmentCleanupRenderMesh& renderMesh)
 {
-	destroyFragmentCleanupSmoothNormalBuffer(
+	destroyGpuSurfaceNormalBuffer(
 		renderMesh.smoothNormals);
 
 	destroyGpuMesh(
@@ -455,7 +277,7 @@ static bool uploadFragmentCleanupRenderMesh(
 		return false;
 	}
 
-	if (!createFragmentCleanupSmoothNormalBuffer(
+	if (!createGpuSurfaceNormalBuffer(
 		renderMesh.smoothNormals,
 		vertexCount))
 	{
@@ -646,13 +468,13 @@ bool initializeFragmentCleanupExperiment(
 	const TerrainEdits& edits)
 {
 	assert(experiment.meshes.empty());
-	assert(experiment.normalComputeProgram.handle == 0);
+	assert(experiment.normalGenerator.program.handle == 0);
 	assert(experiment.shader.program.handle == 0);
 
 	experiment = {};
 
-	if (!initializeFragmentCleanupNormalComputeProgram(
-		experiment))
+	if (!initializeGpuSurfaceNormalGenerator(
+		experiment.normalGenerator))
 	{
 		shutdownFragmentCleanupExperiment(
 			experiment);
@@ -692,8 +514,8 @@ void shutdownFragmentCleanupExperiment(
 	shutdownFragmentCleanupShader(
 		experiment.shader);
 
-	destroyShaderProgram(
-		experiment.normalComputeProgram);
+	shutdownGpuSurfaceNormalGenerator(
+		experiment.normalGenerator);
 
 	experiment = {};
 }
@@ -764,9 +586,11 @@ bool rebuildFragmentCleanupExperiment(
 			&world.sphereField &&
 			renderMesh.smoothNormals.handle != 0)
 		{
-			computeFragmentCleanupSphereNormals(
-				experiment,
-				renderMesh,
+			generateGpuSphereSurfaceNormals(
+				experiment.normalGenerator,
+				renderMesh.gpuMesh,
+				renderMesh.smoothNormals,
+				renderMesh.coord,
 				world.sphereField);
 
 #ifndef NDEBUG

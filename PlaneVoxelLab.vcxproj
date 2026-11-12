@@ -133,9 +133,11 @@
   <ItemGroup>
     <None Include="assets\shaders\color.frag" />
     <None Include="assets\shaders\color.vert" />
+    <None Include="assets\shaders\fields\sphere_density.glsl" />
     <None Include="assets\shaders\fragment_cleanup.frag" />
     <None Include="assets\shaders\fragment_cleanup.vert" />
     <None Include="assets\shaders\fragment_cleanup_normals.comp" />
+    <None Include="assets\shaders\spatial\world_position.glsl" />
     <None Include="assets\shaders\standard.frag" />
     <None Include="assets\shaders\standard.vert" />
     <None Include="docs\code_conventions.md" />
@@ -174,6 +176,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\math\noise.cpp" />
     <ClCompile Include="src\renderer\gpu_mesh.cpp" />
+    <ClCompile Include="src\renderer\gpu_surface_normals.cpp" />
     <ClCompile Include="src\renderer\image_data.cpp" />
     <ClCompile Include="src\renderer\renderer.cpp" />
     <ClCompile Include="src\renderer\shader.cpp" />
@@ -214,6 +217,7 @@
     <ClInclude Include="src\math\math_utils.h" />
     <ClInclude Include="src\math\noise.h" />
     <ClInclude Include="src\renderer\gpu_mesh.h" />
+    <ClInclude Include="src\renderer\gpu_surface_normals.h" />
     <ClInclude Include="src\renderer\image_data.h" />
     <ClInclude Include="src\renderer\renderer.h" />
     <ClInclude Include="src\renderer\render_vertex.h" />

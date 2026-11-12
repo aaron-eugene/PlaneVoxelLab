@@ -85,6 +85,12 @@
     <Filter Include="src\surface_discovery">
       <UniqueIdentifier>{8744b1b9-ed2e-4fc1-ae9a-19086ba4ff1d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="assets\shaders\fields">
+      <UniqueIdentifier>{1e9e2055-726a-4735-989f-aa73c3d71e17}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\shaders\spatial">
+      <UniqueIdentifier>{4ba07513-a7da-459c-85af-d23e0b8e42cf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\color.frag">
@@ -116,6 +122,12 @@
     </None>
     <None Include="assets\shaders\fragment_cleanup.frag">
       <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="assets\shaders\fields\sphere_density.glsl">
+      <Filter>assets\shaders\fields</Filter>
+    </None>
+    <None Include="assets\shaders\spatial\world_position.glsl">
+      <Filter>assets\shaders\spatial</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -248,6 +260,9 @@
     <ClCompile Include="src\surface_discovery\surface_discovery.cpp">
       <Filter>src\surface_discovery</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\gpu_surface_normals.cpp">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">
@@ -375,6 +390,9 @@
     </ClInclude>
     <ClInclude Include="src\surface_discovery\surface_discovery.h">
       <Filter>src\surface_discovery</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\gpu_surface_normals.h">
+      <Filter>src\renderer</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

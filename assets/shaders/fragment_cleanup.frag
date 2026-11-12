@@ -1,3 +1,15 @@
+///////////////////////////////////////////////////////////////////////////////
+// fragment_cleanup.frag
+// =====================
+//
+// Implements experimental surface shading for Fragment Cleanup.
+//
+// Blends geometric face normals with GPU-generated continuous surface
+// normals for lighting. Supports direct normal visualization to inspect
+// the resulting normal field independently of lighting and materials.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 #version 450 core
 
 /***********************************************************

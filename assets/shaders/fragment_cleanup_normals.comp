@@ -1,17 +1,28 @@
+
 ///////////////////////////////////////////////////////////////////////////////
 // fragment_cleanup_normals.comp
 // =============================
 //
-// Generates continuous sphere normals for existing mesh vertices.
+// Generates continuous surface normals from a procedural density field.
 //
-// This initial implementation validates GPU normal generation.
-// Terrain discovery and geometry remain CPU-owned.
+// The CPU owns terrain geometry and voxel ownership. This shader samples
+// the density field to calculate shading normals for existing vertices.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 #version 450 core
 
+/***********************************************************
+* Spatial Coordinate Implementation
+************************************************************/
+
+// @WORLD_POSITION_IMPLEMENTATION@
+
 layout(local_size_x = 128) in;
+
+/***********************************************************
+* Shader Storage Buffers
+************************************************************/
 
 layout(std430, binding = 0) readonly buffer VertexData
 {
@@ -23,14 +34,78 @@ layout(std430, binding = 1) writeonly buffer SmoothNormalData
 	vec4 smoothNormals[];
 };
 
+/***********************************************************
+* Uniforms
+************************************************************/
+
 uniform uint uVertexCount;
-uniform vec3 uSphereCenter;
+uniform ivec3 uMeshChunk;
 
 /***********************************************************
-* Vertex Layout
+* Constants
 ************************************************************/
 
 const uint VERTEX_FLOAT_STRIDE = 11u;
+
+const float GRADIENT_SAMPLE_STEP = 0.1;
+const float GRADIENT_LENGTH_EPSILON = 0.000001;
+
+/***********************************************************
+* Density Field Implementation
+************************************************************/
+
+// @DENSITY_FIELD_IMPLEMENTATION@
+
+
+/***********************************************************
+* Density Field Gradient
+************************************************************/
+
+// Estimates the density gradient using central differences.
+// Returns an unnormalized vector, which may be zero or near zero.
+vec3 sampleDensityFieldGradient(
+	WorldPosition worldPosition,
+	float sampleStep)
+{
+	vec3 offsetX = vec3(sampleStep, 0.0, 0.0);
+	vec3 offsetY = vec3(0.0, sampleStep, 0.0);
+	vec3 offsetZ = vec3(0.0, 0.0, sampleStep);
+
+	float gradientX =
+		sampleDensityField(
+			makeWorldPosition(
+				worldPosition.chunk,
+				worldPosition.localPosition + offsetX)) -
+		sampleDensityField(
+			makeWorldPosition(
+				worldPosition.chunk,
+				worldPosition.localPosition - offsetX));
+
+	float gradientY =
+		sampleDensityField(
+			makeWorldPosition(
+				worldPosition.chunk,
+				worldPosition.localPosition + offsetY)) -
+		sampleDensityField(
+			makeWorldPosition(
+				worldPosition.chunk,
+				worldPosition.localPosition - offsetY));
+
+	float gradientZ =
+		sampleDensityField(
+			makeWorldPosition(
+				worldPosition.chunk,
+				worldPosition.localPosition + offsetZ)) -
+		sampleDensityField(
+			makeWorldPosition(
+				worldPosition.chunk,
+				worldPosition.localPosition - offsetZ));
+
+	return vec3(
+		gradientX,
+		gradientY,
+		gradientZ) / (2.0 * sampleStep);
+}
 
 /***********************************************************
 * Normal Generation
@@ -54,18 +129,26 @@ void main()
 		vertexData[firstFloat + 1u],
 		vertexData[firstFloat + 2u]);
 
-	vec3 direction =
-		position - uSphereCenter;
+WorldPosition worldPosition =
+	makeWorldPosition(
+		uMeshChunk,
+		position);
+
+vec3 gradient =
+	sampleDensityFieldGradient(
+		worldPosition,
+		GRADIENT_SAMPLE_STEP);
 
 	float lengthSquared =
-		dot(direction, direction);
+		dot(gradient, gradient);
 
 	vec3 normal = vec3(0.0, 1.0, 0.0);
 
-	if (lengthSquared > 0.000001)
+	if (lengthSquared >
+		GRADIENT_LENGTH_EPSILON *
+		GRADIENT_LENGTH_EPSILON)
 	{
-		normal =
-			normalize(direction);
+		normal = normalize(gradient);
 	}
 
 	smoothNormals[vertexIndex] =

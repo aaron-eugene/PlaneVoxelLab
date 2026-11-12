@@ -35,14 +35,19 @@ struct ShaderProgram
 * Shader Source Interface
 ************************************************************/
 
+bool insertShaderSource(
+	std::string& targetSource,
+	const char* marker,
+	const std::string& source);
+
 bool loadShaderSource(
 	ShaderSource& shaderSource,
 	const char* vertexShaderPath,
 	const char* fragmentShaderPath);
 
-bool loadComputeShaderSource(
-	std::string& computeSource,
-	const char* computeShaderPath);
+bool loadShaderSourceFile(
+	std::string& source,
+	const char* filePath);
 
 void clearShaderSource(ShaderSource& shaderSource);
 
