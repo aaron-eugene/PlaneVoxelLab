@@ -117,17 +117,17 @@
     <None Include="assets\shaders\fragment_cleanup_normals.comp">
       <Filter>assets\shaders</Filter>
     </None>
-    <None Include="assets\shaders\fragment_cleanup.vert">
-      <Filter>assets\shaders</Filter>
-    </None>
-    <None Include="assets\shaders\fragment_cleanup.frag">
-      <Filter>assets\shaders</Filter>
-    </None>
     <None Include="assets\shaders\fields\sphere_density.glsl">
       <Filter>assets\shaders\fields</Filter>
     </None>
     <None Include="assets\shaders\spatial\world_position.glsl">
       <Filter>assets\shaders\spatial</Filter>
+    </None>
+    <None Include="assets\shaders\surface.frag">
+      <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="assets\shaders\surface.vert">
+      <Filter>assets\shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -263,6 +263,9 @@
     <ClCompile Include="src\renderer\gpu_surface_normals.cpp">
       <Filter>src\renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\surface_shader.cpp">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">
@@ -392,6 +395,9 @@
       <Filter>src\surface_discovery</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\gpu_surface_normals.h">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\surface_shader.h">
       <Filter>src\renderer</Filter>
     </ClInclude>
   </ItemGroup>

@@ -26,15 +26,13 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/vector_float4.hpp>
 #include <glm/geometric.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include <algorithm>
 #include <cassert>
-#include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <limits>
 #include <utility>
-
 
 /***********************************************************
 * GPU Surface Normal Validation
@@ -57,7 +55,7 @@ static void validateFragmentCleanupSphereNormals(
 
 	const uint32_t sampleCount =
 		static_cast<uint32_t>(
-			std::min<size_t>(
+			std::min<std::size_t>(
 				8,
 				renderMesh.cpuMesh.vertices.size()));
 
@@ -105,104 +103,6 @@ static void validateFragmentCleanupSphereNormals(
 #endif
 
 /***********************************************************
-* Fragment Cleanup Shader Helpers
-************************************************************/
-
-static void shutdownFragmentCleanupShader(
-	FragmentCleanupShader& shader)
-{
-	destroyShaderProgram(
-		shader.program);
-
-	shader = {};
-}
-
-static bool initializeFragmentCleanupShader(
-	FragmentCleanupShader& shader)
-{
-	assert(shader.program.handle == 0);
-
-	ShaderSource source = {};
-
-	if (!loadShaderSource(
-		source,
-		"assets/shaders/fragment_cleanup.vert",
-		"assets/shaders/fragment_cleanup.frag"))
-	{
-		return false;
-	}
-
-	const bool created =
-		createShaderProgram(
-			shader.program,
-			source);
-
-	clearShaderSource(source);
-
-	if (!created)
-	{
-		return false;
-	}
-
-	shader.modelLocation =
-		getShaderUniformLocation(
-			shader.program,
-			"uModel");
-
-	shader.viewProjectionLocation =
-		getShaderUniformLocation(
-			shader.program,
-			"uViewProjection");
-
-	shader.textureLocation =
-		getShaderUniformLocation(
-			shader.program,
-			"uTexture");
-
-	shader.lightDirectionLocation =
-		getShaderUniformLocation(
-			shader.program,
-			"uLightDirection");
-
-	shader.ambientStrengthLocation =
-		getShaderUniformLocation(
-			shader.program,
-			"uAmbientStrength");
-
-	shader.diffuseStrengthLocation =
-		getShaderUniformLocation(
-			shader.program,
-			"uDiffuseStrength");
-
-	shader.normalBlendLocation =
-		getShaderUniformLocation(
-			shader.program,
-			"uNormalBlend");
-
-	shader.visualizeNormalsLocation =
-		getShaderUniformLocation(
-			shader.program,
-			"uVisualizeNormals");
-
-	if (shader.modelLocation < 0 ||
-		shader.viewProjectionLocation < 0 ||
-		shader.textureLocation < 0 ||
-		shader.lightDirectionLocation < 0 ||
-		shader.ambientStrengthLocation < 0 ||
-		shader.diffuseStrengthLocation < 0 ||
-		shader.normalBlendLocation < 0 ||
-		shader.visualizeNormalsLocation < 0)
-	{
-		shutdownFragmentCleanupShader(
-			shader);
-
-		return false;
-	}
-
-	return true;
-}
-
-/***********************************************************
 * Render-Mesh Helpers
 ************************************************************/
 
@@ -240,6 +140,7 @@ static bool uploadFragmentCleanupRenderMesh(
 	assert(renderMesh.gpuMesh.indexBuffer == 0);
 
 	assert(renderMesh.smoothNormals.handle == 0);
+	assert(!renderMesh.hasSmoothNormals);
 
 	assert(
 		renderMesh.cpuMesh.vertices.empty() ==
@@ -266,30 +167,55 @@ static bool uploadFragmentCleanupRenderMesh(
 		static_cast<uint32_t>(
 			renderMesh.cpuMesh.indices.size());
 
-	if (!createStandardGpuMesh(
+	return createStandardGpuMesh(
 		renderMesh.gpuMesh,
 		renderMesh.cpuMesh.vertices.data(),
 		vertexCount,
 		renderMesh.cpuMesh.indices.data(),
 		indexCount,
-		GpuPrimitiveType::Triangles))
-	{
-		return false;
-	}
+		GpuPrimitiveType::Triangles);
+}
+
+static bool generateFragmentCleanupSphereNormals(
+	FragmentCleanupRenderMesh& renderMesh,
+	const GpuSurfaceNormalGenerator& generator,
+	const SphereDensityField& sphere)
+{
+	assert(renderMesh.gpuMesh.vertexArray != 0);
+	assert(renderMesh.gpuMesh.vertexBuffer != 0);
+	assert(renderMesh.gpuMesh.vertexCount > 0);
+
+	assert(renderMesh.smoothNormals.handle == 0);
+	assert(!renderMesh.hasSmoothNormals);
+
+	const uint32_t vertexCount =
+		renderMesh.gpuMesh.vertexCount;
 
 	if (!createGpuSurfaceNormalBuffer(
 		renderMesh.smoothNormals,
 		vertexCount))
 	{
-		destroyFragmentCleanupRenderMesh(
-			renderMesh);
-
 		return false;
 	}
+
+	generateGpuSphereSurfaceNormals(
+		generator,
+		renderMesh.gpuMesh,
+		renderMesh.smoothNormals,
+		renderMesh.coord,
+		sphere);
 
 	attachGpuMeshSmoothNormals(
 		renderMesh.gpuMesh,
 		renderMesh.smoothNormals.handle);
+
+#ifndef NDEBUG
+	validateGpuMeshSmoothNormalAttribute(
+		renderMesh.gpuMesh,
+		renderMesh.smoothNormals.handle);
+#endif
+
+	renderMesh.hasSmoothNormals = true;
 
 	return true;
 }
@@ -303,100 +229,6 @@ static glm::mat4 getChunkModelMatrix(
 		getChunkRelativePosition(
 			chunkCoord,
 			renderOriginChunk));
-}
-
-/***********************************************************
-* Fragment Cleanup Drawing Helpers
-************************************************************/
-
-static void renderFragmentCleanupMesh(
-	const FragmentCleanupShader& shader,
-	const GpuMesh& mesh,
-	const StandardRenderSettings& settings,
-	const Texture2D& texture,
-	float normalBlend,
-	bool visualizeNormals,
-	const glm::mat4& model,
-	const glm::mat4& viewProjection)
-{
-	assert(shader.program.handle != 0);
-
-	assert(mesh.vertexArray != 0);
-	assert(mesh.indexCount > 0);
-	assert(mesh.primitiveType == GpuPrimitiveType::Triangles);
-
-	assert(texture.handle != 0);
-
-	assert(settings.ambientStrength >= 0.0f);
-	assert(settings.diffuseStrength >= 0.0f);
-
-	assert(normalBlend >= 0.0f);
-	assert(normalBlend <= 1.0f);
-
-	constexpr GLuint textureUnit = 0;
-
-	glUseProgram(
-		shader.program.handle);
-
-	glUniformMatrix4fv(
-		shader.modelLocation,
-		1,
-		GL_FALSE,
-		glm::value_ptr(model));
-
-	glUniformMatrix4fv(
-		shader.viewProjectionLocation,
-		1,
-		GL_FALSE,
-		glm::value_ptr(viewProjection));
-
-	glUniform3fv(
-		shader.lightDirectionLocation,
-		1,
-		glm::value_ptr(
-			settings.lightDirection));
-
-	glUniform1f(
-		shader.ambientStrengthLocation,
-		settings.ambientStrength);
-
-	glUniform1f(
-		shader.diffuseStrengthLocation,
-		settings.diffuseStrength);
-
-	glUniform1f(
-		shader.normalBlendLocation,
-		normalBlend);
-
-	glUniform1i(
-		shader.visualizeNormalsLocation,
-		visualizeNormals ? 1 : 0);
-
-	glBindTextureUnit(
-		textureUnit,
-		texture.handle);
-
-	glUniform1i(
-		shader.textureLocation,
-		static_cast<GLint>(
-			textureUnit));
-
-	glBindVertexArray(
-		mesh.vertexArray);
-
-	glDrawElements(
-		GL_TRIANGLES,
-		mesh.indexCount,
-		GL_UNSIGNED_INT,
-		nullptr);
-
-	glBindVertexArray(0);
-
-	glBindTextureUnit(
-		textureUnit,
-		0);
-
-	glUseProgram(0);
 }
 
 /***********************************************************
@@ -469,21 +301,11 @@ bool initializeFragmentCleanupExperiment(
 {
 	assert(experiment.meshes.empty());
 	assert(experiment.normalGenerator.program.handle == 0);
-	assert(experiment.shader.program.handle == 0);
 
 	experiment = {};
 
 	if (!initializeGpuSurfaceNormalGenerator(
 		experiment.normalGenerator))
-	{
-		shutdownFragmentCleanupExperiment(
-			experiment);
-
-		return false;
-	}
-
-	if (!initializeFragmentCleanupShader(
-		experiment.shader))
 	{
 		shutdownFragmentCleanupExperiment(
 			experiment);
@@ -510,9 +332,6 @@ void shutdownFragmentCleanupExperiment(
 {
 	destroyFragmentCleanupExperimentMeshes(
 		experiment);
-
-	shutdownFragmentCleanupShader(
-		experiment.shader);
 
 	shutdownGpuSurfaceNormalGenerator(
 		experiment.normalGenerator);
@@ -580,18 +399,24 @@ bool rebuildFragmentCleanupExperiment(
 			return false;
 		}
 
-		// Sphere-only validation path.
-		// Other fields will use their own GPU gradient implementation.
+		// Generate continuous normals only for supported fields.
 		if (world.densityField.userData ==
 			&world.sphereField &&
-			renderMesh.smoothNormals.handle != 0)
+			renderMesh.gpuMesh.vertexCount > 0)
 		{
-			generateGpuSphereSurfaceNormals(
+			if (!generateFragmentCleanupSphereNormals(
+				renderMesh,
 				experiment.normalGenerator,
-				renderMesh.gpuMesh,
-				renderMesh.smoothNormals,
-				renderMesh.coord,
-				world.sphereField);
+				world.sphereField))
+			{
+				destroyFragmentCleanupRenderMesh(
+					renderMesh);
+
+				destroyFragmentCleanupExperimentMeshes(
+					experiment);
+
+				return false;
+			}
 
 #ifndef NDEBUG
 			if (!sphereNormalsValidated)
@@ -606,8 +431,6 @@ bool rebuildFragmentCleanupExperiment(
 					"GPU sphere-normal validation passed.\n");
 			}
 #endif
-
-			renderMesh.hasSmoothNormals = true;
 		}
 
 		experiment.meshes.push_back(
@@ -653,13 +476,12 @@ void renderFragmentCleanupExperiment(
 
 		if (renderMesh.hasSmoothNormals)
 		{
-			renderFragmentCleanupMesh(
-				experiment.shader,
+			renderSurfaceMesh(
+				renderer,
 				renderMesh.gpuMesh,
+				experiment.surfaceSettings,
 				experimentRenderSettings,
 				terrainRenderResources.tileAtlas,
-				experiment.normalBlend,
-				experiment.visualizeNormals,
 				model,
 				viewProjection);
 		}
@@ -719,14 +541,14 @@ bool renderFragmentCleanupExperimentDebugUiContent(
 
 	ImGui::SliderFloat(
 		"Normal Blend",
-		&experiment.normalBlend,
+		&experiment.surfaceSettings.normalBlend,
 		0.0f,
 		1.0f,
 		"%.2f");
 
 	ImGui::Checkbox(
 		"Visualize Normals",
-		&experiment.visualizeNormals);
+		&experiment.surfaceSettings.visualizeNormals);
 
 	return false;
 }

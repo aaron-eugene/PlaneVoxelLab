@@ -11,13 +11,11 @@
 #include "experiments/fragment_cleanup/fragment_cleanup_builder.h"
 #include "renderer/gpu_mesh.h"
 #include "renderer/gpu_surface_normals.h"
-#include "renderer/shader.h"
+#include "renderer/surface_shader.h"
 #include "spatial/spatial_coordinates.h"
 
 #include <cstdint>
 #include <vector>
-
-#include <glm/mat4x4.hpp>
 
 struct LabWorld;
 struct Renderer;
@@ -41,22 +39,6 @@ struct FragmentCleanupDebugStats
 * Fragment Cleanup Experiment Types
 ************************************************************/
 
-struct FragmentCleanupShader
-{
-	ShaderProgram program = {};
-
-	int modelLocation = -1;
-	int viewProjectionLocation = -1;
-
-	int textureLocation = -1;
-	int lightDirectionLocation = -1;
-	int ambientStrengthLocation = -1;
-	int diffuseStrengthLocation = -1;
-
-	int normalBlendLocation = -1;
-	int visualizeNormalsLocation = -1;
-};
-
 struct FragmentCleanupRenderMesh
 {
 	ChunkCoord coord = {};
@@ -73,10 +55,7 @@ struct FragmentCleanupExperiment
 	std::vector<FragmentCleanupRenderMesh> meshes = {};
 
 	GpuSurfaceNormalGenerator normalGenerator = {};
-	FragmentCleanupShader shader = {};
-
-	float normalBlend = 0.0f;
-	bool visualizeNormals = false;
+	SurfaceRenderSettings surfaceSettings = {};
 
 	FragmentCleanupDebugStats debugStats = {};
 };

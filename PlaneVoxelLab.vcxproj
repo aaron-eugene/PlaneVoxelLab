@@ -134,12 +134,12 @@
     <None Include="assets\shaders\color.frag" />
     <None Include="assets\shaders\color.vert" />
     <None Include="assets\shaders\fields\sphere_density.glsl" />
-    <None Include="assets\shaders\fragment_cleanup.frag" />
-    <None Include="assets\shaders\fragment_cleanup.vert" />
     <None Include="assets\shaders\fragment_cleanup_normals.comp" />
     <None Include="assets\shaders\spatial\world_position.glsl" />
     <None Include="assets\shaders\standard.frag" />
     <None Include="assets\shaders\standard.vert" />
+    <None Include="assets\shaders\surface.frag" />
+    <None Include="assets\shaders\surface.vert" />
     <None Include="docs\code_conventions.md" />
     <None Include="docs\module_contracts.md" />
     <None Include="docs\todo.md" />
@@ -180,6 +180,7 @@
     <ClCompile Include="src\renderer\image_data.cpp" />
     <ClCompile Include="src\renderer\renderer.cpp" />
     <ClCompile Include="src\renderer\shader.cpp" />
+    <ClCompile Include="src\renderer\surface_shader.cpp" />
     <ClCompile Include="src\renderer\texture_2d.cpp" />
     <ClCompile Include="src\spatial\spatial_coordinates.cpp" />
     <ClCompile Include="src\surface_discovery\surface_discovery.cpp" />
@@ -223,6 +224,7 @@
     <ClInclude Include="src\renderer\render_vertex.h" />
     <ClInclude Include="src\renderer\shader.h" />
     <ClInclude Include="src\renderer\standard_render_settings.h" />
+    <ClInclude Include="src\renderer\surface_shader.h" />
     <ClInclude Include="src\renderer\texture_2d.h" />
     <ClInclude Include="src\spatial\spatial_constants.h" />
     <ClInclude Include="src\spatial\spatial_coordinates.h" />

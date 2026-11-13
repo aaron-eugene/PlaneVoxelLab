@@ -10,6 +10,7 @@
 
 #include "renderer/gpu_mesh.h"
 #include "renderer/shader.h"
+#include "renderer/surface_shader.h"
 #include "renderer/texture_2d.h"
 
 #include <glm/ext/matrix_float4x4.hpp>
@@ -53,6 +54,7 @@ struct Renderer
 {
 	ColorShader colorShader = {};
 	StandardShader standardShader = {};
+	SurfaceShader surfaceShader = {};
 };
 
 /***********************************************************
@@ -85,6 +87,15 @@ void renderStandardMesh(
 	const Renderer& renderer,
 	const GpuMesh& mesh,
 	const StandardRenderSettings& settings,
+	const Texture2D& texture,
+	const glm::mat4& model,
+	const glm::mat4& viewProjection);
+
+void renderSurfaceMesh(
+	const Renderer& renderer,
+	const GpuMesh& mesh,
+	const SurfaceRenderSettings& surfaceSettings,
+	const StandardRenderSettings& renderSettings,
 	const Texture2D& texture,
 	const glm::mat4& model,
 	const glm::mat4& viewProjection);

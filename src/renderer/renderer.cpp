@@ -11,6 +11,7 @@
 #include "renderer/gpu_mesh.h"
 #include "renderer/shader.h"
 #include "renderer/standard_render_settings.h"
+#include "renderer/surface_shader.h"
 #include "renderer/texture_2d.h"
 
 #include <glad/glad.h>
@@ -230,6 +231,7 @@ bool initializeRenderer(Renderer& renderer)
 {
 	assert(renderer.colorShader.program.handle == 0);
 	assert(renderer.standardShader.program.handle == 0);
+	assert(renderer.surfaceShader.program.handle == 0);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -252,11 +254,21 @@ bool initializeRenderer(Renderer& renderer)
 		return false;
 	}
 
+	if (!initializeSurfaceShader(
+		renderer.surfaceShader))
+	{
+		shutdownRenderer(renderer);
+		return false;
+	}
+
 	return true;
 }
 
 void shutdownRenderer(Renderer& renderer)
 {
+	shutdownSurfaceShader(
+		renderer.surfaceShader);
+
 	shutdownStandardShader(
 		renderer.standardShader);
 
@@ -429,4 +441,23 @@ void renderStandardMesh(
 		0);
 
 	glUseProgram(0);
+}
+
+void renderSurfaceMesh(
+	const Renderer& renderer,
+	const GpuMesh& mesh,
+	const SurfaceRenderSettings& surfaceSettings,
+	const StandardRenderSettings& renderSettings,
+	const Texture2D& texture,
+	const glm::mat4& model,
+	const glm::mat4& viewProjection)
+{
+	renderSurfaceMesh(
+		renderer.surfaceShader,
+		mesh,
+		surfaceSettings,
+		renderSettings,
+		texture,
+		model,
+		viewProjection);
 }
