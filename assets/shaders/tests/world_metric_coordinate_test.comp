@@ -1,0 +1,80 @@
+
+///////////////////////////////////////////////////////////////////////////////
+// world_metric_coordinate_test.comp
+// =================================
+//
+// Validates GPU chunk/local to world-metric coordinate conversion.
+//
+// Writes the two whole-meter integer words and the fractional-meter
+// float bits for comparison against the CPU implementation.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#version 450 core
+
+/***********************************************************
+* Spatial Coordinate Implementations
+************************************************************/
+
+// @WORLD_POSITION_IMPLEMENTATION@
+
+// @WORLD_METRIC_COORDINATE_IMPLEMENTATION@
+
+layout(local_size_x = 64) in;
+
+/***********************************************************
+* Test Types
+************************************************************/
+
+struct TestInput
+{
+	int chunkCoordinate;
+	float localPosition;
+};
+
+/***********************************************************
+* Shader Storage Buffers
+************************************************************/
+
+layout(std430, binding = 0) readonly buffer TestInputs
+{
+	TestInput inputs[];
+};
+
+layout(std430, binding = 1) writeonly buffer TestOutputs
+{
+	uvec4 outputs[];
+};
+
+/***********************************************************
+* Uniforms
+************************************************************/
+
+uniform uint uTestCount;
+
+/***********************************************************
+* Coordinate Validation
+************************************************************/
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+
+	if (index >= uTestCount)
+	{
+		return;
+	}
+
+	TestInput inputData = inputs[index];
+
+	WorldMetricCoordinate coordinate =
+		getWorldMetricCoordinate(
+			inputData.chunkCoordinate,
+			inputData.localPosition);
+
+	outputs[index] = uvec4(
+		coordinate.wholeMeters.x,
+		coordinate.wholeMeters.y,
+		floatBitsToUint(coordinate.fractionalMeter),
+		0u);
+}

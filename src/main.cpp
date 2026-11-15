@@ -33,6 +33,13 @@
 #include <cassert>
 #include <cstdio>
 
+// TEST
+#ifndef NDEBUG
+#include "tests/gpu_world_metric_test.h"
+#include "tests/gpu_wide_integer_test.h"
+#include "tests/gpu_wide_noise_test.h"
+#endif
+
 /***********************************************************
 * GPU Preference (Windows)
 ************************************************************/
@@ -610,6 +617,41 @@ int main()
 	}
 
 	initializeCamera(app.developmentCamera);
+
+	// TEST
+#ifndef NDEBUG
+
+	if (!validateGpuWorldMetricCoordinates())
+	{
+		std::printf(
+			"GPU world-metric validation failed.\n");
+
+		shutdownRenderer(app.renderer);
+		shutdownGlfw(app.window);
+		return -1;
+	}
+
+	if (!validateGpuWideIntegerArithmetic())
+	{
+		std::printf(
+			"GPU wide-integer validation failed.\n");
+
+		shutdownRenderer(app.renderer);
+		shutdownGlfw(app.window);
+		return -1;
+	}
+
+	if (!validateGpuWideNoiseCoordinates())
+	{
+		std::printf(
+			"GPU wide-noise validation failed.\n");
+
+		shutdownRenderer(app.renderer);
+		shutdownGlfw(app.window);
+		return -1;
+	}
+
+#endif
 
 	if (!initializeLab(app.lab))
 	{

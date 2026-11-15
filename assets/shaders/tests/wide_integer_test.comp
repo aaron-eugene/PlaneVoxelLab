@@ -1,0 +1,73 @@
+///////////////////////////////////////////////////////////////////////////////
+// tests/wide_integer_test.comp
+// ============================
+//
+// Validates signed wide multiplication and signed wide floor division.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#version 450 core
+
+// @WIDE_INTEGER_IMPLEMENTATION@
+
+layout(local_size_x = 64) in;
+
+struct TestInput
+{
+	uvec2 value;
+	uint multiplier;
+	uint divisor;
+};
+
+struct TestOutput
+{
+	uvec4 multiplication;
+	uvec4 division;
+};
+
+layout(std430, binding = 0) readonly buffer TestInputs
+{
+	TestInput inputs[];
+};
+
+layout(std430, binding = 1) writeonly buffer TestOutputs
+{
+	TestOutput outputs[];
+};
+
+uniform uint uTestCount;
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+
+	if (index >= uTestCount)
+	{
+		return;
+	}
+
+	TestInput inputData = inputs[index];
+	TestOutput outputData;
+
+	uvec2 product;
+	bool multiplyValid = tryMultiplyWideInteger(
+		inputData.value,
+		inputData.multiplier,
+		product);
+
+	uvec2 quotient;
+	uint remainder;
+	bool divideValid = tryDivideWideIntegerFloor(
+		inputData.value,
+		inputData.divisor,
+		quotient,
+		remainder);
+
+	outputData.multiplication = uvec4(
+		product.x, product.y, multiplyValid ? 1u : 0u, 0u);
+
+	outputData.division = uvec4(
+		quotient.x, quotient.y, remainder, divideValid ? 1u : 0u);
+
+	outputs[index] = outputData;
+}

@@ -1,0 +1,67 @@
+///////////////////////////////////////////////////////////////////////////////
+// tests/noise_coordinate_wide_test.comp
+// =====================================
+// Validates wide noise-coordinate conversion on the GPU.
+///////////////////////////////////////////////////////////////////////////////
+
+#version 450 core
+
+// @WORLD_POSITION_IMPLEMENTATION@
+// @WORLD_METRIC_COORDINATE_IMPLEMENTATION@
+// @WIDE_INTEGER_IMPLEMENTATION@
+// @NOISE_COORDINATE_IMPLEMENTATION@
+
+layout(local_size_x = 64) in;
+
+struct TestInput
+{
+	int chunkCoordinate;
+	float localPosition;
+	int numerator;
+	int denominator;
+};
+
+layout(std430, binding = 0) readonly buffer TestInputs
+{
+	TestInput inputs[];
+};
+
+// x/y: signed 64-bit cell in two's-complement (low/high)
+// z: fractional noise-cell position bits
+// w: validity flag
+layout(std430, binding = 1) writeonly buffer TestOutputs
+{
+	uvec4 outputs[];
+};
+
+uniform uint uTestCount;
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+
+	if (index >= uTestCount)
+	{
+		return;
+	}
+
+	TestInput inputData = inputs[index];
+
+	WorldMetricCoordinate coordinate = getWorldMetricCoordinate(
+		inputData.chunkCoordinate,
+		inputData.localPosition);
+
+	NoiseCoordinate64 result;
+
+	bool valid = tryGetScaledNoiseCoordinate64(
+		coordinate,
+		inputData.numerator,
+		inputData.denominator,
+		result);
+
+	outputs[index] = uvec4(
+		result.cell.x,
+		result.cell.y,
+		floatBitsToUint(result.local),
+		valid ? 1u : 0u);
+}

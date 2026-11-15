@@ -91,6 +91,15 @@
     <Filter Include="assets\shaders\spatial">
       <UniqueIdentifier>{4ba07513-a7da-459c-85af-d23e0b8e42cf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="assets\shaders\tests">
+      <UniqueIdentifier>{5b679c54-0f63-427f-90fc-865493b9222b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tests">
+      <UniqueIdentifier>{c6317a1b-2aa5-46eb-ad79-6ff73c40d53d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\shaders\math">
+      <UniqueIdentifier>{36568271-c4ea-4efa-93f9-6cd45694be0c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\color.frag">
@@ -128,6 +137,27 @@
     </None>
     <None Include="assets\shaders\surface.vert">
       <Filter>assets\shaders</Filter>
+    </None>
+    <None Include="assets\shaders\spatial\world_metric_coordinate.glsl">
+      <Filter>assets\shaders\spatial</Filter>
+    </None>
+    <None Include="assets\shaders\tests\world_metric_coordinate_test.comp">
+      <Filter>assets\shaders\tests</Filter>
+    </None>
+    <None Include="assets\shaders\tests\noise_coordinate_test.comp">
+      <Filter>assets\shaders\tests</Filter>
+    </None>
+    <None Include="assets\shaders\math\wide_integer.glsl">
+      <Filter>assets\shaders\math</Filter>
+    </None>
+    <None Include="assets\shaders\tests\wide_integer_test.comp">
+      <Filter>assets\shaders\tests</Filter>
+    </None>
+    <None Include="assets\shaders\math\noise_coordinates.glsl">
+      <Filter>assets\shaders\math</Filter>
+    </None>
+    <None Include="assets\shaders\tests\noise_coordinate_wide_test.comp">
+      <Filter>assets\shaders\tests</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -266,6 +296,18 @@
     <ClCompile Include="src\renderer\surface_shader.cpp">
       <Filter>src\renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\tests\gpu_world_metric_test.cpp">
+      <Filter>src\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests\gpu_wide_integer_test.cpp">
+      <Filter>src\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests\gpu_wide_noise_test.cpp">
+      <Filter>src\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\gpu_noise_domain.cpp">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">
@@ -398,6 +440,18 @@
       <Filter>src\renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\surface_shader.h">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tests\gpu_world_metric_test.h">
+      <Filter>src\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tests\gpu_wide_integer_test.h">
+      <Filter>src\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tests\gpu_wide_noise_test.h">
+      <Filter>src\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\gpu_noise_domain.h">
       <Filter>src\renderer</Filter>
     </ClInclude>
   </ItemGroup>

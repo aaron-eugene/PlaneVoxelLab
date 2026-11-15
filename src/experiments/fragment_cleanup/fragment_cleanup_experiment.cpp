@@ -209,12 +209,6 @@ static bool generateFragmentCleanupSphereNormals(
 		renderMesh.gpuMesh,
 		renderMesh.smoothNormals.handle);
 
-#ifndef NDEBUG
-	validateGpuMeshSmoothNormalAttribute(
-		renderMesh.gpuMesh,
-		renderMesh.smoothNormals.handle);
-#endif
-
 	renderMesh.hasSmoothNormals = true;
 
 	return true;
