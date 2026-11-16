@@ -1,0 +1,13 @@
+///////////////////////////////////////////////////////////////////////////////
+// tests/gpu_noise_domain_test.h
+// =============================
+//
+// Declares CPU-only Debug validation for the GPU heightmap noise domain.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+#ifndef NDEBUG
+bool validateGpuNoiseDomainConfiguration();
+#endif

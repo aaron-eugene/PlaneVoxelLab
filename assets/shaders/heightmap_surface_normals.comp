@@ -1,0 +1,95 @@
+///////////////////////////////////////////////////////////////////////////////
+// heightmap_surface_normals.comp
+// ==============================
+//
+// Generates continuous surface normals for existing heightmap mesh vertices.
+// Geometry and voxel ownership remain CPU responsibilities.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#version 450 core
+
+/***********************************************************
+* Coordinate and Noise Implementations
+************************************************************/
+
+// @WORLD_POSITION_IMPLEMENTATION@
+// @WORLD_METRIC_COORDINATE_IMPLEMENTATION@
+// @WIDE_INTEGER_IMPLEMENTATION@
+// @NOISE_COORDINATE_IMPLEMENTATION@
+// @VALUE_NOISE_IMPLEMENTATION@
+// @FRACTAL_NOISE_IMPLEMENTATION@
+// @HEIGHTMAP_NORMALS_IMPLEMENTATION@
+
+layout(local_size_x = 128) in;
+
+/***********************************************************
+* Mesh and Normal Buffers
+************************************************************/
+
+layout(std430, binding = 0) readonly buffer VertexData
+{
+	float vertexData[];
+};
+
+layout(std430, binding = 1) writeonly buffer SmoothNormalData
+{
+	vec4 smoothNormals[];
+};
+
+/***********************************************************
+* Uniforms
+************************************************************/
+
+uniform uint uVertexCount;
+uniform ivec3 uMeshChunk;
+uniform float uHeightAmplitude;
+uniform float uGradientStepMeters;
+
+const uint VERTEX_FLOAT_STRIDE = 11u;
+
+/***********************************************************
+* Normal Generation
+************************************************************/
+
+void main()
+{
+	uint vertexIndex = gl_GlobalInvocationID.x;
+
+	if (vertexIndex >= uVertexCount)
+	{
+		return;
+	}
+
+	uint firstFloat = vertexIndex * VERTEX_FLOAT_STRIDE;
+
+	vec3 localPosition = vec3(
+		vertexData[firstFloat + 0u],
+		vertexData[firstFloat + 1u],
+		vertexData[firstFloat + 2u]);
+
+	WorldPosition worldPosition =
+		makeWorldPosition(uMeshChunk, localPosition);
+
+	WorldMetricCoordinate worldX =
+		getWorldMetricCoordinate(
+			worldPosition.chunk.x,
+			worldPosition.localPosition.x);
+
+	WorldMetricCoordinate worldZ =
+		getWorldMetricCoordinate(
+			worldPosition.chunk.z,
+			worldPosition.localPosition.z);
+
+	vec3 normal;
+	bool valid = trySampleGpuHeightmapNormal(
+		worldX,
+		worldZ,
+		uHeightAmplitude,
+		uGradientStepMeters,
+		normal);
+
+	// .w marks unexpected sampling failures for Debug readback.
+	// The renderer consumes only the normal's xyz components.
+	smoothNormals[vertexIndex] = vec4(normal, valid ? 0.0 : 1.0);
+}

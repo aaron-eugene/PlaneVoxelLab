@@ -11,7 +11,9 @@
 #include "chunk/chunk.h"
 #include "fields/field_generators.h"
 #include "lab_world/lab_world.h"
+#include "math/noise.h"
 #include "renderer/gpu_mesh.h"
+#include "renderer/gpu_noise_domain.h"
 #include "renderer/gpu_surface_normals.h"
 #include "renderer/renderer.h"
 #include "renderer/standard_render_settings.h"
@@ -29,16 +31,18 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <limits>
 #include <utility>
+#include <vector>
+
+#ifndef NDEBUG
 
 /***********************************************************
 * GPU Surface Normal Validation
 ************************************************************/
-
-#ifndef NDEBUG
 
 static void validateFragmentCleanupSphereNormals(
 	const FragmentCleanupRenderMesh& renderMesh,
@@ -97,6 +101,216 @@ static void validateFragmentCleanupSphereNormals(
 				actualNormal - expectedNormal);
 
 		assert(error < 0.001f);
+	}
+}
+
+/***********************************************************
+* CPU Heightmap Normal Reference
+************************************************************/
+
+static constexpr float HEIGHTMAP_NORMAL_GRADIENT_STEP = 0.1f;
+static constexpr float HEIGHTMAP_NORMAL_TOLERANCE = 0.01f;
+
+static float sampleFragmentCleanupCpuHeightmapNoise(
+	const WorldMetricCoordinate& worldX,
+	const WorldMetricCoordinate& worldZ,
+	const HeightmapDensityField& heightmap)
+{
+	return sampleFractalValueNoise2d(
+		worldX.wholeMeters,
+		worldZ.wholeMeters,
+		worldX.fractionalMeter,
+		worldZ.fractionalMeter,
+		heightmap.baseScale,
+		heightmap.octaveCount,
+		heightmap.persistence,
+		heightmap.lacunarity,
+		heightmap.seed);
+}
+
+static glm::vec3 sampleFragmentCleanupCpuHeightmapNormal(
+	const WorldPosition& worldPosition,
+	const HeightmapDensityField& heightmap)
+{
+	const WorldMetricCoordinate worldX =
+		getWorldMetricCoordinate(
+			worldPosition.chunk.x,
+			worldPosition.localPosition.x);
+
+	const WorldMetricCoordinate worldZ =
+		getWorldMetricCoordinate(
+			worldPosition.chunk.z,
+			worldPosition.localPosition.z);
+
+	const WorldMetricCoordinate leftX =
+		offsetWorldMetricCoordinate(
+			worldX,
+			-HEIGHTMAP_NORMAL_GRADIENT_STEP);
+
+	const WorldMetricCoordinate rightX =
+		offsetWorldMetricCoordinate(
+			worldX,
+			HEIGHTMAP_NORMAL_GRADIENT_STEP);
+
+	const WorldMetricCoordinate backZ =
+		offsetWorldMetricCoordinate(
+			worldZ,
+			-HEIGHTMAP_NORMAL_GRADIENT_STEP);
+
+	const WorldMetricCoordinate frontZ =
+		offsetWorldMetricCoordinate(
+			worldZ,
+			HEIGHTMAP_NORMAL_GRADIENT_STEP);
+
+	const float left =
+		sampleFragmentCleanupCpuHeightmapNoise(
+			leftX, worldZ, heightmap);
+
+	const float right =
+		sampleFragmentCleanupCpuHeightmapNoise(
+			rightX, worldZ, heightmap);
+
+	const float back =
+		sampleFragmentCleanupCpuHeightmapNoise(
+			worldX, backZ, heightmap);
+
+	const float front =
+		sampleFragmentCleanupCpuHeightmapNoise(
+			worldX, frontZ, heightmap);
+
+	const float derivativeScale =
+		heightmap.amplitude *
+		(0.5f / HEIGHTMAP_NORMAL_GRADIENT_STEP);
+
+	return glm::normalize(glm::vec3(
+		-(right - left) * derivativeScale,
+		1.0f,
+		-(front - back) * derivativeScale));
+}
+
+/***********************************************************
+* GPU Heightmap Normal Validation
+************************************************************/
+
+static void validateFragmentCleanupHeightmapNormals(
+	const FragmentCleanupRenderMesh& renderMesh,
+	const HeightmapDensityField& heightmap)
+{
+	assert(renderMesh.hasSmoothNormals);
+	assert(renderMesh.smoothNormals.handle != 0);
+	assert(renderMesh.smoothNormals.normalCount ==
+		renderMesh.cpuMesh.vertices.size());
+
+	const uint32_t normalCount =
+		renderMesh.smoothNormals.normalCount;
+
+	assert(normalCount > 0);
+
+	std::vector<glm::vec4> gpuNormals(normalCount);
+
+	glGetNamedBufferSubData(
+		renderMesh.smoothNormals.handle,
+		0,
+		static_cast<GLsizeiptr>(
+			gpuNormals.size() * sizeof(glm::vec4)),
+		gpuNormals.data());
+
+	// Inspect every normal in this buffer for invalid output.
+	for (uint32_t index = 0; index < normalCount; ++index)
+	{
+		const glm::vec4& normal = gpuNormals[index];
+
+		const bool finite =
+			std::isfinite(normal.x) &&
+			std::isfinite(normal.y) &&
+			std::isfinite(normal.z) &&
+			std::isfinite(normal.w);
+
+		const float lengthSquared =
+			normal.x * normal.x +
+			normal.y * normal.y +
+			normal.z * normal.z;
+
+		if (!finite ||
+			normal.w != 0.0f ||
+			!std::isfinite(lengthSquared) ||
+			std::fabs(lengthSquared - 1.0f) > 0.01f)
+		{
+			std::printf(
+				"Invalid GPU heightmap normal.\n"
+				"  Chunk: %d, %d, %d\n"
+				"  Vertex: %u\n"
+				"  Normal: %.6f %.6f %.6f %.6f\n",
+				renderMesh.coord.x,
+				renderMesh.coord.y,
+				renderMesh.coord.z,
+				index,
+				normal.x,
+				normal.y,
+				normal.z,
+				normal.w);
+
+			assert(false &&
+				"Invalid GPU heightmap normal");
+
+			return;
+		}
+	}
+
+	// Compare representative vertices against the CPU reference.
+	const uint32_t sampleCount =
+		std::min<uint32_t>(8u, normalCount);
+
+	for (uint32_t sample = 0;
+		sample < sampleCount;
+		++sample)
+	{
+		const uint32_t index =
+			sampleCount > 1
+			? static_cast<uint32_t>(
+				(static_cast<uint64_t>(sample) *
+					(normalCount - 1u)) /
+				(sampleCount - 1u))
+			: 0u;
+
+		const glm::vec3 localPosition =
+			renderMesh.cpuMesh.vertices[index].position;
+
+		const WorldPosition worldPosition =
+			makeWorldPosition(
+				renderMesh.coord,
+				localPosition);
+
+		const glm::vec3 expected =
+			sampleFragmentCleanupCpuHeightmapNormal(
+				worldPosition,
+				heightmap);
+
+		const glm::vec3 actual =
+			glm::vec3(gpuNormals[index]);
+
+		const float error =
+			glm::length(actual - expected);
+
+		if (!std::isfinite(error) ||
+			error > HEIGHTMAP_NORMAL_TOLERANCE)
+		{
+			std::printf(
+				"GPU heightmap normal mismatch.\n"
+				"  Chunk: %d, %d, %d\n"
+				"  Vertex: %u\n"
+				"  Error: %.9f\n",
+				renderMesh.coord.x,
+				renderMesh.coord.y,
+				renderMesh.coord.z,
+				index,
+				error);
+
+			assert(false &&
+				"GPU heightmap normal mismatch");
+
+			return;
+		}
 	}
 }
 
@@ -225,6 +439,39 @@ static glm::mat4 getChunkModelMatrix(
 			renderOriginChunk));
 }
 
+static bool generateFragmentCleanupHeightmapNormals(
+	FragmentCleanupRenderMesh& renderMesh,
+	const GpuSurfaceNormalGenerator& generator)
+{
+	assert(renderMesh.gpuMesh.vertexArray != 0);
+	assert(renderMesh.gpuMesh.vertexBuffer != 0);
+	assert(renderMesh.gpuMesh.vertexCount > 0);
+
+	assert(renderMesh.smoothNormals.handle == 0);
+	assert(!renderMesh.hasSmoothNormals);
+
+	if (!createGpuSurfaceNormalBuffer(
+		renderMesh.smoothNormals,
+		renderMesh.gpuMesh.vertexCount))
+	{
+		return false;
+	}
+
+	generateGpuHeightmapSurfaceNormals(
+		generator,
+		renderMesh.gpuMesh,
+		renderMesh.smoothNormals,
+		renderMesh.coord);
+
+	attachGpuMeshSmoothNormals(
+		renderMesh.gpuMesh,
+		renderMesh.smoothNormals.handle);
+
+	renderMesh.hasSmoothNormals = true;
+
+	return true;
+}
+
 /***********************************************************
 * Debug-Stats Helpers
 ************************************************************/
@@ -285,6 +532,42 @@ static void buildEditedTetrahedraMesh(
 }
 
 /***********************************************************
+* GPU Heightmap Configuration
+************************************************************/
+
+static bool prepareFragmentCleanupGpuHeightmap(
+	const HeightmapDensityField& heightmap,
+	GpuHeightmapNoiseConfiguration& configuration)
+{
+	const GpuNoiseDomain domain =
+		getFullGpuNoiseDomain();
+
+	const GpuNoiseDomainResult result =
+		prepareGpuHeightmapNoiseConfiguration(
+			heightmap,
+			domain,
+			configuration);
+
+	if (result.failure != GpuNoiseDomainFailure::None)
+	{
+		std::printf(
+			"Unsupported GPU heightmap configuration.\n"
+			"  Octave: %u\n"
+			"  Reason: %s\n",
+			result.failedOctave,
+			getGpuNoiseDomainFailureDescription(
+				result.failure));
+
+		assert(false &&
+			"Unsupported GPU heightmap configuration");
+
+		return false;
+	}
+
+	return true;
+}
+
+/***********************************************************
 * Fragment Cleanup Lifecycle
 ************************************************************/
 
@@ -294,7 +577,7 @@ bool initializeFragmentCleanupExperiment(
 	const TerrainEdits& edits)
 {
 	assert(experiment.meshes.empty());
-	assert(experiment.normalGenerator.program.handle == 0);
+	assert(experiment.normalGenerator.sphere.program.handle == 0);
 
 	experiment = {};
 
@@ -345,7 +628,27 @@ bool rebuildFragmentCleanupExperiment(
 #ifndef NDEBUG
 	bool sphereNormalsValidated = false;
 #endif
-	
+
+	GpuHeightmapNoiseConfiguration gpuHeightmap = {};
+
+	if (world.densityField.userData ==
+		&world.heightmapField)
+	{
+		if (!prepareFragmentCleanupGpuHeightmap(
+			world.heightmapField,
+			gpuHeightmap))
+		{
+			return false;
+		}
+
+		if (!prepareGpuHeightmapSurfaceNormals(
+			experiment.normalGenerator,
+			gpuHeightmap))
+		{
+			return false;
+		}
+	}
+
 	destroyFragmentCleanupExperimentMeshes(
 		experiment);
 
@@ -393,7 +696,6 @@ bool rebuildFragmentCleanupExperiment(
 			return false;
 		}
 
-		// Generate continuous normals only for supported fields.
 		if (world.densityField.userData ==
 			&world.sphereField &&
 			renderMesh.gpuMesh.vertexCount > 0)
@@ -427,9 +729,93 @@ bool rebuildFragmentCleanupExperiment(
 #endif
 		}
 
+		else if (world.densityField.userData ==
+			&world.heightmapField &&
+			renderMesh.gpuMesh.vertexCount > 0)
+		{
+			if (!generateFragmentCleanupHeightmapNormals(
+				renderMesh,
+				experiment.normalGenerator))
+			{
+				destroyFragmentCleanupRenderMesh(renderMesh);
+				destroyFragmentCleanupExperimentMeshes(experiment);
+
+				return false;
+			}
+		}
+
 		experiment.meshes.push_back(
 			std::move(renderMesh));
 	}
+
+
+#ifndef NDEBUG
+
+	if (world.densityField.userData ==
+		&world.heightmapField)
+	{
+		std::vector<std::size_t> meshIndices = {};
+
+		for (std::size_t index = 0;
+			index < experiment.meshes.size();
+			++index)
+		{
+			if (experiment.meshes[index].hasSmoothNormals)
+			{
+				meshIndices.push_back(index);
+			}
+		}
+
+		if (!meshIndices.empty())
+		{
+			const std::size_t selectedIndices[] =
+			{
+				0,
+				meshIndices.size() / 2,
+				meshIndices.size() - 1
+			};
+
+			std::size_t validatedMeshCount = 0;
+			std::size_t validatedNormalCount = 0;
+
+			std::size_t previousIndex =
+				std::numeric_limits<std::size_t>::max();
+
+			for (std::size_t selectedIndex : selectedIndices)
+			{
+				const std::size_t meshIndex =
+					meshIndices[selectedIndex];
+
+				if (meshIndex == previousIndex)
+				{
+					continue;
+				}
+
+				const FragmentCleanupRenderMesh& renderMesh =
+					experiment.meshes[meshIndex];
+
+				validateFragmentCleanupHeightmapNormals(
+					renderMesh,
+					world.heightmapField);
+
+				++validatedMeshCount;
+
+				validatedNormalCount +=
+					renderMesh.smoothNormals.normalCount;
+
+				previousIndex = meshIndex;
+			}
+
+			std::printf(
+				"GPU heightmap production validation passed.\n"
+				"  Meshes: %zu\n"
+				"  Normals checked: %zu\n",
+				validatedMeshCount,
+				validatedNormalCount);
+		}
+	}
+
+#endif
 
 	updateFragmentCleanupDebugStats(experiment);
 

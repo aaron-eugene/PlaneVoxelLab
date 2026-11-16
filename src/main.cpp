@@ -38,6 +38,10 @@
 #include "tests/gpu_world_metric_test.h"
 #include "tests/gpu_wide_integer_test.h"
 #include "tests/gpu_wide_noise_test.h"
+#include "tests/gpu_noise_domain_test.h"
+#include "tests/gpu_value_noise_test.h"
+#include "tests/gpu_fractal_noise_test.h"
+#include "tests/gpu_heightmap_normals_test.h"
 #endif
 
 /***********************************************************
@@ -648,6 +652,40 @@ int main()
 
 		shutdownRenderer(app.renderer);
 		shutdownGlfw(app.window);
+		return -1;
+	}
+
+	if (!validateGpuNoiseDomainConfiguration())
+	{
+		std::printf(
+			"GPU noise-domain validation failed.\n");
+
+		return -1;
+	}
+
+	if (!validateGpuValueNoise())
+	{
+		std::printf(
+			"GPU value-noise validation failed.\n");
+
+		return -1;
+	}
+
+	if (!validateGpuFractalNoise())
+	{
+		std::printf(
+			"GPU fractal-noise validation failed.\n");
+
+		// Follow your existing GPU-test failure cleanup path.
+		return -1;
+	}
+
+	if (!validateGpuHeightmapNormals())
+	{
+		std::printf(
+			"GPU heightmap-normal validation failed.\n");
+
+		// Use your existing startup failure cleanup.
 		return -1;
 	}
 

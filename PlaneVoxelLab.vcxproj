@@ -135,7 +135,11 @@
     <None Include="assets\shaders\color.vert" />
     <None Include="assets\shaders\fields\sphere_density.glsl" />
     <None Include="assets\shaders\fragment_cleanup_normals.comp" />
+    <None Include="assets\shaders\heightmap_surface_normals.comp" />
+    <None Include="assets\shaders\math\fractal_noise.glsl" />
+    <None Include="assets\shaders\math\heightmap_normals.glsl" />
     <None Include="assets\shaders\math\noise_coordinates.glsl" />
+    <None Include="assets\shaders\math\value_noise.glsl" />
     <None Include="assets\shaders\math\wide_integer.glsl" />
     <None Include="assets\shaders\spatial\world_metric_coordinate.glsl" />
     <None Include="assets\shaders\spatial\world_position.glsl" />
@@ -143,8 +147,11 @@
     <None Include="assets\shaders\standard.vert" />
     <None Include="assets\shaders\surface.frag" />
     <None Include="assets\shaders\surface.vert" />
+    <None Include="assets\shaders\tests\fractal_noise_test.comp" />
+    <None Include="assets\shaders\tests\heightmap_normals_test.comp" />
     <None Include="assets\shaders\tests\noise_coordinate_test.comp" />
     <None Include="assets\shaders\tests\noise_coordinate_wide_test.comp" />
+    <None Include="assets\shaders\tests\value_noise_test.comp" />
     <None Include="assets\shaders\tests\wide_integer_test.comp" />
     <None Include="assets\shaders\tests\world_metric_coordinate_test.comp" />
     <None Include="docs\code_conventions.md" />
@@ -198,6 +205,10 @@
     <ClCompile Include="src\terrain_edit\terrain_edit.cpp" />
     <ClCompile Include="src\terrain_render\terrain_render_resources.cpp" />
     <ClCompile Include="src\terrain_render\terrain_tile_atlas.cpp" />
+    <ClCompile Include="src\tests\gpu_fractal_noise_test.cpp" />
+    <ClCompile Include="src\tests\gpu_heightmap_normals_test.cpp" />
+    <ClCompile Include="src\tests\gpu_noise_domain_test.cpp" />
+    <ClCompile Include="src\tests\gpu_value_noise_test.cpp" />
     <ClCompile Include="src\tests\gpu_wide_integer_test.cpp" />
     <ClCompile Include="src\tests\gpu_wide_noise_test.cpp" />
     <ClCompile Include="src\tests\gpu_world_metric_test.cpp" />
@@ -248,6 +259,10 @@
     <ClInclude Include="src\terrain_edit\terrain_edit.h" />
     <ClInclude Include="src\terrain_render\terrain_render_resources.h" />
     <ClInclude Include="src\terrain_render\terrain_tile_atlas.h" />
+    <ClInclude Include="src\tests\gpu_fractal_noise_test.h" />
+    <ClInclude Include="src\tests\gpu_heightmap_normals_test.h" />
+    <ClInclude Include="src\tests\gpu_noise_domain_test.h" />
+    <ClInclude Include="src\tests\gpu_value_noise_test.h" />
     <ClInclude Include="src\tests\gpu_wide_integer_test.h" />
     <ClInclude Include="src\tests\gpu_wide_noise_test.h" />
     <ClInclude Include="src\tests\gpu_world_metric_test.h" />

@@ -1,0 +1,15 @@
+///////////////////////////////////////////////////////////////////////////////
+// tests/gpu_heightmap_normals_test.h
+// ==================================
+//
+// Debug-only CPU/GPU comparison of continuous heightmap normals.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+#ifndef NDEBUG
+
+bool validateGpuHeightmapNormals();
+
+#endif

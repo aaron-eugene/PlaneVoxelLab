@@ -1,0 +1,67 @@
+///////////////////////////////////////////////////////////////////////////////
+// heightmap_normals_test.comp
+// ===========================
+//
+// Exercises heightmap gradients from explicit world-metric X/Z positions.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#version 450 core
+
+// @WORLD_POSITION_IMPLEMENTATION@
+// @WORLD_METRIC_COORDINATE_IMPLEMENTATION@
+// @WIDE_INTEGER_IMPLEMENTATION@
+// @NOISE_COORDINATE_IMPLEMENTATION@
+// @VALUE_NOISE_IMPLEMENTATION@
+// @FRACTAL_NOISE_IMPLEMENTATION@
+// @HEIGHTMAP_NORMALS_IMPLEMENTATION@
+
+layout(local_size_x = 64) in;
+
+struct TestInput
+{
+	uvec2 wholeX;
+	uvec2 wholeZ;
+	float fractionalX;
+	float fractionalZ;
+};
+
+layout(std430, binding = 0) readonly buffer TestInputs
+{
+	TestInput inputs[];
+};
+
+layout(std430, binding = 1) writeonly buffer TestOutputs
+{
+	vec4 outputs[];
+};
+
+uniform uint uTestCount;
+uniform float uHeightAmplitude;
+uniform float uGradientStepMeters;
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+
+	if (index >= uTestCount)
+	{
+		return;
+	}
+
+	TestInput inputData = inputs[index];
+
+	WorldMetricCoordinate worldX;
+	worldX.wholeMeters = inputData.wholeX;
+	worldX.fractionalMeter = inputData.fractionalX;
+
+	WorldMetricCoordinate worldZ;
+	worldZ.wholeMeters = inputData.wholeZ;
+	worldZ.fractionalMeter = inputData.fractionalZ;
+
+	vec3 normal;
+	bool valid = trySampleGpuHeightmapNormal(
+		worldX, worldZ, uHeightAmplitude, uGradientStepMeters, normal);
+
+	outputs[index] = vec4(normal, valid ? 1.0 : 0.0);
+}

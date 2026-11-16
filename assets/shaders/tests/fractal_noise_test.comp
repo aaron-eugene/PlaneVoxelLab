@@ -1,0 +1,87 @@
+///////////////////////////////////////////////////////////////////////////////
+// fractal_noise_test.comp
+// =======================
+//
+// Tests multi-octave noise at explicit wide world-metric coordinates.
+// CPU-prepared octave parameters are supplied in a separate SSBO.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#version 450 core
+
+/***********************************************************
+* Shader Implementations
+************************************************************/
+
+// @WORLD_POSITION_IMPLEMENTATION@
+
+// @WORLD_METRIC_COORDINATE_IMPLEMENTATION@
+
+// @WIDE_INTEGER_IMPLEMENTATION@
+
+// @NOISE_COORDINATE_IMPLEMENTATION@
+
+// @VALUE_NOISE_IMPLEMENTATION@
+
+// @FRACTAL_NOISE_IMPLEMENTATION@
+
+layout(local_size_x = 64) in;
+
+/***********************************************************
+* Test Types
+************************************************************/
+
+struct TestInput
+{
+	uvec2 wholeX;
+	uvec2 wholeZ;
+	float fractionalX;
+	float fractionalZ;
+};
+
+/***********************************************************
+* Shader Storage Buffers
+************************************************************/
+
+layout(std430, binding = 0) readonly buffer TestInputs
+{
+	TestInput inputs[];
+};
+
+layout(std430, binding = 1) writeonly buffer TestOutputs
+{
+	uvec2 outputs[];
+};
+
+uniform uint uTestCount;
+
+/***********************************************************
+* Test Execution
+************************************************************/
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+
+	if (index >= uTestCount)
+	{
+		return;
+	}
+
+	TestInput inputData = inputs[index];
+
+	WorldMetricCoordinate worldX;
+	worldX.wholeMeters = inputData.wholeX;
+	worldX.fractionalMeter = inputData.fractionalX;
+
+	WorldMetricCoordinate worldZ;
+	worldZ.wholeMeters = inputData.wholeZ;
+	worldZ.fractionalMeter = inputData.fractionalZ;
+
+	float value;
+	bool valid = trySampleGpuFractalValueNoise2d(worldX, worldZ, value);
+
+	outputs[index] = uvec2(
+		floatBitsToUint(value),
+		valid ? 1u : 0u);
+}

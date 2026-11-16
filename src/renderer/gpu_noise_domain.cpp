@@ -2,14 +2,13 @@
 // renderer/gpu_noise_domain.cpp
 // =============================
 //
-// Checks every heightmap octave before GPU noise evaluation. Accepted inputs
-// are safe from signed 64-bit multiplication and cell-addition overflow in
-// the current two-word GLSL conversion.
+// Validates GPU heightmap noise arithmetic and prepares approved octave data.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "renderer/gpu_noise_domain.h"
 
+#include "fields/field_generators.h"
 #include "spatial/spatial_constants.h"
 
 #include <cmath>
@@ -20,9 +19,8 @@
 * File-Local Constants
 ************************************************************/
 
-// These must match the currently checked GLSL B2 contract.
+// Must match the checked B2 GLSL scale-component limit.
 static constexpr int64_t MAX_GPU_NOISE_SCALE_COMPONENT = 65536;
-static constexpr uint32_t MAX_GPU_NOISE_OCTAVES = 64;
 
 /***********************************************************
 * File-Local Helpers
@@ -42,7 +40,7 @@ static int64_t floorDividePositiveDenominator(
 	int64_t numerator,
 	int64_t denominator)
 {
-	// Requires denominator > 0. This division is always representable.
+	// Requires denominator > 0.
 	int64_t quotient = numerator / denominator;
 	const int64_t remainder = numerator % denominator;
 
@@ -58,8 +56,8 @@ static bool canMultiplyInInt64(
 	int64_t value,
 	int64_t positiveMultiplier)
 {
-	const int64_t minValue = std::numeric_limits<int64_t>::min();
-	const int64_t maxValue = std::numeric_limits<int64_t>::max();
+	constexpr int64_t minValue = std::numeric_limits<int64_t>::min();
+	constexpr int64_t maxValue = std::numeric_limits<int64_t>::max();
 
 	return
 		positiveMultiplier > 0 &&
@@ -76,9 +74,11 @@ GpuNoiseDomain getFullGpuNoiseDomain()
 	const int64_t chunkSize = static_cast<int64_t>(CHUNK_SIZE);
 
 	GpuNoiseDomain domain = {};
+
 	domain.minWholeMeters =
 		static_cast<int64_t>(std::numeric_limits<int32_t>::min()) *
 		chunkSize;
+
 	domain.maxWholeMeters =
 		static_cast<int64_t>(std::numeric_limits<int32_t>::max()) *
 		chunkSize + (chunkSize - 1);
@@ -100,7 +100,8 @@ GpuNoiseDomainResult validateGpuHeightmapNoiseDomain(
 	}
 
 	if (!std::isfinite(heightmap.amplitude) ||
-		!std::isfinite(heightmap.persistence))
+		!std::isfinite(heightmap.persistence) ||
+		heightmap.persistence < 0.0f)
 	{
 		return makeFailure(
 			GpuNoiseDomainFailure::InvalidHeightmapParameter, 0);
@@ -109,11 +110,13 @@ GpuNoiseDomainResult validateGpuHeightmapNoiseDomain(
 	if (heightmap.octaveCount == 0 ||
 		heightmap.octaveCount > MAX_GPU_NOISE_OCTAVES)
 	{
-		return makeFailure(GpuNoiseDomainFailure::InvalidOctaveCount, 0);
+		return makeFailure(
+			GpuNoiseDomainFailure::InvalidOctaveCount, 0);
 	}
 
 	int64_t numerator = heightmap.baseScale.numerator;
 	int64_t denominator = heightmap.baseScale.denominator;
+
 	const int64_t lacunarityNumerator = heightmap.lacunarity.numerator;
 	const int64_t lacunarityDenominator = heightmap.lacunarity.denominator;
 
@@ -142,12 +145,10 @@ GpuNoiseDomainResult validateGpuHeightmapNoiseDomain(
 				GpuNoiseDomainFailure::WorldProductOverflow, octave);
 		}
 
-		const int64_t minProduct = domain.minWholeMeters * numerator;
 		const int64_t maxProduct = domain.maxWholeMeters * numerator;
 
 		// The local-cell offset is nonnegative. numerator + 2 is a
 		// conservative upper bound that also accommodates float rounding.
-		// Reject any domain too near INT64_MAX for a safe adjustment.
 		const int64_t maxCell =
 			floorDividePositiveDenominator(maxProduct, denominator);
 		const int64_t maxOffset = numerator + 2;
@@ -159,8 +160,6 @@ GpuNoiseDomainResult validateGpuHeightmapNoiseDomain(
 				GpuNoiseDomainFailure::CellRangeOverflow, octave);
 		}
 
-		// Keep a runtime finite check for the non-coordinate part of the
-		// current CPU fractal accumulation contract.
 		totalAmplitude += octaveAmplitude;
 
 		if (!std::isfinite(totalAmplitude))
@@ -196,6 +195,57 @@ GpuNoiseDomainResult validateGpuHeightmapNoiseDomain(
 		return makeFailure(
 			GpuNoiseDomainFailure::InvalidHeightmapParameter,
 			heightmap.octaveCount - 1);
+	}
+
+	return {};
+}
+
+/***********************************************************
+* GPU Heightmap Configuration Preparation
+************************************************************/
+
+GpuNoiseDomainResult prepareGpuHeightmapNoiseConfiguration(
+	const HeightmapDensityField& heightmap,
+	const GpuNoiseDomain& domain,
+	GpuHeightmapNoiseConfiguration& configuration)
+{
+	configuration = {};
+
+	const GpuNoiseDomainResult validation =
+		validateGpuHeightmapNoiseDomain(heightmap, domain);
+
+	if (validation.failure != GpuNoiseDomainFailure::None)
+	{
+		return validation;
+	}
+
+	configuration.octaveCount = heightmap.octaveCount;
+	configuration.seed = heightmap.seed;
+	configuration.heightAmplitude = heightmap.amplitude;
+	configuration.baseHeight = heightmap.baseHeight;
+
+	int64_t numerator = heightmap.baseScale.numerator;
+	int64_t denominator = heightmap.baseScale.denominator;
+	float octaveAmplitude = 1.0f;
+
+	for (uint32_t octave = 0;
+		octave < configuration.octaveCount;
+		++octave)
+	{
+		GpuNoiseOctave& gpuOctave = configuration.octaves[octave];
+
+		gpuOctave.numerator = static_cast<int32_t>(numerator);
+		gpuOctave.denominator = static_cast<int32_t>(denominator);
+		gpuOctave.amplitude = octaveAmplitude;
+
+		configuration.totalAmplitude += octaveAmplitude;
+
+		if (octave + 1 < configuration.octaveCount)
+		{
+			octaveAmplitude *= heightmap.persistence;
+			numerator *= heightmap.lacunarity.numerator;
+			denominator *= heightmap.lacunarity.denominator;
+		}
 	}
 
 	return {};

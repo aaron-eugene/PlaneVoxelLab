@@ -17,6 +17,7 @@
 
 #include <cstdint>
 
+struct GpuHeightmapNoiseConfiguration;
 struct GpuMesh;
 struct SphereDensityField;
 
@@ -30,16 +31,40 @@ struct GpuSurfaceNormalBuffer
 	uint32_t normalCount = 0;
 };
 
-struct GpuSurfaceNormalGenerator
+struct GpuSphereNormalProgram
 {
 	ShaderProgram program = {};
 
 	int vertexCountLocation = -1;
 	int meshChunkLocation = -1;
 
-	int sphereCenterChunkLocation = -1;
-	int sphereCenterLocalLocation = -1;
-	int sphereRadiusLocation = -1;
+	int centerChunkLocation = -1;
+	int centerLocalLocation = -1;
+	int radiusLocation = -1;
+};
+
+struct GpuHeightmapNormalProgram
+{
+	ShaderProgram program = {};
+
+	uint32_t octaveBuffer = 0;
+	bool configured = false;
+
+	int vertexCountLocation = -1;
+	int meshChunkLocation = -1;
+
+	int octaveCountLocation = -1;
+	int seedLocation = -1;
+	int totalAmplitudeLocation = -1;
+
+	int heightAmplitudeLocation = -1;
+	int gradientStepLocation = -1;
+};
+
+struct GpuSurfaceNormalGenerator
+{
+	GpuSphereNormalProgram sphere = {};
+	GpuHeightmapNormalProgram heightmap = {};
 };
 
 /***********************************************************
@@ -73,3 +98,13 @@ void generateGpuSphereSurfaceNormals(
 	const GpuSurfaceNormalBuffer& normalBuffer,
 	const ChunkCoord& chunkCoord,
 	const SphereDensityField& sphere);
+
+bool prepareGpuHeightmapSurfaceNormals(
+	GpuSurfaceNormalGenerator& generator,
+	const GpuHeightmapNoiseConfiguration& configuration);
+
+void generateGpuHeightmapSurfaceNormals(
+	const GpuSurfaceNormalGenerator& generator,
+	const GpuMesh& mesh,
+	const GpuSurfaceNormalBuffer& normalBuffer,
+	const ChunkCoord& chunkCoord);

@@ -1,0 +1,87 @@
+///////////////////////////////////////////////////////////////////////////////
+// value_noise_test.comp
+// =====================
+//
+// Tests GPU value noise at explicit wide lattice coordinates.
+// Coordinate conversion is intentionally not exercised here.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#version 450 core
+
+/***********************************************************
+* Shader Implementations
+************************************************************/
+
+// @WORLD_POSITION_IMPLEMENTATION@
+
+// @WORLD_METRIC_COORDINATE_IMPLEMENTATION@
+
+// @WIDE_INTEGER_IMPLEMENTATION@
+
+// @NOISE_COORDINATE_IMPLEMENTATION@
+
+// @VALUE_NOISE_IMPLEMENTATION@
+
+layout(local_size_x = 64) in;
+
+/***********************************************************
+* Test Types
+************************************************************/
+
+struct TestInput
+{
+	uvec2 cellX;
+	uvec2 cellZ;
+	float localX;
+	float localZ;
+	uint seed;
+	uint reserved;
+};
+
+/***********************************************************
+* Shader Storage Buffers
+************************************************************/
+
+layout(std430, binding = 0) readonly buffer TestInputs
+{
+	TestInput inputs[];
+};
+
+layout(std430, binding = 1) writeonly buffer TestOutputs
+{
+	uint outputs[];
+};
+
+uniform uint uTestCount;
+
+/***********************************************************
+* Test Execution
+************************************************************/
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+
+	if (index >= uTestCount)
+	{
+		return;
+	}
+
+	TestInput inputData = inputs[index];
+
+	NoiseCoordinate64 x;
+	x.cell = inputData.cellX;
+	x.local = inputData.localX;
+
+	NoiseCoordinate64 z;
+	z.cell = inputData.cellZ;
+	z.local = inputData.localZ;
+
+	float value = sampleGpuValueNoise2d(
+		x,
+		z,
+		inputData.seed);
+
+	outputs[index] = floatBitsToUint(value);
+}
