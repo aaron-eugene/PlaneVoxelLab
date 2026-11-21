@@ -99,14 +99,16 @@ WorldMetricCoordinate offsetWorldMetricCoordinate(
 	assert(axis.fractionalMeter >= 0.0f);
 	assert(axis.fractionalMeter < 1.0f);
 
-	const float totalFractionalMeters =
-		axis.fractionalMeter +
-		offsetMeters;
+	const double totalFractionalMeters =
+		static_cast<double>(axis.fractionalMeter) +
+		static_cast<double>(offsetMeters);
+
+	const double wholeMeterOffsetDouble =
+		std::floor(totalFractionalMeters);
 
 	const int64_t wholeMeterOffset =
 		static_cast<int64_t>(
-			std::floor(
-				totalFractionalMeters));
+			wholeMeterOffsetDouble);
 
 	const int64_t resultWholeMeters =
 		axis.wholeMeters +
@@ -118,9 +120,15 @@ WorldMetricCoordinate offsetWorldMetricCoordinate(
 		resultWholeMeters;
 
 	result.fractionalMeter =
-		totalFractionalMeters -
 		static_cast<float>(
-			wholeMeterOffset);
+			totalFractionalMeters -
+			wholeMeterOffsetDouble);
+
+	if (result.fractionalMeter >= 1.0f)
+	{
+		result.fractionalMeter =
+			std::nextafter(1.0f, 0.0f);
+	}
 
 	assert(result.fractionalMeter >= 0.0f);
 	assert(result.fractionalMeter < 1.0f);

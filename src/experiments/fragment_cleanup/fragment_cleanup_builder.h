@@ -12,7 +12,10 @@
 #include "renderer/render_vertex.h"
 #include "spatial/spatial_coordinates.h"
 
+#include <glm/ext/vector_float3.hpp>
+
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 struct Chunk;
@@ -21,6 +24,37 @@ struct DiscoveredSurfaceChunk;
 /***********************************************************
 * Fragment Cleanup Mesh Types
 ************************************************************/
+
+struct SurfaceIntersectionKey
+{
+	SampleCoord sampleA = {};
+	SampleCoord sampleB = {};
+};
+
+struct SurfaceTriangleKeys
+{
+	SurfaceIntersectionKey vertices[3] = {};
+};
+
+struct FragmentCleanupTopologyTriangle
+{
+	SurfaceTriangleKeys keys = {};
+
+	glm::vec3 positions[3] = {};
+
+	uint32_t renderTriangleIndex =
+		std::numeric_limits<uint32_t>::max();
+};
+
+struct FragmentCleanupTriangleAdjacency
+{
+	uint32_t neighbors[3] =
+	{
+		UINT32_MAX,
+		UINT32_MAX,
+		UINT32_MAX
+	};
+};
 
 struct FragmentCleanupVoxelRange
 {
@@ -36,6 +70,12 @@ struct FragmentCleanupMesh
 	std::vector<uint32_t> indices = {};
 
 	std::vector<FragmentCleanupVoxelRange> voxelRanges = {};
+
+	std::vector<SurfaceTriangleKeys> triangleKeys = {};
+
+	std::vector<FragmentCleanupTopologyTriangle> topologyTriangles = {};
+
+	std::vector<FragmentCleanupTriangleAdjacency> adjacency = {};
 };
 
 /***********************************************************

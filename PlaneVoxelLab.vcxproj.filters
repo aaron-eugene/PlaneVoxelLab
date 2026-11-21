@@ -100,6 +100,9 @@
     <Filter Include="assets\shaders\math">
       <UniqueIdentifier>{36568271-c4ea-4efa-93f9-6cd45694be0c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\terrain_material">
+      <UniqueIdentifier>{3f7cdf01-a670-4357-b0a8-95a65ae42084}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\color.frag">
@@ -341,6 +344,15 @@
     <ClCompile Include="src\tests\gpu_heightmap_normals_test.cpp">
       <Filter>src\tests</Filter>
     </ClCompile>
+    <ClCompile Include="src\terrain_material\terrain_material_placement.cpp">
+      <Filter>src\terrain_material</Filter>
+    </ClCompile>
+    <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_edge_diagnostics.cpp">
+      <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClCompile>
+    <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_adjacency.cpp">
+      <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">
@@ -498,6 +510,15 @@
     </ClInclude>
     <ClInclude Include="src\tests\gpu_heightmap_normals_test.h">
       <Filter>src\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="src\terrain_material\terrain_material_placement.h">
+      <Filter>src\terrain_material</Filter>
+    </ClInclude>
+    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_edge_diagnostics.h">
+      <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClInclude>
+    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_adjacency.h">
+      <Filter>src\experiments\fragment_cleanup</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

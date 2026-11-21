@@ -9,6 +9,9 @@
 #include "experiments/fragment_cleanup/fragment_cleanup_experiment.h"
 
 #include "chunk/chunk.h"
+#include "experiments/fragment_cleanup/fragment_cleanup_adjacency.h"
+#include "experiments/fragment_cleanup/fragment_cleanup_builder.h"
+#include "experiments/fragment_cleanup/fragment_cleanup_edge_diagnostics.h"
 #include "fields/field_generators.h"
 #include "lab_world/lab_world.h"
 #include "math/noise.h"
@@ -314,6 +317,105 @@ static void validateFragmentCleanupHeightmapNormals(
 	}
 }
 
+/***********************************************************
+* Triangle Adjacency Validation
+************************************************************/
+
+static void validateFragmentCleanupAdjacency(
+	const FragmentCleanupMesh& mesh)
+{
+	assert(
+		mesh.adjacency.size() ==
+		mesh.topologyTriangles.size());
+
+	uint64_t matchedEdgeOccurrences = 0;
+	uint64_t unmatchedEdgeOccurrences = 0;
+	uint64_t renderedRejectedConnections = 0;
+
+	for (uint32_t triangleIndex = 0;
+		triangleIndex < mesh.adjacency.size();
+		++triangleIndex)
+	{
+		const FragmentCleanupTriangleAdjacency& triangle =
+			mesh.adjacency[triangleIndex];
+
+		for (uint32_t edgeIndex = 0;
+			edgeIndex < 3;
+			++edgeIndex)
+		{
+			const uint32_t neighborIndex =
+				triangle.neighbors[edgeIndex];
+
+			if (neighborIndex == UINT32_MAX)
+			{
+				++unmatchedEdgeOccurrences;
+				continue;
+			}
+
+			assert(neighborIndex < mesh.adjacency.size());
+			assert(neighborIndex != triangleIndex);
+
+			++matchedEdgeOccurrences;
+
+			const FragmentCleanupTriangleAdjacency& neighbor =
+				mesh.adjacency[neighborIndex];
+
+			bool reciprocal = false;
+
+			for (uint32_t neighborEdgeIndex = 0;
+				neighborEdgeIndex < 3;
+				++neighborEdgeIndex)
+			{
+				if (neighbor.neighbors[neighborEdgeIndex] ==
+					triangleIndex)
+				{
+					reciprocal = true;
+					break;
+				}
+			}
+
+			assert(reciprocal);
+
+			if (triangleIndex < neighborIndex)
+			{
+				const bool renderedA =
+					mesh.topologyTriangles[triangleIndex]
+					.renderTriangleIndex != UINT32_MAX;
+
+				const bool renderedB =
+					mesh.topologyTriangles[neighborIndex]
+					.renderTriangleIndex != UINT32_MAX;
+
+				if (renderedA != renderedB)
+				{
+					++renderedRejectedConnections;
+				}
+			}
+		}
+	}
+
+	assert(matchedEdgeOccurrences % 2 == 0);
+
+	assert(
+		matchedEdgeOccurrences +
+		unmatchedEdgeOccurrences ==
+		mesh.topologyTriangles.size() * 3);
+
+	std::printf(
+		"Fragment cleanup adjacency validation:\n"
+		"  Topology triangles:         %zu\n"
+		"  Matched edge pairs:         %llu\n"
+		"  Unmatched edge occurrences: %llu\n"
+		"  Rendered/rejected links:    %llu\n",
+		mesh.topologyTriangles.size(),
+		static_cast<unsigned long long>(
+			matchedEdgeOccurrences / 2),
+		static_cast<unsigned long long>(
+			unmatchedEdgeOccurrences),
+		static_cast<unsigned long long>(
+			renderedRejectedConnections));
+}
+
 #endif
 
 /***********************************************************
@@ -529,6 +631,14 @@ static void buildEditedTetrahedraMesh(
 			chunk,
 			surfaceVoxel.coord);
 	}
+
+	assert(
+		mesh.triangleKeys.size() ==
+		mesh.indices.size() / 3);
+
+	assert(
+		mesh.topologyTriangles.size() >=
+		mesh.triangleKeys.size());
 }
 
 /***********************************************************
@@ -683,6 +793,83 @@ bool rebuildFragmentCleanupExperiment(
 			chunk,
 			surfaceChunk,
 			editChunk);
+
+		if (!buildFragmentCleanupAdjacency(renderMesh.cpuMesh))
+		{
+			std::printf(
+				"Failed to build fragment cleanup adjacency.\n"
+				"  Chunk: %d, %d, %d\n",
+				renderMesh.coord.x,
+				renderMesh.coord.y,
+				renderMesh.coord.z);
+
+			destroyFragmentCleanupRenderMesh(renderMesh);
+			destroyFragmentCleanupExperimentMeshes(experiment);
+
+			return false;
+		}
+
+#ifndef NDEBUG
+		static bool adjacencyValidated = false;
+
+		if (!adjacencyValidated &&
+			!renderMesh.cpuMesh.topologyTriangles.empty())
+		{
+			validateFragmentCleanupAdjacency(
+				renderMesh.cpuMesh);
+
+			adjacencyValidated = true;
+		}
+#endif
+
+#ifndef NDEBUG
+		static bool edgeDiagnosticReported = false;
+
+		if (!edgeDiagnosticReported &&
+			!renderMesh.cpuMesh.triangleKeys.empty())
+		{
+			assert(
+				renderMesh.cpuMesh.triangleKeys.size() ==
+				renderMesh.cpuMesh.indices.size() / 3);
+
+			const FragmentCleanupEdgeStats stats =
+				analyzeFragmentCleanupEdges(
+					renderMesh.cpuMesh);
+
+			std::printf(
+				"Fragment cleanup edge diagnostic:\n"
+				"  Chunk: %d, %d, %d\n"
+				"  Triangles:        %llu\n"
+				"  Rendered triangles: %llu\n"
+				"  Rejected triangles: %llu\n"
+				"  Edge occurrences: %llu\n"
+				"  Unique edges:     %llu\n"
+				"  Single-use:       %llu\n"
+				"    Chunk boundary: %llu\n"
+				"    Interior:       %llu\n"
+				"  Double-use:       %llu\n"
+				"  Multi-use:        %llu\n"
+				"  Maximum use:      %u\n"
+				"  Analysis time:    %.3f ms\n",
+				renderMesh.coord.x,
+				renderMesh.coord.y,
+				renderMesh.coord.z,
+				static_cast<unsigned long long>(stats.triangleCount),
+				static_cast<unsigned long long>(stats.renderedTriangleCount),
+				static_cast<unsigned long long>(stats.rejectedTriangleCount),
+				static_cast<unsigned long long>(stats.edgeOccurrences),
+				static_cast<unsigned long long>(stats.uniqueEdges),
+				static_cast<unsigned long long>(stats.singleUseEdges),
+				static_cast<unsigned long long>(stats.boundarySingleUseEdges),
+				static_cast<unsigned long long>(stats.interiorSingleUseEdges),
+				static_cast<unsigned long long>(stats.doubleUseEdges),
+				static_cast<unsigned long long>(stats.multiUseEdges),
+				stats.maximumEdgeUse,
+				stats.elapsedMilliseconds);
+
+			edgeDiagnosticReported = true;
+		}
+#endif
 
 		if (!uploadFragmentCleanupRenderMesh(
 			renderMesh))

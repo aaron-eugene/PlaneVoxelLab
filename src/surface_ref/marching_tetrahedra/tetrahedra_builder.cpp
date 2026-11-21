@@ -30,11 +30,14 @@ static constexpr float TRIANGLE_AREA_EPSILON = 0.00001f;
 * Local Types
 ************************************************************/
 
-struct TetrahedronCorner
+namespace
 {
-	glm::vec3 position = {};
-	float density = 0.0f;
-};
+	struct TetrahedronCorner
+	{
+		glm::vec3 position = {};
+		float density = 0.0f;
+	};
+}
 
 /***********************************************************
 * Coordinate Helpers

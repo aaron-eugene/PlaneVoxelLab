@@ -16,6 +16,7 @@
 #include "spatial/spatial_constants.h"
 #include "spatial/spatial_coordinates.h"
 #include "surface_map/surface_map.h"
+#include "terrain_material/terrain_material_placement.h"
 #include "terrain_render/terrain_tile_atlas.h"
 
 #include <glm/common.hpp>
@@ -24,6 +25,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cstdio>
 
 /***********************************************************
 * Tetrahedra Building Constants
@@ -32,28 +34,24 @@
 static constexpr float TRIANGLE_AREA_EPSILON = 0.00001f;
 
 /***********************************************************
-* Terrain Material Constants
-************************************************************/
-
-static constexpr WorldMetricCoordinate
-SAND_TO_GRASS_HEIGHT = { -6, 0.0f };
-
-static constexpr WorldMetricCoordinate
-GRASS_TO_ROCK_HEIGHT = { 2, 0.0f };
-
-static constexpr WorldMetricCoordinate
-ROCK_TO_SNOW_HEIGHT = { 16, 0.0f };
-
-/***********************************************************
 * Local Types
 ************************************************************/
 
-struct TetrahedronCorner
+namespace 
 {
-	glm::vec3 position = {};
-	float density = 0.0f;
-};
+	struct TetrahedronCorner
+	{
+		glm::vec3 position = {};
+		float density = 0.0f;
+		SampleCoord sampleCoord = {};
+	};
 
+	struct TetrahedronSurfacePoint
+	{
+		glm::vec3 position = {};
+		SurfaceIntersectionKey key = {};
+	};
+}
 /***********************************************************
 * Coordinate Helpers
 ************************************************************/
@@ -90,54 +88,21 @@ static glm::vec3 getVoxelCornerLocalPosition(
 		getVoxelCornerMetricOffset(cornerIndex);
 }
 
-/***********************************************************
-* Terrain Material Helpers
-************************************************************/
-
-static TerrainTile getFragmentCleanupTerrainTile(
-	const ChunkCoord& chunkCoord,
-	const glm::vec3& position,
-	const glm::vec3& normal)
+static bool isSampleCoordLess(
+	const SampleCoord& a,
+	const SampleCoord& b)
 {
-	static constexpr float MATERIAL_HEIGHT_VARIATION = 4.0f;
-	static constexpr float REFERENCE_NORMAL_Y = 0.7f;
-
-	const WorldMetricCoordinate worldHeight =
-		getWorldMetricCoordinate(
-			chunkCoord.y,
-			position.y);
-
-	const float heightOffset =
-		(REFERENCE_NORMAL_Y - normal.y) *
-		MATERIAL_HEIGHT_VARIATION;
-
-	const WorldMetricCoordinate classificationHeight =
-		offsetWorldMetricCoordinate(
-			worldHeight,
-			heightOffset);
-
-	if (compareWorldMetricCoordinates(
-		classificationHeight,
-		SAND_TO_GRASS_HEIGHT) < 0)
+	if (a.x != b.x)
 	{
-		return TerrainTile::Sand;
+		return a.x < b.x;
 	}
 
-	if (compareWorldMetricCoordinates(
-		classificationHeight,
-		GRASS_TO_ROCK_HEIGHT) < 0)
+	if (a.y != b.y)
 	{
-		return TerrainTile::Grass;
+		return a.y < b.y;
 	}
 
-	if (compareWorldMetricCoordinates(
-		classificationHeight,
-		ROCK_TO_SNOW_HEIGHT) < 0)
-	{
-		return TerrainTile::Rock;
-	}
-
-	return TerrainTile::Snow;
+	return a.z < b.z;
 }
 
 /***********************************************************
@@ -260,7 +225,7 @@ static glm::vec3 interpolateSurfacePoint(
 	return positionA + t * (positionB - positionA);
 }
 
-static void addOrientedTriangle(
+static bool appendOrientedTriangle(
 	FragmentCleanupMesh& mesh,
 	const ChunkCoord& chunkCoord,
 	const VoxelCoord& voxelCoord,
@@ -277,7 +242,7 @@ static void addOrientedTriangle(
 		pointB,
 		pointC))
 	{
-		return;
+		return false;
 	}
 
 	glm::vec3 finalPointB = pointB;
@@ -302,7 +267,7 @@ static void addOrientedTriangle(
 		(pointA + finalPointB + finalPointC) / 3.0f;
 
 	const TerrainTile tile =
-		getFragmentCleanupTerrainTile(
+		classifyTerrainMaterial(
 			chunkCoord,
 			triangleCentroid,
 			normal);
@@ -343,6 +308,97 @@ static void addOrientedTriangle(
 	mesh.indices.push_back(baseIndex + 0);
 	mesh.indices.push_back(baseIndex + 1);
 	mesh.indices.push_back(baseIndex + 2);
+
+	return true;
+}
+
+static void addOrientedTriangle(
+	FragmentCleanupMesh& mesh,
+	const ChunkCoord& chunkCoord,
+	const VoxelCoord& voxelCoord,
+	const TetrahedronSurfacePoint& pointA,
+	const TetrahedronSurfacePoint& pointB,
+	const TetrahedronSurfacePoint& pointC,
+	const glm::vec3& desiredNormalDirection)
+{
+	const uint32_t renderTriangleIndex =
+		static_cast<uint32_t>(
+			mesh.indices.size() / 3);
+
+	const bool emitted =
+		appendOrientedTriangle(
+			mesh,
+			chunkCoord,
+			voxelCoord,
+			pointA.position,
+			pointB.position,
+			pointC.position,
+			desiredNormalDirection);
+
+	FragmentCleanupTopologyTriangle topologyTriangle = {};
+
+	topologyTriangle.keys.vertices[0] = pointA.key;
+	topologyTriangle.keys.vertices[1] = pointB.key;
+	topologyTriangle.keys.vertices[2] = pointC.key;
+
+	topologyTriangle.positions[0] = pointA.position;
+	topologyTriangle.positions[1] = pointB.position;
+	topologyTriangle.positions[2] = pointC.position;
+
+	if (emitted)
+	{
+		glm::vec3 normal = {};
+
+		const bool validNormal =
+			calculateTriangleNormal(
+				normal,
+				pointA.position,
+				pointB.position,
+				pointC.position);
+
+		assert(validNormal);
+
+		if (glm::dot(
+			normal,
+			desiredNormalDirection) < 0.0f)
+		{
+			std::swap(
+				topologyTriangle.keys.vertices[1],
+				topologyTriangle.keys.vertices[2]);
+
+			std::swap(
+				topologyTriangle.positions[1],
+				topologyTriangle.positions[2]);
+		}
+
+		topologyTriangle.renderTriangleIndex =
+			renderTriangleIndex;
+
+		mesh.triangleKeys.push_back(
+			topologyTriangle.keys);
+	}
+
+	mesh.topologyTriangles.push_back(
+		topologyTriangle);
+}
+
+static void addOrientedTriangle(
+	FragmentCleanupMesh& mesh,
+	const ChunkCoord& chunkCoord,
+	const VoxelCoord& voxelCoord,
+	const glm::vec3& pointA,
+	const glm::vec3& pointB,
+	const glm::vec3& pointC,
+	const glm::vec3& desiredNormalDirection)
+{
+	appendOrientedTriangle(
+		mesh,
+		chunkCoord,
+		voxelCoord,
+		pointA,
+		pointB,
+		pointC,
+		desiredNormalDirection);
 }
 
 /***********************************************************
@@ -426,21 +482,40 @@ static glm::vec3 getSurfaceDirectionFromSolidToAir(
 	return outsideCentroid - insideCentroid;
 }
 
-static glm::vec3 getTetrahedronEdgeSurfacePoint(
+static TetrahedronSurfacePoint getTetrahedronEdgeSurfacePoint(
 	const TetrahedronCorner& cornerA,
 	const TetrahedronCorner& cornerB)
 {
-	return interpolateSurfacePoint(
-		cornerA.position,
-		cornerA.density,
-		cornerB.position,
-		cornerB.density);
+	TetrahedronSurfacePoint result = {};
+
+	result.position =
+		interpolateSurfacePoint(
+			cornerA.position,
+			cornerA.density,
+			cornerB.position,
+			cornerB.density);
+
+	if (isSampleCoordLess(
+		cornerA.sampleCoord,
+		cornerB.sampleCoord))
+	{
+		result.key.sampleA = cornerA.sampleCoord;
+		result.key.sampleB = cornerB.sampleCoord;
+	}
+	else
+	{
+		result.key.sampleA = cornerB.sampleCoord;
+		result.key.sampleB = cornerA.sampleCoord;
+	}
+
+	return result;
 }
 
 static void gatherTetrahedronCorners(
 	TetrahedronCorner tetrahedronCorners[FRAGMENT_CLEANUP_TETRAHEDRON_CORNER_COUNT],
 	const glm::vec3 voxelCornerPositions[VOXEL_CORNER_COUNT],
 	const float voxelCornerDensities[VOXEL_CORNER_COUNT],
+	const VoxelCoord& voxelCoord,
 	uint32_t tetrahedronIndex)
 {
 	assert(tetrahedronIndex < FRAGMENT_CLEANUP_TETRAHEDRA_PER_VOXEL);
@@ -461,6 +536,11 @@ static void gatherTetrahedronCorners(
 
 		tetrahedronCorners[tetrahedronCornerIndex].density =
 			voxelCornerDensities[voxelCornerIndex];
+
+		tetrahedronCorners[tetrahedronCornerIndex].sampleCoord =
+			getVoxelCornerSampleCoord(
+				voxelCoord,
+				voxelCornerIndex);
 	}
 }
 
@@ -478,6 +558,7 @@ static void polygonizeTetrahedron(
 		tetrahedronCorners,
 		voxelCornerPositions,
 		voxelCornerDensities,
+		voxelCoord,
 		tetrahedronIndex);
 
 	uint32_t insideCorners[FRAGMENT_CLEANUP_TETRAHEDRON_CORNER_COUNT] = {};
@@ -511,17 +592,17 @@ static void polygonizeTetrahedron(
 		const TetrahedronCorner& insideCorner =
 			tetrahedronCorners[insideCorners[0]];
 
-		const glm::vec3 pointA =
+		const TetrahedronSurfacePoint pointA =
 			getTetrahedronEdgeSurfacePoint(
 				insideCorner,
 				tetrahedronCorners[outsideCorners[0]]);
 
-		const glm::vec3 pointB =
+		const TetrahedronSurfacePoint pointB =
 			getTetrahedronEdgeSurfacePoint(
 				insideCorner,
 				tetrahedronCorners[outsideCorners[1]]);
 
-		const glm::vec3 pointC =
+		const TetrahedronSurfacePoint pointC =
 			getTetrahedronEdgeSurfacePoint(
 				insideCorner,
 				tetrahedronCorners[outsideCorners[2]]);
@@ -540,17 +621,17 @@ static void polygonizeTetrahedron(
 		const TetrahedronCorner& outsideCorner =
 			tetrahedronCorners[outsideCorners[0]];
 
-		const glm::vec3 pointA =
+		const TetrahedronSurfacePoint pointA =
 			getTetrahedronEdgeSurfacePoint(
 				outsideCorner,
 				tetrahedronCorners[insideCorners[0]]);
 
-		const glm::vec3 pointB =
+		const TetrahedronSurfacePoint pointB =
 			getTetrahedronEdgeSurfacePoint(
 				outsideCorner,
 				tetrahedronCorners[insideCorners[1]]);
 
-		const glm::vec3 pointC =
+		const TetrahedronSurfacePoint pointC =
 			getTetrahedronEdgeSurfacePoint(
 				outsideCorner,
 				tetrahedronCorners[insideCorners[2]]);
@@ -581,22 +662,22 @@ static void polygonizeTetrahedron(
 		const TetrahedronCorner& outsideCornerB =
 			tetrahedronCorners[outsideCorners[1]];
 
-		const glm::vec3 pointA =
+		const TetrahedronSurfacePoint pointA =
 			getTetrahedronEdgeSurfacePoint(
 				insideCornerA,
 				outsideCornerA);
 
-		const glm::vec3 pointB =
+		const TetrahedronSurfacePoint pointB =
 			getTetrahedronEdgeSurfacePoint(
 				insideCornerA,
 				outsideCornerB);
 
-		const glm::vec3 pointC =
+		const TetrahedronSurfacePoint pointC =
 			getTetrahedronEdgeSurfacePoint(
 				insideCornerB,
 				outsideCornerB);
 
-		const glm::vec3 pointD =
+		const TetrahedronSurfacePoint pointD =
 			getTetrahedronEdgeSurfacePoint(
 				insideCornerB,
 				outsideCornerA);
@@ -868,6 +949,9 @@ void clearFragmentCleanupMesh(
 	mesh.vertices.clear();
 	mesh.indices.clear();
 	mesh.voxelRanges.clear();
+	mesh.triangleKeys.clear();
+	mesh.topologyTriangles.clear();
+	mesh.adjacency.clear();
 }
 
 void appendFragmentCleanupVoxel(
@@ -936,4 +1020,12 @@ void buildFragmentCleanupMesh(
 			chunk,
 			surfaceVoxel.coord);
 	}
+
+	assert(
+		mesh.triangleKeys.size() ==
+		mesh.indices.size() / 3);
+
+	assert(
+		mesh.topologyTriangles.size() >=
+		mesh.triangleKeys.size());
 }
