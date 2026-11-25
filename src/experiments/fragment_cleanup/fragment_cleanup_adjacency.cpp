@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////////////
 // experiments/fragment_cleanup/fragment_cleanup_adjacency.cpp
 // =============================================================
@@ -12,7 +11,6 @@
 #include "experiments/fragment_cleanup/fragment_cleanup_builder.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cstdint>
 #include <limits>
 #include <vector>

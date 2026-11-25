@@ -347,10 +347,16 @@
     <ClCompile Include="src\terrain_material\terrain_material_placement.cpp">
       <Filter>src\terrain_material</Filter>
     </ClCompile>
-    <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_edge_diagnostics.cpp">
+    <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_adjacency.cpp">
       <Filter>src\experiments\fragment_cleanup</Filter>
     </ClCompile>
-    <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_adjacency.cpp">
+    <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_material_boundaries.cpp">
+      <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClCompile>
+    <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_blend_distance.cpp">
+      <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClCompile>
+    <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_cross_chunk.cpp">
       <Filter>src\experiments\fragment_cleanup</Filter>
     </ClCompile>
   </ItemGroup>
@@ -514,10 +520,16 @@
     <ClInclude Include="src\terrain_material\terrain_material_placement.h">
       <Filter>src\terrain_material</Filter>
     </ClInclude>
-    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_edge_diagnostics.h">
+    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_adjacency.h">
       <Filter>src\experiments\fragment_cleanup</Filter>
     </ClInclude>
-    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_adjacency.h">
+    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_material_boundaries.h">
+      <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClInclude>
+    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_blend_distance.h">
+      <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClInclude>
+    <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_cross_chunk.h">
       <Filter>src\experiments\fragment_cleanup</Filter>
     </ClInclude>
   </ItemGroup>

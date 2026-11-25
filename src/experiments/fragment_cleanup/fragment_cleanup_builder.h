@@ -11,15 +11,14 @@
 
 #include "renderer/render_vertex.h"
 #include "spatial/spatial_coordinates.h"
+#include "terrain_render/terrain_tile_atlas.h"
 
 #include <glm/ext/vector_float3.hpp>
 
 #include <cstdint>
-#include <limits>
 #include <vector>
 
 struct Chunk;
-struct DiscoveredSurfaceChunk;
 
 /***********************************************************
 * Fragment Cleanup Mesh Types
@@ -42,8 +41,11 @@ struct FragmentCleanupTopologyTriangle
 
 	glm::vec3 positions[3] = {};
 
+	TerrainTile material = {};
+	bool hasMaterial = false;
+
 	uint32_t renderTriangleIndex =
-		std::numeric_limits<uint32_t>::max();
+		UINT32_MAX;
 };
 
 struct FragmentCleanupTriangleAdjacency
@@ -54,6 +56,12 @@ struct FragmentCleanupTriangleAdjacency
 		UINT32_MAX,
 		UINT32_MAX
 	};
+};
+
+struct FragmentCleanupMaterialBoundary
+{
+	uint32_t triangleIndex = 0;
+	uint32_t edgeIndex = 0;
 };
 
 struct FragmentCleanupVoxelRange
@@ -71,11 +79,11 @@ struct FragmentCleanupMesh
 
 	std::vector<FragmentCleanupVoxelRange> voxelRanges = {};
 
-	std::vector<SurfaceTriangleKeys> triangleKeys = {};
-
 	std::vector<FragmentCleanupTopologyTriangle> topologyTriangles = {};
 
 	std::vector<FragmentCleanupTriangleAdjacency> adjacency = {};
+
+	std::vector<FragmentCleanupMaterialBoundary> materialBoundaries = {};
 };
 
 /***********************************************************
@@ -95,8 +103,3 @@ void appendFragmentCleanupExposedFace(
 	const Chunk& chunk,
 	const VoxelCoord& voxelCoord,
 	uint32_t faceIndex);
-
-void buildFragmentCleanupMesh(
-	FragmentCleanupMesh& mesh,
-	const Chunk& chunk,
-	const DiscoveredSurfaceChunk& surfaceChunk);

@@ -10,8 +10,9 @@
 
 #include "chunk/chunk.h"
 #include "experiments/fragment_cleanup/fragment_cleanup_adjacency.h"
-#include "experiments/fragment_cleanup/fragment_cleanup_builder.h"
-#include "experiments/fragment_cleanup/fragment_cleanup_edge_diagnostics.h"
+#include "experiments/fragment_cleanup/fragment_cleanup_blend_distance.h"
+#include "experiments/fragment_cleanup/fragment_cleanup_cross_chunk.h"
+#include "experiments/fragment_cleanup/fragment_cleanup_material_boundaries.h"
 #include "fields/field_generators.h"
 #include "lab_world/lab_world.h"
 #include "math/noise.h"
@@ -42,70 +43,6 @@
 #include <vector>
 
 #ifndef NDEBUG
-
-/***********************************************************
-* GPU Surface Normal Validation
-************************************************************/
-
-static void validateFragmentCleanupSphereNormals(
-	const FragmentCleanupRenderMesh& renderMesh,
-	const SphereDensityField& sphere)
-{
-	assert(renderMesh.smoothNormals.handle != 0);
-	assert(!renderMesh.cpuMesh.vertices.empty());
-
-	const glm::vec3 sphereCenterLocal =
-		getChunkRelativePosition(
-			sphere.center.chunk,
-			renderMesh.coord) +
-		sphere.center.localPosition;
-
-	const uint32_t sampleCount =
-		static_cast<uint32_t>(
-			std::min<std::size_t>(
-				8,
-				renderMesh.cpuMesh.vertices.size()));
-
-	for (uint32_t index = 0;
-		index < sampleCount;
-		++index)
-	{
-		glm::vec4 gpuNormal = {};
-
-		glGetNamedBufferSubData(
-			renderMesh.smoothNormals.handle,
-			static_cast<GLintptr>(
-				index * sizeof(glm::vec4)),
-			sizeof(glm::vec4),
-			&gpuNormal);
-
-		const glm::vec3 position =
-			renderMesh.cpuMesh.vertices[index].position;
-
-		const glm::vec3 direction =
-			position - sphereCenterLocal;
-
-		const float lengthSquared =
-			glm::dot(direction, direction);
-
-		if (lengthSquared <= 0.000001f)
-		{
-			continue;
-		}
-
-		const glm::vec3 expectedNormal =
-			glm::normalize(direction);
-
-		const glm::vec3 actualNormal =
-			glm::vec3(gpuNormal);
-
-		const float error =
-			glm::length(
-				actualNormal - expectedNormal);
-
-		assert(error < 0.001f);
-	}
-}
 
 /***********************************************************
 * CPU Heightmap Normal Reference
@@ -192,134 +129,21 @@ static glm::vec3 sampleFragmentCleanupCpuHeightmapNormal(
 }
 
 /***********************************************************
-* GPU Heightmap Normal Validation
-************************************************************/
-
-static void validateFragmentCleanupHeightmapNormals(
-	const FragmentCleanupRenderMesh& renderMesh,
-	const HeightmapDensityField& heightmap)
-{
-	assert(renderMesh.hasSmoothNormals);
-	assert(renderMesh.smoothNormals.handle != 0);
-	assert(renderMesh.smoothNormals.normalCount ==
-		renderMesh.cpuMesh.vertices.size());
-
-	const uint32_t normalCount =
-		renderMesh.smoothNormals.normalCount;
-
-	assert(normalCount > 0);
-
-	std::vector<glm::vec4> gpuNormals(normalCount);
-
-	glGetNamedBufferSubData(
-		renderMesh.smoothNormals.handle,
-		0,
-		static_cast<GLsizeiptr>(
-			gpuNormals.size() * sizeof(glm::vec4)),
-		gpuNormals.data());
-
-	// Inspect every normal in this buffer for invalid output.
-	for (uint32_t index = 0; index < normalCount; ++index)
-	{
-		const glm::vec4& normal = gpuNormals[index];
-
-		const bool finite =
-			std::isfinite(normal.x) &&
-			std::isfinite(normal.y) &&
-			std::isfinite(normal.z) &&
-			std::isfinite(normal.w);
-
-		const float lengthSquared =
-			normal.x * normal.x +
-			normal.y * normal.y +
-			normal.z * normal.z;
-
-		if (!finite ||
-			normal.w != 0.0f ||
-			!std::isfinite(lengthSquared) ||
-			std::fabs(lengthSquared - 1.0f) > 0.01f)
-		{
-			std::printf(
-				"Invalid GPU heightmap normal.\n"
-				"  Chunk: %d, %d, %d\n"
-				"  Vertex: %u\n"
-				"  Normal: %.6f %.6f %.6f %.6f\n",
-				renderMesh.coord.x,
-				renderMesh.coord.y,
-				renderMesh.coord.z,
-				index,
-				normal.x,
-				normal.y,
-				normal.z,
-				normal.w);
-
-			assert(false &&
-				"Invalid GPU heightmap normal");
-
-			return;
-		}
-	}
-
-	// Compare representative vertices against the CPU reference.
-	const uint32_t sampleCount =
-		std::min<uint32_t>(8u, normalCount);
-
-	for (uint32_t sample = 0;
-		sample < sampleCount;
-		++sample)
-	{
-		const uint32_t index =
-			sampleCount > 1
-			? static_cast<uint32_t>(
-				(static_cast<uint64_t>(sample) *
-					(normalCount - 1u)) /
-				(sampleCount - 1u))
-			: 0u;
-
-		const glm::vec3 localPosition =
-			renderMesh.cpuMesh.vertices[index].position;
-
-		const WorldPosition worldPosition =
-			makeWorldPosition(
-				renderMesh.coord,
-				localPosition);
-
-		const glm::vec3 expected =
-			sampleFragmentCleanupCpuHeightmapNormal(
-				worldPosition,
-				heightmap);
-
-		const glm::vec3 actual =
-			glm::vec3(gpuNormals[index]);
-
-		const float error =
-			glm::length(actual - expected);
-
-		if (!std::isfinite(error) ||
-			error > HEIGHTMAP_NORMAL_TOLERANCE)
-		{
-			std::printf(
-				"GPU heightmap normal mismatch.\n"
-				"  Chunk: %d, %d, %d\n"
-				"  Vertex: %u\n"
-				"  Error: %.9f\n",
-				renderMesh.coord.x,
-				renderMesh.coord.y,
-				renderMesh.coord.z,
-				index,
-				error);
-
-			assert(false &&
-				"GPU heightmap normal mismatch");
-
-			return;
-		}
-	}
-}
-
-/***********************************************************
 * Triangle Adjacency Validation
 ************************************************************/
+
+static bool isSurfaceIntersectionKeyEqual(
+	const SurfaceIntersectionKey& a,
+	const SurfaceIntersectionKey& b)
+{
+	return
+		a.sampleA.x == b.sampleA.x &&
+		a.sampleA.y == b.sampleA.y &&
+		a.sampleA.z == b.sampleA.z &&
+		a.sampleB.x == b.sampleB.x &&
+		a.sampleB.y == b.sampleB.y &&
+		a.sampleB.z == b.sampleB.z;
+}
 
 static void validateFragmentCleanupAdjacency(
 	const FragmentCleanupMesh& mesh)
@@ -328,37 +152,42 @@ static void validateFragmentCleanupAdjacency(
 		mesh.adjacency.size() ==
 		mesh.topologyTriangles.size());
 
-	uint64_t matchedEdgeOccurrences = 0;
-	uint64_t unmatchedEdgeOccurrences = 0;
-	uint64_t renderedRejectedConnections = 0;
-
 	for (uint32_t triangleIndex = 0;
 		triangleIndex < mesh.adjacency.size();
 		++triangleIndex)
 	{
-		const FragmentCleanupTriangleAdjacency& triangle =
+		const FragmentCleanupTriangleAdjacency& adjacency =
 			mesh.adjacency[triangleIndex];
+
+		const SurfaceTriangleKeys& triangleKeys =
+			mesh.topologyTriangles[triangleIndex].keys;
 
 		for (uint32_t edgeIndex = 0;
 			edgeIndex < 3;
 			++edgeIndex)
 		{
 			const uint32_t neighborIndex =
-				triangle.neighbors[edgeIndex];
+				adjacency.neighbors[edgeIndex];
 
 			if (neighborIndex == UINT32_MAX)
 			{
-				++unmatchedEdgeOccurrences;
 				continue;
 			}
 
 			assert(neighborIndex < mesh.adjacency.size());
 			assert(neighborIndex != triangleIndex);
 
-			++matchedEdgeOccurrences;
-
 			const FragmentCleanupTriangleAdjacency& neighbor =
 				mesh.adjacency[neighborIndex];
+
+			const SurfaceTriangleKeys& neighborKeys =
+				mesh.topologyTriangles[neighborIndex].keys;
+
+			const SurfaceIntersectionKey& edgeA =
+				triangleKeys.vertices[edgeIndex];
+
+			const SurfaceIntersectionKey& edgeB =
+				triangleKeys.vertices[(edgeIndex + 1) % 3];
 
 			bool reciprocal = false;
 
@@ -366,54 +195,147 @@ static void validateFragmentCleanupAdjacency(
 				neighborEdgeIndex < 3;
 				++neighborEdgeIndex)
 			{
-				if (neighbor.neighbors[neighborEdgeIndex] ==
+				if (neighbor.neighbors[neighborEdgeIndex] !=
 					triangleIndex)
 				{
-					reciprocal = true;
-					break;
+					continue;
 				}
+
+				const SurfaceIntersectionKey& neighborA =
+					neighborKeys.vertices[neighborEdgeIndex];
+
+				const SurfaceIntersectionKey& neighborB =
+					neighborKeys.vertices[(neighborEdgeIndex + 1) % 3];
+
+				const bool matchingEdge =
+					(isSurfaceIntersectionKeyEqual(edgeA, neighborA) &&
+						isSurfaceIntersectionKeyEqual(edgeB, neighborB)) ||
+					(isSurfaceIntersectionKeyEqual(edgeA, neighborB) &&
+						isSurfaceIntersectionKeyEqual(edgeB, neighborA));
+
+				assert(matchingEdge);
+
+				reciprocal = true;
+				break;
 			}
 
 			assert(reciprocal);
-
-			if (triangleIndex < neighborIndex)
-			{
-				const bool renderedA =
-					mesh.topologyTriangles[triangleIndex]
-					.renderTriangleIndex != UINT32_MAX;
-
-				const bool renderedB =
-					mesh.topologyTriangles[neighborIndex]
-					.renderTriangleIndex != UINT32_MAX;
-
-				if (renderedA != renderedB)
-				{
-					++renderedRejectedConnections;
-				}
-			}
 		}
 	}
+}
 
-	assert(matchedEdgeOccurrences % 2 == 0);
+static void validateFragmentCleanupRenderMapping(
+	const FragmentCleanupMesh& mesh)
+{
+	assert(mesh.indices.size() % 3 == 0);
 
-	assert(
-		matchedEdgeOccurrences +
-		unmatchedEdgeOccurrences ==
-		mesh.topologyTriangles.size() * 3);
+	const size_t renderTriangleCount =
+		mesh.indices.size() / 3;
 
-	std::printf(
-		"Fragment cleanup adjacency validation:\n"
-		"  Topology triangles:         %zu\n"
-		"  Matched edge pairs:         %llu\n"
-		"  Unmatched edge occurrences: %llu\n"
-		"  Rendered/rejected links:    %llu\n",
-		mesh.topologyTriangles.size(),
-		static_cast<unsigned long long>(
-			matchedEdgeOccurrences / 2),
-		static_cast<unsigned long long>(
-			unmatchedEdgeOccurrences),
-		static_cast<unsigned long long>(
-			renderedRejectedConnections));
+	std::vector<bool> mappedTriangles(
+		renderTriangleCount,
+		false);
+
+	size_t mappedCount = 0;
+
+	for (const FragmentCleanupTopologyTriangle& triangle :
+		mesh.topologyTriangles)
+	{
+		if (triangle.renderTriangleIndex == UINT32_MAX)
+		{
+			assert(!triangle.hasMaterial);
+			continue;
+		}
+
+		assert(triangle.hasMaterial);
+
+		const uint32_t renderIndex =
+			triangle.renderTriangleIndex;
+
+		assert(renderIndex < renderTriangleCount);
+		assert(!mappedTriangles[renderIndex]);
+
+		mappedTriangles[renderIndex] = true;
+		++mappedCount;
+	}
+
+	assert(mappedCount == renderTriangleCount);
+}
+
+static void validateFragmentCleanupCrossChunkConnections(
+	const FragmentCleanupExperiment& experiment)
+{
+	for (const FragmentCleanupCrossChunkConnection& connection :
+		experiment.crossChunkConnections)
+	{
+		const FragmentCleanupCrossChunkEndpoint& a =
+			connection.a;
+
+		const FragmentCleanupCrossChunkEndpoint& b =
+			connection.b;
+
+		assert(a.meshIndex < experiment.meshes.size());
+		assert(b.meshIndex < experiment.meshes.size());
+		assert(a.meshIndex != b.meshIndex);
+
+		const FragmentCleanupRenderMesh& meshA =
+			experiment.meshes[a.meshIndex];
+
+		const FragmentCleanupRenderMesh& meshB =
+			experiment.meshes[b.meshIndex];
+
+		assert(a.triangleIndex <
+			meshA.cpuMesh.topologyTriangles.size());
+
+		assert(b.triangleIndex <
+			meshB.cpuMesh.topologyTriangles.size());
+
+		assert(a.edgeIndex < 3);
+		assert(b.edgeIndex < 3);
+
+		assert(meshA.cpuMesh.adjacency[a.triangleIndex]
+			.neighbors[a.edgeIndex] == UINT32_MAX);
+
+		assert(meshB.cpuMesh.adjacency[b.triangleIndex]
+			.neighbors[b.edgeIndex] == UINT32_MAX);
+
+		const FragmentCleanupTopologyTriangle& triangleA =
+			meshA.cpuMesh.topologyTriangles[a.triangleIndex];
+
+		const FragmentCleanupTopologyTriangle& triangleB =
+			meshB.cpuMesh.topologyTriangles[b.triangleIndex];
+
+		const glm::vec3 chunkOffset =
+			getChunkRelativePosition(
+				meshB.coord,
+				meshA.coord);
+
+		const glm::vec3 a0 =
+			triangleA.positions[a.edgeIndex];
+
+		const glm::vec3 a1 =
+			triangleA.positions[(a.edgeIndex + 1) % 3];
+
+		const glm::vec3 b0 =
+			triangleB.positions[b.edgeIndex] +
+			chunkOffset;
+
+		const glm::vec3 b1 =
+			triangleB.positions[(b.edgeIndex + 1) % 3] +
+			chunkOffset;
+
+		const float tolerance = 0.0001f;
+
+		const bool sameDirection =
+			glm::length(a0 - b0) <= tolerance &&
+			glm::length(a1 - b1) <= tolerance;
+
+		const bool oppositeDirection =
+			glm::length(a0 - b1) <= tolerance &&
+			glm::length(a1 - b0) <= tolerance;
+
+		assert(sameDirection || oppositeDirection);
+	}
 }
 
 #endif
@@ -437,6 +359,8 @@ static void destroyFragmentCleanupRenderMesh(
 static void destroyFragmentCleanupExperimentMeshes(
 	FragmentCleanupExperiment& experiment)
 {
+	experiment.crossChunkConnections.clear();
+	
 	for (FragmentCleanupRenderMesh& renderMesh :
 		experiment.meshes)
 	{
@@ -446,6 +370,9 @@ static void destroyFragmentCleanupExperimentMeshes(
 
 	experiment.meshes.clear();
 	experiment.debugStats = {};
+
+	experiment.blendDistances.clear();
+	experiment.blendBoundarySeeds.clear();
 }
 
 static bool uploadFragmentCleanupRenderMesh(
@@ -603,9 +530,193 @@ static void updateFragmentCleanupDebugStats(
 	}
 }
 
+#ifndef NDEBUG
+
 /***********************************************************
 * Mesh Building Helpers
 ************************************************************/
+
+static void visualizeFragmentCleanupBlendDistances(
+	FragmentCleanupMesh& mesh,
+	const std::vector<float>& distances,
+	float maxDistance)
+{
+	assert(distances.size() == mesh.topologyTriangles.size());
+	assert(maxDistance > 0.0f);
+
+	const glm::vec3 boundaryColor =
+		glm::vec3(1.0f, 0.15f, 0.15f);
+
+	const glm::vec3 normalColor =
+		glm::vec3(1.0f);
+
+	for (uint32_t triangleIndex = 0;
+		triangleIndex < mesh.topologyTriangles.size();
+		++triangleIndex)
+	{
+		const FragmentCleanupTopologyTriangle& triangle =
+			mesh.topologyTriangles[triangleIndex];
+
+		if (triangle.renderTriangleIndex == UINT32_MAX)
+		{
+			continue;
+		}
+
+		const float distance =
+			distances[triangleIndex];
+
+		if (!std::isfinite(distance))
+		{
+			continue;
+		}
+
+		const float blend =
+			std::clamp(
+				distance / maxDistance,
+				0.0f,
+				1.0f);
+
+		const glm::vec3 color =
+			glm::mix(
+				boundaryColor,
+				normalColor,
+				blend);
+
+		const uint32_t firstIndex =
+			triangle.renderTriangleIndex * 3;
+
+		assert(firstIndex + 2 < mesh.indices.size());
+
+		for (uint32_t corner = 0; corner < 3; ++corner)
+		{
+			const uint32_t vertexIndex =
+				mesh.indices[firstIndex + corner];
+
+			assert(vertexIndex < mesh.vertices.size());
+
+			mesh.vertices[vertexIndex].color = color;
+		}
+	}
+}
+
+static bool doesTriangleBorderRejectedTriangle(
+	const FragmentCleanupMesh& mesh,
+	uint32_t triangleIndex)
+{
+	assert(
+		triangleIndex <
+		mesh.topologyTriangles.size());
+
+	assert(
+		mesh.adjacency.size() ==
+		mesh.topologyTriangles.size());
+
+	const FragmentCleanupTriangleAdjacency& adjacency =
+		mesh.adjacency[triangleIndex];
+
+	for (uint32_t edgeIndex = 0;
+		edgeIndex < 3;
+		++edgeIndex)
+	{
+		const uint32_t neighborIndex =
+			adjacency.neighbors[edgeIndex];
+
+		if (neighborIndex == UINT32_MAX)
+		{
+			continue;
+		}
+
+		assert(
+			neighborIndex <
+			mesh.topologyTriangles.size());
+
+		const FragmentCleanupTopologyTriangle& neighbor =
+			mesh.topologyTriangles[neighborIndex];
+
+		if (neighbor.renderTriangleIndex == UINT32_MAX)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static void visualizeRejectedTriangleBorders(
+	FragmentCleanupMesh& mesh)
+{
+	assert(mesh.indices.size() % 3 == 0);
+
+	assert(
+		mesh.adjacency.size() ==
+		mesh.topologyTriangles.size());
+	
+	const glm::vec3 rejectedNeighborTint =
+		glm::vec3(0.35f, 0.80f, 1.00f);
+
+	static constexpr float TINT_STRENGTH = 0.35f;
+	
+	/*
+	const glm::vec3 rejectedNeighborTint =
+		glm::vec3(0.1f, 0.3f, 1.0f);
+
+	static constexpr float TINT_STRENGTH = 1.0f;
+	*/
+
+	uint32_t highlightedTriangleCount = 0;
+
+	for (uint32_t triangleIndex = 0;
+		triangleIndex < mesh.topologyTriangles.size();
+		++triangleIndex)
+	{
+		const FragmentCleanupTopologyTriangle& triangle =
+			mesh.topologyTriangles[triangleIndex];
+
+		if (triangle.renderTriangleIndex == UINT32_MAX)
+		{
+			continue;
+		}
+
+		if (!doesTriangleBorderRejectedTriangle(
+			mesh,
+			triangleIndex))
+		{
+			continue;
+		}
+
+		const uint32_t firstIndex =
+			triangle.renderTriangleIndex * 3;
+
+		assert(firstIndex + 2 < mesh.indices.size());
+
+		for (uint32_t corner = 0;
+			corner < 3;
+			++corner)
+		{
+			const uint32_t vertexIndex =
+				mesh.indices[firstIndex + corner];
+
+			assert(vertexIndex < mesh.vertices.size());
+
+			glm::vec3& color =
+				mesh.vertices[vertexIndex].color;
+
+			color = glm::mix(
+				color,
+				rejectedNeighborTint,
+				TINT_STRENGTH);
+		}
+
+		++highlightedTriangleCount;
+	}
+
+	std::printf(
+		"Fragment cleanup rejected-border visualization:\n"
+		"  Highlighted triangles: %u\n",
+		highlightedTriangleCount);
+}
+
+#endif
 
 static void buildEditedTetrahedraMesh(
 	FragmentCleanupMesh& mesh,
@@ -631,14 +742,6 @@ static void buildEditedTetrahedraMesh(
 			chunk,
 			surfaceVoxel.coord);
 	}
-
-	assert(
-		mesh.triangleKeys.size() ==
-		mesh.indices.size() / 3);
-
-	assert(
-		mesh.topologyTriangles.size() >=
-		mesh.triangleKeys.size());
 }
 
 /***********************************************************
@@ -676,6 +779,382 @@ static bool prepareFragmentCleanupGpuHeightmap(
 
 	return true;
 }
+
+#ifndef NDEBUG
+
+/***********************************************************
+* World Blend Distance Visualization
+************************************************************/
+
+static void visualizeFragmentCleanupBoundarySeeds(
+	FragmentCleanupMesh& mesh,
+	const std::vector<float>& distances,
+	const std::vector<uint8_t>& boundarySeeds)
+{
+	assert(distances.size() == mesh.topologyTriangles.size());
+	assert(boundarySeeds.size() == mesh.topologyTriangles.size());
+
+	const glm::vec3 seedColor =
+		glm::vec3(0.0f, 1.0f, 1.0f);
+
+	const glm::vec3 propagatedColor =
+		glm::vec3(1.0f, 0.0f, 1.0f);
+
+	for (uint32_t triangleIndex = 0;
+		triangleIndex < mesh.topologyTriangles.size();
+		++triangleIndex)
+	{
+		const FragmentCleanupTopologyTriangle& triangle =
+			mesh.topologyTriangles[triangleIndex];
+
+		if (triangle.renderTriangleIndex == UINT32_MAX)
+		{
+			continue;
+		}
+
+		const bool isSeed =
+			boundarySeeds[triangleIndex] != 0;
+
+		const bool isReached =
+			std::isfinite(distances[triangleIndex]);
+
+		if (!isSeed && !isReached)
+		{
+			continue;
+		}
+
+		const glm::vec3 color =
+			isSeed ? seedColor : propagatedColor;
+
+		const uint32_t firstIndex =
+			triangle.renderTriangleIndex * 3;
+
+		assert(firstIndex + 2 < mesh.indices.size());
+
+		for (uint32_t corner = 0; corner < 3; ++corner)
+		{
+			const uint32_t vertexIndex =
+				mesh.indices[firstIndex + corner];
+
+			assert(vertexIndex < mesh.vertices.size());
+
+			mesh.vertices[vertexIndex].color = color;
+		}
+	}
+}
+
+/***********************************************************
+* Material Blend Debug Update
+************************************************************/
+
+static const char* getFragmentCleanupMaterialName(
+	TerrainTile material)
+{
+	switch (material)
+	{
+	case TerrainTile::Grass:
+		return "Grass";
+
+	case TerrainTile::Sand:
+		return "Sand";
+
+	case TerrainTile::Rock:
+		return "Rock";
+
+	case TerrainTile::Snow:
+		return "Snow";
+
+	default:
+		return "Unknown";
+	}
+}
+
+
+/***********************************************************
+* Material Blend Debug Visualization
+************************************************************/
+
+static glm::vec3 getFragmentCleanupMaterialDebugColor(
+	TerrainTile material)
+{
+	switch (material)
+	{
+	case TerrainTile::Grass:
+		return glm::vec3(0.15f, 0.75f, 0.20f);
+
+	case TerrainTile::Sand:
+		return glm::vec3(1.00f, 0.75f, 0.15f);
+
+	case TerrainTile::Rock:
+		return glm::vec3(0.45f, 0.50f, 0.60f);
+
+	case TerrainTile::Snow:
+		return glm::vec3(0.55f, 0.85f, 1.00f);
+
+	default:
+		return glm::vec3(1.0f, 0.0f, 1.0f);
+	}
+}
+
+static void applyFragmentCleanupBlendDebugColors(
+	FragmentCleanupExperiment& experiment)
+{
+	const FragmentCleanupBlendDebugSettings& settings =
+		experiment.blendDebug;
+
+	const bool normalMode =
+		settings.mode == FragmentCleanupDebugMode::Normal;
+
+	experiment.surfaceSettings.visualizeDebugColors =
+		!normalMode;
+
+	const float maxDistance =
+		settings.baseDistanceMeters *
+		settings.distanceScale;
+
+	const glm::vec3 normalColor(1.0f);
+	const glm::vec3 unreachedColor(0.15f);
+	const glm::vec3 seedColor(0.0f, 1.0f, 1.0f);
+	const glm::vec3 propagatedColor(1.0f, 0.0f, 1.0f);
+
+	for (size_t meshIndex = 0;
+		meshIndex < experiment.meshes.size();
+		++meshIndex)
+	{
+		FragmentCleanupRenderMesh& renderMesh =
+			experiment.meshes[meshIndex];
+
+		FragmentCleanupMesh& mesh =
+			renderMesh.cpuMesh;
+
+		const bool hasDistances =
+			meshIndex < experiment.blendDistances.size() &&
+			meshIndex < experiment.blendBoundarySeeds.size();
+
+		//--------------------------------------------------
+		// Set Default Colors
+		//--------------------------------------------------
+
+		const glm::vec3 defaultColor =
+			normalMode ? normalColor : unreachedColor;
+
+		for (StandardVertex& vertex : mesh.vertices)
+		{
+			vertex.color = defaultColor;
+		}
+
+		//--------------------------------------------------
+		// Color Rendered Triangles
+		//--------------------------------------------------
+
+		for (uint32_t triangleIndex = 0;
+			triangleIndex < mesh.topologyTriangles.size();
+			++triangleIndex)
+		{
+			const FragmentCleanupTopologyTriangle& triangle =
+				mesh.topologyTriangles[triangleIndex];
+
+			if (triangle.renderTriangleIndex == UINT32_MAX)
+			{
+				continue;
+			}
+
+			glm::vec3 color = defaultColor;
+
+			const float distance =
+				hasDistances
+				? experiment.blendDistances[meshIndex][triangleIndex]
+				: std::numeric_limits<float>::infinity();
+
+			const bool reached =
+				std::isfinite(distance);
+
+			const bool isSeed =
+				hasDistances &&
+				experiment.blendBoundarySeeds[meshIndex][triangleIndex] != 0;
+
+			switch (settings.mode)
+			{
+			case FragmentCleanupDebugMode::Normal:
+				color = normalColor;
+				break;
+
+			case FragmentCleanupDebugMode::Materials:
+				color = getFragmentCleanupMaterialDebugColor(
+					triangle.material);
+				break;
+
+			case FragmentCleanupDebugMode::BoundarySeeds:
+				if (reached)
+				{
+					color = isSeed
+						? seedColor
+						: propagatedColor;
+				}
+				break;
+
+			case FragmentCleanupDebugMode::BlendDistance:
+				if (reached && maxDistance > 0.0f)
+				{
+					const float blend =
+						std::clamp(
+							distance / maxDistance,
+							0.0f,
+							1.0f);
+
+					const glm::vec3 nearColor(
+						1.0f, 0.15f, 0.05f);
+
+					const glm::vec3 farColor(
+						0.10f, 0.35f, 1.0f);
+
+					color = glm::mix(
+						nearColor,
+						farColor,
+						blend);
+				}
+				break;
+			}
+
+			const uint32_t firstIndex =
+				triangle.renderTriangleIndex * 3;
+
+			assert(firstIndex + 2 < mesh.indices.size());
+
+			for (uint32_t corner = 0;
+				corner < 3;
+				++corner)
+			{
+				const uint32_t vertexIndex =
+					mesh.indices[firstIndex + corner];
+
+				assert(vertexIndex < mesh.vertices.size());
+
+				mesh.vertices[vertexIndex].color = color;
+			}
+		}
+
+		//--------------------------------------------------
+		// Update Existing GPU Vertex Buffer
+		//--------------------------------------------------
+
+		if (renderMesh.gpuMesh.vertexBuffer != 0 &&
+			!mesh.vertices.empty())
+		{
+			assert(
+				renderMesh.gpuMesh.vertexCount ==
+				mesh.vertices.size());
+
+			const GLsizeiptr dataSize =
+				static_cast<GLsizeiptr>(
+					mesh.vertices.size() *
+					sizeof(StandardVertex));
+
+			glNamedBufferSubData(
+				renderMesh.gpuMesh.vertexBuffer,
+				0,
+				dataSize,
+				mesh.vertices.data());
+		}
+	}
+}
+
+static void updateFragmentCleanupBlendDebug(
+	FragmentCleanupExperiment& experiment)
+{
+	const FragmentCleanupBlendDebugSettings& settings =
+		experiment.blendDebug;
+
+	assert(settings.sourceMaterial != settings.targetMaterial);
+	assert(settings.baseDistanceMeters > 0.0f);
+	assert(settings.distanceScale >= 0.0f);
+
+	const float maxDistanceMeters =
+		settings.baseDistanceMeters *
+		settings.distanceScale;
+
+	experiment.blendDistances.clear();
+	experiment.blendBoundarySeeds.clear();
+
+	uint32_t seedCount = 0;
+
+	if (maxDistanceMeters > 0.0f)
+	{
+		seedCount =
+			calculateFragmentCleanupWorldBlendDistances(
+				experiment.blendDistances,
+				experiment.blendBoundarySeeds,
+				experiment.meshes,
+				experiment.crossChunkConnections,
+				settings.targetMaterial,
+				settings.sourceMaterial,
+				maxDistanceMeters);
+	}
+
+	//--------------------------------------------------
+	// Collect Distance Statistics
+	//--------------------------------------------------
+
+	uint64_t reachedTriangleCount = 0;
+	uint32_t reachedChunkCount = 0;
+
+	for (const std::vector<float>& chunkDistances :
+		experiment.blendDistances)
+	{
+		bool chunkReached = false;
+
+		for (float distance : chunkDistances)
+		{
+			if (!std::isfinite(distance))
+			{
+				continue;
+			}
+
+			++reachedTriangleCount;
+			chunkReached = true;
+		}
+
+		if (chunkReached)
+		{
+			++reachedChunkCount;
+		}
+	}
+
+	//--------------------------------------------------
+	// Apply Current Visualization
+	//--------------------------------------------------
+
+	applyFragmentCleanupBlendDebugColors(
+		experiment);
+
+	//--------------------------------------------------
+	// Report Results
+	//--------------------------------------------------
+
+	std::printf(
+		"Fragment cleanup material blend debug:\n"
+		"  Source: %s\n"
+		"  Target: %s\n"
+		"  Base distance: %.2f m\n"
+		"  Distance scale: %.2f\n"
+		"  Effective distance: %.2f m\n"
+		"  Boundary seeds: %u\n"
+		"  Reached triangles: %llu\n"
+		"  Reached chunks: %u\n",
+		getFragmentCleanupMaterialName(
+			settings.sourceMaterial),
+		getFragmentCleanupMaterialName(
+			settings.targetMaterial),
+		settings.baseDistanceMeters,
+		settings.distanceScale,
+		maxDistanceMeters,
+		seedCount,
+		static_cast<unsigned long long>(
+			reachedTriangleCount),
+		reachedChunkCount);
+}
+
+#endif
 
 /***********************************************************
 * Fragment Cleanup Lifecycle
@@ -735,9 +1214,9 @@ bool rebuildFragmentCleanupExperiment(
 	const LabWorld& world,
 	const TerrainEdits& edits)
 {
-#ifndef NDEBUG
-	bool sphereNormalsValidated = false;
-#endif
+	//--------------------------------------------------
+	// Prepare GPU Heightmap Configuration
+	//--------------------------------------------------
 
 	GpuHeightmapNoiseConfiguration gpuHeightmap = {};
 
@@ -759,11 +1238,19 @@ bool rebuildFragmentCleanupExperiment(
 		}
 	}
 
+	//--------------------------------------------------
+	// Clear Existing Meshes
+	//--------------------------------------------------
+
 	destroyFragmentCleanupExperimentMeshes(
 		experiment);
 
 	experiment.meshes.reserve(
 		world.surfaceMap.chunks.size());
+
+	//--------------------------------------------------
+	// Build Chunk-Local CPU Meshes and Topology
+	//--------------------------------------------------
 
 	for (const DiscoveredSurfaceChunk& surfaceChunk :
 		world.surfaceMap.chunks)
@@ -794,7 +1281,8 @@ bool rebuildFragmentCleanupExperiment(
 			surfaceChunk,
 			editChunk);
 
-		if (!buildFragmentCleanupAdjacency(renderMesh.cpuMesh))
+		if (!buildFragmentCleanupAdjacency(
+			renderMesh.cpuMesh))
 		{
 			std::printf(
 				"Failed to build fragment cleanup adjacency.\n"
@@ -803,208 +1291,109 @@ bool rebuildFragmentCleanupExperiment(
 				renderMesh.coord.y,
 				renderMesh.coord.z);
 
-			destroyFragmentCleanupRenderMesh(renderMesh);
-			destroyFragmentCleanupExperimentMeshes(experiment);
-
-			return false;
-		}
-
-#ifndef NDEBUG
-		static bool adjacencyValidated = false;
-
-		if (!adjacencyValidated &&
-			!renderMesh.cpuMesh.topologyTriangles.empty())
-		{
-			validateFragmentCleanupAdjacency(
-				renderMesh.cpuMesh);
-
-			adjacencyValidated = true;
-		}
-#endif
-
-#ifndef NDEBUG
-		static bool edgeDiagnosticReported = false;
-
-		if (!edgeDiagnosticReported &&
-			!renderMesh.cpuMesh.triangleKeys.empty())
-		{
-			assert(
-				renderMesh.cpuMesh.triangleKeys.size() ==
-				renderMesh.cpuMesh.indices.size() / 3);
-
-			const FragmentCleanupEdgeStats stats =
-				analyzeFragmentCleanupEdges(
-					renderMesh.cpuMesh);
-
-			std::printf(
-				"Fragment cleanup edge diagnostic:\n"
-				"  Chunk: %d, %d, %d\n"
-				"  Triangles:        %llu\n"
-				"  Rendered triangles: %llu\n"
-				"  Rejected triangles: %llu\n"
-				"  Edge occurrences: %llu\n"
-				"  Unique edges:     %llu\n"
-				"  Single-use:       %llu\n"
-				"    Chunk boundary: %llu\n"
-				"    Interior:       %llu\n"
-				"  Double-use:       %llu\n"
-				"  Multi-use:        %llu\n"
-				"  Maximum use:      %u\n"
-				"  Analysis time:    %.3f ms\n",
-				renderMesh.coord.x,
-				renderMesh.coord.y,
-				renderMesh.coord.z,
-				static_cast<unsigned long long>(stats.triangleCount),
-				static_cast<unsigned long long>(stats.renderedTriangleCount),
-				static_cast<unsigned long long>(stats.rejectedTriangleCount),
-				static_cast<unsigned long long>(stats.edgeOccurrences),
-				static_cast<unsigned long long>(stats.uniqueEdges),
-				static_cast<unsigned long long>(stats.singleUseEdges),
-				static_cast<unsigned long long>(stats.boundarySingleUseEdges),
-				static_cast<unsigned long long>(stats.interiorSingleUseEdges),
-				static_cast<unsigned long long>(stats.doubleUseEdges),
-				static_cast<unsigned long long>(stats.multiUseEdges),
-				stats.maximumEdgeUse,
-				stats.elapsedMilliseconds);
-
-			edgeDiagnosticReported = true;
-		}
-#endif
-
-		if (!uploadFragmentCleanupRenderMesh(
-			renderMesh))
-		{
-			destroyFragmentCleanupRenderMesh(
-				renderMesh);
-
 			destroyFragmentCleanupExperimentMeshes(
 				experiment);
 
 			return false;
 		}
 
+		buildFragmentCleanupMaterialBoundaries(
+			renderMesh.cpuMesh);
+
+#ifndef NDEBUG
+		validateFragmentCleanupAdjacency(
+			renderMesh.cpuMesh);
+
+		validateFragmentCleanupRenderMapping(
+			renderMesh.cpuMesh);
+#endif
+
+		experiment.meshes.push_back(
+			std::move(renderMesh));
+	}
+
+	//--------------------------------------------------
+	// Build Cross-Chunk Surface Topology
+	//--------------------------------------------------
+
+	if (!buildFragmentCleanupCrossChunkConnections(
+		experiment.crossChunkConnections,
+		experiment.meshes))
+	{
+		std::printf(
+			"Failed to build fragment cleanup "
+			"cross-chunk connections.\n");
+
+		destroyFragmentCleanupExperimentMeshes(
+			experiment);
+
+		return false;
+	}
+
+#ifndef NDEBUG
+	validateFragmentCleanupCrossChunkConnections(
+		experiment);
+
+	updateFragmentCleanupBlendDebug(
+		experiment);
+#endif
+
+	//--------------------------------------------------
+	// Upload GPU Meshes and Generate Surface Normals
+	//--------------------------------------------------
+
+	for (FragmentCleanupRenderMesh& renderMesh :
+		experiment.meshes)
+	{
+		if (!uploadFragmentCleanupRenderMesh(
+			renderMesh))
+		{
+			destroyFragmentCleanupExperimentMeshes(
+				experiment);
+
+			return false;
+		}
+
+		if (renderMesh.gpuMesh.vertexCount == 0)
+		{
+			continue;
+		}
+
 		if (world.densityField.userData ==
-			&world.sphereField &&
-			renderMesh.gpuMesh.vertexCount > 0)
+			&world.sphereField)
 		{
 			if (!generateFragmentCleanupSphereNormals(
 				renderMesh,
 				experiment.normalGenerator,
 				world.sphereField))
 			{
-				destroyFragmentCleanupRenderMesh(
-					renderMesh);
-
 				destroyFragmentCleanupExperimentMeshes(
 					experiment);
 
 				return false;
 			}
-
-#ifndef NDEBUG
-			if (!sphereNormalsValidated)
-			{
-				validateFragmentCleanupSphereNormals(
-					renderMesh,
-					world.sphereField);
-
-				sphereNormalsValidated = true;
-
-				std::printf(
-					"GPU sphere-normal validation passed.\n");
-			}
-#endif
 		}
-
 		else if (world.densityField.userData ==
-			&world.heightmapField &&
-			renderMesh.gpuMesh.vertexCount > 0)
+			&world.heightmapField)
 		{
 			if (!generateFragmentCleanupHeightmapNormals(
 				renderMesh,
 				experiment.normalGenerator))
 			{
-				destroyFragmentCleanupRenderMesh(renderMesh);
-				destroyFragmentCleanupExperimentMeshes(experiment);
+				destroyFragmentCleanupExperimentMeshes(
+					experiment);
 
 				return false;
 			}
 		}
-
-		experiment.meshes.push_back(
-			std::move(renderMesh));
 	}
 
+	//--------------------------------------------------
+	// Update Debug Statistics
+	//--------------------------------------------------
 
-#ifndef NDEBUG
-
-	if (world.densityField.userData ==
-		&world.heightmapField)
-	{
-		std::vector<std::size_t> meshIndices = {};
-
-		for (std::size_t index = 0;
-			index < experiment.meshes.size();
-			++index)
-		{
-			if (experiment.meshes[index].hasSmoothNormals)
-			{
-				meshIndices.push_back(index);
-			}
-		}
-
-		if (!meshIndices.empty())
-		{
-			const std::size_t selectedIndices[] =
-			{
-				0,
-				meshIndices.size() / 2,
-				meshIndices.size() - 1
-			};
-
-			std::size_t validatedMeshCount = 0;
-			std::size_t validatedNormalCount = 0;
-
-			std::size_t previousIndex =
-				std::numeric_limits<std::size_t>::max();
-
-			for (std::size_t selectedIndex : selectedIndices)
-			{
-				const std::size_t meshIndex =
-					meshIndices[selectedIndex];
-
-				if (meshIndex == previousIndex)
-				{
-					continue;
-				}
-
-				const FragmentCleanupRenderMesh& renderMesh =
-					experiment.meshes[meshIndex];
-
-				validateFragmentCleanupHeightmapNormals(
-					renderMesh,
-					world.heightmapField);
-
-				++validatedMeshCount;
-
-				validatedNormalCount +=
-					renderMesh.smoothNormals.normalCount;
-
-				previousIndex = meshIndex;
-			}
-
-			std::printf(
-				"GPU heightmap production validation passed.\n"
-				"  Meshes: %zu\n"
-				"  Normals checked: %zu\n",
-				validatedMeshCount,
-				validatedNormalCount);
-		}
-	}
-
-#endif
-
-	updateFragmentCleanupDebugStats(experiment);
+	updateFragmentCleanupDebugStats(
+		experiment);
 
 	return true;
 }
@@ -1116,6 +1505,171 @@ bool renderFragmentCleanupExperimentDebugUiContent(
 	ImGui::Checkbox(
 		"Visualize Normals",
 		&experiment.surfaceSettings.visualizeNormals);
+
+#ifndef NDEBUG
+
+	ImGui::SeparatorText(
+		"Material Blend Debug");
+
+	FragmentCleanupBlendDebugSettings& settings =
+		experiment.blendDebug;
+
+	bool blendSettingsChanged = false;
+
+	//--------------------------------------------------
+	// Visualization Mode
+	//--------------------------------------------------
+
+	const char* debugModes[] =
+	{
+		"Normal",
+		"Materials",
+		"Boundary Seeds",
+		"Blend Distance"
+	};
+
+	int selectedMode =
+		static_cast<int>(settings.mode);
+
+	if (ImGui::Combo(
+		"Visualization",
+		&selectedMode,
+		debugModes,
+		IM_ARRAYSIZE(debugModes)))
+	{
+		settings.mode =
+			static_cast<FragmentCleanupDebugMode>(
+				selectedMode);
+
+		applyFragmentCleanupBlendDebugColors(
+			experiment);
+	}
+
+	//--------------------------------------------------
+	// Material Selection
+	//--------------------------------------------------
+
+	const TerrainTile materials[] =
+	{
+		TerrainTile::Grass,
+		TerrainTile::Sand,
+		TerrainTile::Rock,
+		TerrainTile::Snow
+	};
+
+	if (ImGui::BeginCombo(
+		"Source Material",
+		getFragmentCleanupMaterialName(
+			settings.sourceMaterial)))
+	{
+		for (TerrainTile material : materials)
+		{
+			if (material == settings.targetMaterial)
+			{
+				continue;
+			}
+
+			const bool selected =
+				material == settings.sourceMaterial;
+
+			if (ImGui::Selectable(
+				getFragmentCleanupMaterialName(material),
+				selected))
+			{
+				settings.sourceMaterial = material;
+				blendSettingsChanged = true;
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+
+	if (ImGui::BeginCombo(
+		"Target Material",
+		getFragmentCleanupMaterialName(
+			settings.targetMaterial)))
+	{
+		for (TerrainTile material : materials)
+		{
+			if (material == settings.sourceMaterial)
+			{
+				continue;
+			}
+
+			const bool selected =
+				material == settings.targetMaterial;
+
+			if (ImGui::Selectable(
+				getFragmentCleanupMaterialName(material),
+				selected))
+			{
+				settings.targetMaterial = material;
+				blendSettingsChanged = true;
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+
+	//--------------------------------------------------
+	// Swap Propagation Direction
+	//--------------------------------------------------
+
+	if (ImGui::Button("Swap Source / Target"))
+	{
+		std::swap(
+			settings.sourceMaterial,
+			settings.targetMaterial);
+
+		blendSettingsChanged = true;
+	}
+
+	ImGui::Text(
+		"%s -> %s",
+		getFragmentCleanupMaterialName(
+			settings.sourceMaterial),
+		getFragmentCleanupMaterialName(
+			settings.targetMaterial));
+
+	//--------------------------------------------------
+	// Relative Distance Control
+	//--------------------------------------------------
+
+	if (ImGui::SliderFloat(
+		"Distance Scale",
+		&settings.distanceScale,
+		0.0f,
+		3.0f,
+		"%.2fx"))
+	{
+		blendSettingsChanged = true;
+	}
+
+	const float effectiveDistance =
+		settings.baseDistanceMeters *
+		settings.distanceScale;
+
+	ImGui::Text(
+		"Effective distance: %.2f m",
+		effectiveDistance);
+
+	if (ImGui::Button("Reset Distance Scale"))
+	{
+		settings.distanceScale = 1.0f;
+		blendSettingsChanged = true;
+	}
+
+	//--------------------------------------------------
+	// Refresh Cached Distances and GPU Colors
+	//--------------------------------------------------
+
+	if (blendSettingsChanged)
+	{
+		updateFragmentCleanupBlendDebug(
+			experiment);
+	}
+
+#endif
 
 	return false;
 }

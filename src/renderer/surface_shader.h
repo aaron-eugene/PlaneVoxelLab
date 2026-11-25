@@ -39,12 +39,15 @@ struct SurfaceShader
 
 	int normalBlendLocation = -1;
 	int visualizeNormalsLocation = -1;
+
+	int visualizeDebugColorsLocation = -1;
 };
 
 struct SurfaceRenderSettings
 {
 	float normalBlend = 0.0f;
 	bool visualizeNormals = false;
+	bool visualizeDebugColors = false;
 };
 
 /***********************************************************

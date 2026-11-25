@@ -24,6 +24,7 @@ uniform mat4 uViewProjection;
 flat out vec3 flatNormal;
 out vec3 smoothNormal;
 out vec3 vertexColor;
+flat out vec3 debugColor;
 out vec2 tileUv;
 
 /***********************************************************
@@ -41,6 +42,7 @@ void main()
         normalMatrix * inSmoothNormal);
 
     vertexColor = inColor;
+    debugColor = inColor;
     tileUv = inTileUv;
 
     gl_Position =

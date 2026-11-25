@@ -9,6 +9,7 @@
 #pragma once
 
 #include "experiments/fragment_cleanup/fragment_cleanup_builder.h"
+#include "experiments/fragment_cleanup/fragment_cleanup_cross_chunk.h"
 #include "renderer/gpu_mesh.h"
 #include "renderer/gpu_surface_normals.h"
 #include "renderer/surface_shader.h"
@@ -24,7 +25,7 @@ struct TerrainEdits;
 struct TerrainRenderResources;
 
 /***********************************************************
-* Fragment Cleanup Debug Stats
+* Fragment Cleanup Debug Types
 ************************************************************/
 
 struct FragmentCleanupDebugStats
@@ -33,6 +34,26 @@ struct FragmentCleanupDebugStats
 	uint64_t voxelRangeCount = 0;
 	uint64_t vertexCount = 0;
 	uint64_t indexCount = 0;
+};
+
+enum class FragmentCleanupDebugMode : uint32_t
+{
+	Normal,
+	Materials,
+	BoundarySeeds,
+	BlendDistance
+};
+
+struct FragmentCleanupBlendDebugSettings
+{
+	TerrainTile sourceMaterial = TerrainTile::Rock;
+	TerrainTile targetMaterial = TerrainTile::Grass;
+
+	float baseDistanceMeters = 3.0f;
+	float distanceScale = 1.0f;
+
+	FragmentCleanupDebugMode mode =
+		FragmentCleanupDebugMode::BoundarySeeds;
 };
 
 /***********************************************************
@@ -56,6 +77,14 @@ struct FragmentCleanupExperiment
 
 	GpuSurfaceNormalGenerator normalGenerator = {};
 	SurfaceRenderSettings surfaceSettings = {};
+
+	std::vector<FragmentCleanupCrossChunkConnection>
+		crossChunkConnections = {};
+
+	FragmentCleanupBlendDebugSettings blendDebug = {};
+
+	std::vector<std::vector<float>> blendDistances = {};
+	std::vector<std::vector<uint8_t>> blendBoundarySeeds = {};
 
 	FragmentCleanupDebugStats debugStats = {};
 };

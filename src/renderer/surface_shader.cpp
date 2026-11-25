@@ -94,6 +94,11 @@ bool initializeSurfaceShader(
 			shader.program,
 			"uVisualizeNormals");
 
+	shader.visualizeDebugColorsLocation =
+		getShaderUniformLocation(
+			shader.program,
+			"uVisualizeDebugColors");
+
 	if (shader.modelLocation < 0 ||
 		shader.viewProjectionLocation < 0 ||
 		shader.textureLocation < 0 ||
@@ -101,7 +106,8 @@ bool initializeSurfaceShader(
 		shader.ambientStrengthLocation < 0 ||
 		shader.diffuseStrengthLocation < 0 ||
 		shader.normalBlendLocation < 0 ||
-		shader.visualizeNormalsLocation < 0)
+		shader.visualizeNormalsLocation < 0 ||
+		shader.visualizeDebugColorsLocation < 0)
 	{
 		shutdownSurfaceShader(
 			shader);
@@ -186,6 +192,10 @@ void renderSurfaceMesh(
 	glUniform1i(
 		shader.visualizeNormalsLocation,
 		surfaceSettings.visualizeNormals ? 1 : 0);
+
+	glUniform1i(
+		shader.visualizeDebugColorsLocation,
+		surfaceSettings.visualizeDebugColors ? 1 : 0);
 
 	glBindTextureUnit(
 		textureUnit,

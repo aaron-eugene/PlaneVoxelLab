@@ -15,7 +15,6 @@
 #include "geometry/voxel_topology.h"
 #include "spatial/spatial_constants.h"
 #include "spatial/spatial_coordinates.h"
-#include "surface_map/surface_map.h"
 #include "terrain_material/terrain_material_placement.h"
 #include "terrain_render/terrain_tile_atlas.h"
 
@@ -25,7 +24,7 @@
 
 #include <cassert>
 #include <cstdint>
-#include <cstdio>
+#include <utility>
 
 /***********************************************************
 * Tetrahedra Building Constants
@@ -191,21 +190,6 @@ static bool calculateTriangleNormal(
 	return true;
 }
 
-static glm::vec3 getFragmentCleanupNormalColor(
-	const glm::vec3& normal)
-{
-	const glm::vec3 absoluteNormal =
-		glm::abs(normal);
-
-	const glm::vec3 mutedNormalColor =
-		glm::vec3(
-			0.55f + 0.25f * absoluteNormal.x,
-			0.55f + 0.25f * absoluteNormal.y,
-			0.55f + 0.25f * absoluteNormal.z);
-
-	return mutedNormalColor;
-}
-
 static glm::vec3 interpolateSurfacePoint(
 	const glm::vec3& positionA,
 	float densityA,
@@ -232,8 +216,12 @@ static bool appendOrientedTriangle(
 	const glm::vec3& pointA,
 	const glm::vec3& pointB,
 	const glm::vec3& pointC,
-	const glm::vec3& desiredNormalDirection)
+	const glm::vec3& desiredNormalDirection,
+	bool& windingReversed,
+	TerrainTile& material)
 {
+	windingReversed = false;
+
 	glm::vec3 normal = {};
 
 	if (!calculateTriangleNormal(
@@ -255,6 +243,8 @@ static bool appendOrientedTriangle(
 		finalPointB = pointC;
 		finalPointC = pointB;
 		normal = -normal;
+
+		windingReversed = true;
 	}
 
 	const uint32_t baseIndex =
@@ -266,7 +256,7 @@ static bool appendOrientedTriangle(
 	const glm::vec3 triangleCentroid =
 		(pointA + finalPointB + finalPointC) / 3.0f;
 
-	const TerrainTile tile =
+	material =
 		classifyTerrainMaterial(
 			chunkCoord,
 			triangleCentroid,
@@ -278,23 +268,23 @@ static bool appendOrientedTriangle(
 				pointA,
 				normal,
 				voxelCoord),
-			tile);
+			material);
 
 	const glm::vec2 uvB =
 		getTerrainAtlasUv(
 			getVoxelProjectedUv(
-				finalPointB,
+				pointB,
 				normal,
 				voxelCoord),
-			tile);
+			material);
 
 	const glm::vec2 uvC =
 		getTerrainAtlasUv(
 			getVoxelProjectedUv(
-				finalPointC,
+				pointC,
 				normal,
 				voxelCoord),
-			tile);
+			material);
 
 	mesh.vertices.push_back(
 		{ pointA, normal, color, uvA });
@@ -325,6 +315,9 @@ static void addOrientedTriangle(
 		static_cast<uint32_t>(
 			mesh.indices.size() / 3);
 
+	bool windingReversed = false;
+	TerrainTile material = {};
+
 	const bool emitted =
 		appendOrientedTriangle(
 			mesh,
@@ -333,7 +326,9 @@ static void addOrientedTriangle(
 			pointA.position,
 			pointB.position,
 			pointC.position,
-			desiredNormalDirection);
+			desiredNormalDirection,
+			windingReversed,
+			material);
 
 	FragmentCleanupTopologyTriangle topologyTriangle = {};
 
@@ -347,20 +342,7 @@ static void addOrientedTriangle(
 
 	if (emitted)
 	{
-		glm::vec3 normal = {};
-
-		const bool validNormal =
-			calculateTriangleNormal(
-				normal,
-				pointA.position,
-				pointB.position,
-				pointC.position);
-
-		assert(validNormal);
-
-		if (glm::dot(
-			normal,
-			desiredNormalDirection) < 0.0f)
+		if (windingReversed)
 		{
 			std::swap(
 				topologyTriangle.keys.vertices[1],
@@ -371,11 +353,11 @@ static void addOrientedTriangle(
 				topologyTriangle.positions[2]);
 		}
 
+		topologyTriangle.material = material;
+		topologyTriangle.hasMaterial = true;
+
 		topologyTriangle.renderTriangleIndex =
 			renderTriangleIndex;
-
-		mesh.triangleKeys.push_back(
-			topologyTriangle.keys);
 	}
 
 	mesh.topologyTriangles.push_back(
@@ -391,6 +373,9 @@ static void addOrientedTriangle(
 	const glm::vec3& pointC,
 	const glm::vec3& desiredNormalDirection)
 {
+	bool windingReversed = false;
+	TerrainTile material = {};
+
 	appendOrientedTriangle(
 		mesh,
 		chunkCoord,
@@ -398,7 +383,9 @@ static void addOrientedTriangle(
 		pointA,
 		pointB,
 		pointC,
-		desiredNormalDirection);
+		desiredNormalDirection,
+		windingReversed,
+		material);
 }
 
 /***********************************************************
@@ -735,6 +722,9 @@ static void gatherVoxelCorners(
 * Exposed Face Helpers
 ************************************************************/
 
+// TODO: Exposed-face triangles currently emit render geometry only.
+// Extend surface vertex identities before including these faces
+// in the topology and adjacency graph.
 static void appendClippedFaceTriangle(
 	FragmentCleanupMesh& mesh,
 	const ChunkCoord& chunkCoord,
@@ -949,9 +939,9 @@ void clearFragmentCleanupMesh(
 	mesh.vertices.clear();
 	mesh.indices.clear();
 	mesh.voxelRanges.clear();
-	mesh.triangleKeys.clear();
 	mesh.topologyTriangles.clear();
 	mesh.adjacency.clear();
+	mesh.materialBoundaries.clear();
 }
 
 void appendFragmentCleanupVoxel(
@@ -1000,32 +990,4 @@ void appendFragmentCleanupVoxel(
 		mesh.voxelRanges.push_back(
 			voxelRange);
 	}
-}
-
-void buildFragmentCleanupMesh(
-	FragmentCleanupMesh& mesh,
-	const Chunk& chunk,
-	const DiscoveredSurfaceChunk& surfaceChunk)
-{
-	clearFragmentCleanupMesh(mesh);
-
-	assert(surfaceChunk.coord.x == chunk.coord.x);
-	assert(surfaceChunk.coord.y == chunk.coord.y);
-	assert(surfaceChunk.coord.z == chunk.coord.z);
-
-	for (const SurfaceVoxel& surfaceVoxel : surfaceChunk.voxels)
-	{
-		appendFragmentCleanupVoxel(
-			mesh,
-			chunk,
-			surfaceVoxel.coord);
-	}
-
-	assert(
-		mesh.triangleKeys.size() ==
-		mesh.indices.size() / 3);
-
-	assert(
-		mesh.topologyTriangles.size() >=
-		mesh.triangleKeys.size());
 }

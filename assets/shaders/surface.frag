@@ -19,6 +19,7 @@
 flat in vec3 flatNormal;
 in vec3 smoothNormal;
 in vec3 vertexColor;
+flat in vec3 debugColor;
 in vec2 tileUv;
 
 /***********************************************************
@@ -34,6 +35,9 @@ uniform float uDiffuseStrength;
 uniform float uNormalBlend;
 
 uniform bool uVisualizeNormals;
+uniform bool uVisualizeDebugColors;
+
+uniform int uDebugVisualizationMode;
 
 /***********************************************************
 * Fragment Output
@@ -59,6 +63,12 @@ void main()
             normal * 0.5 + 0.5,
             1.0);
 
+        return;
+    }
+
+    if (uVisualizeDebugColors)
+    {
+        outColor = vec4(debugColor, 1.0);
         return;
     }
 
