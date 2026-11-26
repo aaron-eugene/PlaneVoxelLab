@@ -15,20 +15,20 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "app/app_debug_ui.h"
 #include "camera/dev_camera.h"
 #include "input/input.h"
 #include "lab/lab.h"
 #include "renderer/renderer.h"
-#include "spatial/spatial_coordinates.h"
 
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 
+#include <glm/mat4x4.hpp>
+
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
-
-#include <glm/mat4x4.hpp>
 
 #include <cassert>
 #include <cstdio>
@@ -98,7 +98,7 @@ namespace
 }
 
 /***********************************************************
-* Library Initialization
+* Application Initialization
 ************************************************************/
 
 static bool initializeGlfw()
@@ -155,9 +155,6 @@ static bool initializeImGui(GLFWwindow* window)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
-	ImGuiIO& io = ImGui::GetIO();
-	(void)io;
-
 	ImGui::StyleColorsDark();
 
 	if (!ImGui_ImplGlfw_InitForOpenGL(window, true))
@@ -184,7 +181,7 @@ static void initializeCamera(DevelopmentCamera& camera)
 }
 
 /***********************************************************
-* Library Shutdown
+* Application Shutdown
 ************************************************************/
 
 static void shutdownImGui()
@@ -205,7 +202,7 @@ static void shutdownGlfw(GLFWwindow* window)
 }
 
 /***********************************************************
-* Frame Helpers
+* Frame Rendering
 ************************************************************/
 
 static void beginImGuiFrame()
@@ -263,120 +260,6 @@ static void endAppRenderFrame(
 	glfwSwapBuffers(window);
 }
 
-static DevelopmentCameraControls getDevelopmentCameraControls(
-	const ApplicationState& app)
-{
-	DevelopmentCameraControls controls = {};
-
-	if (isActionDown(app.input, InputAction::MoveForward))
-	{
-		controls.localMovement.z += 1.0f;
-	}
-
-	if (isActionDown(app.input, InputAction::MoveBackward))
-	{
-		controls.localMovement.z -= 1.0f;
-	}
-
-	if (isActionDown(app.input, InputAction::MoveRight))
-	{
-		controls.localMovement.x += 1.0f;
-	}
-
-	if (isActionDown(app.input, InputAction::MoveLeft))
-	{
-		controls.localMovement.x -= 1.0f;
-	}
-
-	if (isActionDown(app.input, InputAction::MoveUp))
-	{
-		controls.localMovement.y += 1.0f;
-	}
-
-	if (isActionDown(app.input, InputAction::MoveDown))
-	{
-		controls.localMovement.y -= 1.0f;
-	}
-
-	if (isActionDown(app.input, InputAction::SpeedBoost))
-	{
-		controls.speedBoost = true;
-	}
-
-	controls.lookDelta.x = app.input.mouseDeltaX;
-	controls.lookDelta.y = app.input.mouseDeltaY;
-
-	return controls;
-}
-
-/***********************************************************
-* Debug UI
-************************************************************/
-
-static bool renderDebugUi(
-	ApplicationState& app)
-{
-	ImGui::Begin(
-		"Plane Voxel Lab Debug",
-		nullptr,
-		ImGuiWindowFlags_AlwaysAutoResize);
-
-	ImGui::Text(
-		"OpenGL Version: %s",
-		glGetString(GL_VERSION));
-
-	ImGui::Separator();
-
-	const WorldPosition& cameraPosition =
-		app.developmentCamera.position;
-
-	ImGui::Text(
-		"Camera Chunk: %d, %d, %d",
-		cameraPosition.chunk.x,
-		cameraPosition.chunk.y,
-		cameraPosition.chunk.z);
-
-	ImGui::Text(
-		"Camera Local: %.2f, %.2f, %.2f",
-		cameraPosition.localPosition.x,
-		cameraPosition.localPosition.y,
-		cameraPosition.localPosition.z);
-
-	const WorldMetricCoordinate cameraX =
-		getWorldMetricCoordinate(
-			cameraPosition.chunk.x,
-			cameraPosition.localPosition.x);
-
-	const WorldMetricCoordinate cameraY =
-		getWorldMetricCoordinate(
-			cameraPosition.chunk.y,
-			cameraPosition.localPosition.y);
-
-	const WorldMetricCoordinate cameraZ =
-		getWorldMetricCoordinate(
-			cameraPosition.chunk.z,
-			cameraPosition.localPosition.z);
-
-	ImGui::Text(
-		"Camera Meters: %lld + %.2f, %lld + %.2f, %lld + %.2f",
-		static_cast<long long>(cameraX.wholeMeters),
-		cameraX.fractionalMeter,
-		static_cast<long long>(cameraY.wholeMeters),
-		cameraY.fractionalMeter,
-		static_cast<long long>(cameraZ.wholeMeters),
-		cameraZ.fractionalMeter);
-
-	ImGui::Separator();
-
-	const bool labUiSucceeded =
-		renderLabDebugUiContent(
-			app.lab);
-
-	ImGui::End();
-
-	return labUiSucceeded;
-}
-
 /***********************************************************
 * Frame Timing
 ************************************************************/
@@ -426,8 +309,54 @@ static void updateFrameTiming(FrameTiming& timing)
 }
 
 /***********************************************************
-* Miscellaneous Helpers
+* Application Input
 ************************************************************/
+
+static DevelopmentCameraControls getDevelopmentCameraControls(
+	const ApplicationState& app)
+{
+	DevelopmentCameraControls controls = {};
+
+	if (isActionDown(app.input, InputAction::MoveForward))
+	{
+		controls.localMovement.z += 1.0f;
+	}
+
+	if (isActionDown(app.input, InputAction::MoveBackward))
+	{
+		controls.localMovement.z -= 1.0f;
+	}
+
+	if (isActionDown(app.input, InputAction::MoveRight))
+	{
+		controls.localMovement.x += 1.0f;
+	}
+
+	if (isActionDown(app.input, InputAction::MoveLeft))
+	{
+		controls.localMovement.x -= 1.0f;
+	}
+
+	if (isActionDown(app.input, InputAction::MoveUp))
+	{
+		controls.localMovement.y += 1.0f;
+	}
+
+	if (isActionDown(app.input, InputAction::MoveDown))
+	{
+		controls.localMovement.y -= 1.0f;
+	}
+
+	if (isActionDown(app.input, InputAction::SpeedBoost))
+	{
+		controls.speedBoost = true;
+	}
+
+	controls.lookDelta.x = app.input.mouseDeltaX;
+	controls.lookDelta.y = app.input.mouseDeltaY;
+
+	return controls;
+}
 
 static void setApplicationCursorLocked(
 	ApplicationState& app,
@@ -569,7 +498,9 @@ static bool runGameLoop(ApplicationState& app)
 				interpolationAlpha,
 				frameRenderInfo);
 
-			if (!renderDebugUi(app))
+			if (!renderAppDebugUi(
+				app.lab,
+				app.developmentCamera))
 			{
 				ImGui::EndFrame();
 				return false;

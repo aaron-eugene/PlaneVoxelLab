@@ -167,6 +167,7 @@
     <ClCompile Include="external\imgui\imgui_draw.cpp" />
     <ClCompile Include="external\imgui\imgui_tables.cpp" />
     <ClCompile Include="external\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\app\app_debug_ui.cpp" />
     <ClCompile Include="src\camera\camera_math.cpp" />
     <ClCompile Include="src\camera\dev_camera.cpp" />
     <ClCompile Include="src\chunk\chunk.cpp" />
@@ -221,6 +222,7 @@
     <ClCompile Include="src\tests\gpu_world_metric_test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\app\app_debug_ui.h" />
     <ClInclude Include="src\camera\camera_math.h" />
     <ClInclude Include="src\camera\dev_camera.h" />
     <ClInclude Include="src\chunk\chunk.h" />

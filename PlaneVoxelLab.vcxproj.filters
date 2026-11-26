@@ -103,6 +103,9 @@
     <Filter Include="src\terrain_material">
       <UniqueIdentifier>{3f7cdf01-a670-4357-b0a8-95a65ae42084}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\app">
+      <UniqueIdentifier>{b3986637-337e-4faa-8e11-6a2368bc6498}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\color.frag">
@@ -359,6 +362,9 @@
     <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_cross_chunk.cpp">
       <Filter>src\experiments\fragment_cleanup</Filter>
     </ClCompile>
+    <ClCompile Include="src\app\app_debug_ui.cpp">
+      <Filter>src\app</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">
@@ -531,6 +537,9 @@
     </ClInclude>
     <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_cross_chunk.h">
       <Filter>src\experiments\fragment_cleanup</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app\app_debug_ui.h">
+      <Filter>src\app</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

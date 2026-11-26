@@ -78,3 +78,5 @@ void renderLab(
 ************************************************************/
 
 bool renderLabDebugUiContent(Lab& lab);
+
+bool renderLabExperimentDebugUiContent(Lab& lab);
