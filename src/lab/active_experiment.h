@@ -18,19 +18,25 @@
 
 #include <glm/mat4x4.hpp>
 
+struct Renderer;
+struct StandardRenderSettings;
+
+/***********************************************************
+* Experiment Selection
+************************************************************/
+
 #define LAB_EXPERIMENT_NONE 0
 #define LAB_EXPERIMENT_XZ_COLUMNAR 1	
 #define LAB_EXPERIMENT_FRAGMENT_CLEANUP 2
 
 #define LAB_ACTIVE_EXPERIMENT LAB_EXPERIMENT_FRAGMENT_CLEANUP
 
-struct Renderer;
-struct StandardRenderSettings;
+/***********************************************************
+* Active Experiment Type
+************************************************************/
 
-// Empty experiment state used when no active experiment is selected.
 struct EmptyExperiment
-{
-};
+{};
 
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 typedef EmptyExperiment ActiveExperiment;
@@ -61,7 +67,7 @@ void shutdownActiveExperiment(
 	ActiveExperiment& experiment);
 
 /***********************************************************
-* Active Experiment Mesh Building
+* Active Experiment Mesh Rebuild
 ************************************************************/
 
 bool rebuildActiveExperiment(
@@ -85,6 +91,7 @@ void renderActiveExperiment(
 * Active Experiment Debug UI
 ************************************************************/
 
-bool renderActiveExperimentDebugUiContent(
+void renderActiveExperimentDebugUiContent(
 	ActiveExperiment& experiment,
-	const LabWorld& world);
+	const LabWorld& world,
+	bool& rebuildRequested);

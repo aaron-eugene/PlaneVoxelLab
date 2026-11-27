@@ -25,25 +25,6 @@
 #include <vector>
 
 /***********************************************************
-* Local Types
-************************************************************/
-
-namespace
-{
-	struct BlendDistanceQueueEntry
-	{
-		float distance = 0.0f;
-		uint32_t triangleIndex = 0;
-
-		bool operator>(
-			const BlendDistanceQueueEntry& other) const
-		{
-			return distance > other.distance;
-		}
-	};
-}
-
-/***********************************************************
 * Geometry Helpers
 ************************************************************/
 
@@ -67,30 +48,6 @@ static glm::vec3 getTriangleEdgeMidpoint(
 			triangle.positions[(edgeIndex + 1) % 3]) * 0.5f;
 }
 
-static float getTriangleTransitionDistance(
-	const FragmentCleanupMesh& mesh,
-	uint32_t triangleIndex,
-	uint32_t edgeIndex,
-	uint32_t neighborIndex)
-{
-	const FragmentCleanupTopologyTriangle& triangle =
-		mesh.topologyTriangles[triangleIndex];
-
-	const FragmentCleanupTopologyTriangle& neighbor =
-		mesh.topologyTriangles[neighborIndex];
-
-	const glm::vec3 edgeMidpoint =
-		getTriangleEdgeMidpoint(
-			triangle,
-			edgeIndex);
-
-	return
-		glm::length(
-			getTriangleCentroid(triangle) - edgeMidpoint) +
-		glm::length(
-			getTriangleCentroid(neighbor) - edgeMidpoint);
-}
-
 /***********************************************************
 * Traversal Helpers
 ************************************************************/
@@ -103,7 +60,6 @@ static bool canTraverseBlendTriangle(
 		!triangle.hasMaterial ||
 		triangle.material == targetMaterial;
 }
-
 
 /***********************************************************
 * World Blend Traversal Types
@@ -239,193 +195,6 @@ static float getWorldBlendTransitionDistance(
 			getTriangleCentroid(triangle) - edgeMidpoint) +
 		glm::length(
 			neighborCentroid - edgeMidpoint);
-}
-
-/***********************************************************
-* Material Blend Distance Interface
-************************************************************/
-
-uint32_t calculateFragmentCleanupBlendDistances(
-	std::vector<float>& distances,
-	const FragmentCleanupMesh& mesh,
-	TerrainTile targetMaterial,
-	TerrainTile sourceMaterial,
-	float maxDistanceMeters)
-{
-	const float infinity =
-		std::numeric_limits<float>::infinity();
-
-	distances.assign(
-		mesh.topologyTriangles.size(),
-		infinity);
-
-	assert(
-		mesh.adjacency.size() ==
-		mesh.topologyTriangles.size());
-
-	assert(targetMaterial != sourceMaterial);
-	assert(maxDistanceMeters > 0.0f);
-
-	using Queue = std::priority_queue<
-		BlendDistanceQueueEntry,
-		std::vector<BlendDistanceQueueEntry>,
-		std::greater<BlendDistanceQueueEntry>>;
-
-	Queue queue = {};
-
-	uint32_t seededBoundaryCount = 0;
-
-	//--------------------------------------------------
-	// Initialize From Material Boundaries
-	//--------------------------------------------------
-
-	for (const FragmentCleanupMaterialBoundary& boundary :
-		mesh.materialBoundaries)
-	{
-		const uint32_t triangleIndex =
-			boundary.triangleIndex;
-
-		const uint32_t neighborIndex =
-			mesh.adjacency[triangleIndex]
-			.neighbors[boundary.edgeIndex];
-
-		assert(neighborIndex < mesh.topologyTriangles.size());
-
-		const FragmentCleanupTopologyTriangle& triangle =
-			mesh.topologyTriangles[triangleIndex];
-
-		const FragmentCleanupTopologyTriangle& neighbor =
-			mesh.topologyTriangles[neighborIndex];
-
-		uint32_t targetIndex = 0;
-		uint32_t targetEdgeIndex = 0;
-
-		if (triangle.material == targetMaterial &&
-			neighbor.material == sourceMaterial)
-		{
-			targetIndex = triangleIndex;
-			targetEdgeIndex = boundary.edgeIndex;
-		}
-		else if (triangle.material == sourceMaterial &&
-			neighbor.material == targetMaterial)
-		{
-			targetIndex = neighborIndex;
-
-			const FragmentCleanupTriangleAdjacency& targetAdjacency =
-				mesh.adjacency[targetIndex];
-
-			bool foundEdge = false;
-
-			for (uint32_t edgeIndex = 0; edgeIndex < 3; ++edgeIndex)
-			{
-				if (targetAdjacency.neighbors[edgeIndex] ==
-					triangleIndex)
-				{
-					targetEdgeIndex = edgeIndex;
-					foundEdge = true;
-					break;
-				}
-			}
-
-			assert(foundEdge);
-
-			if (!foundEdge)
-			{
-				continue;
-			}
-		}
-		else
-		{
-			continue;
-		}
-
-		++seededBoundaryCount;
-
-		const FragmentCleanupTopologyTriangle& target =
-			mesh.topologyTriangles[targetIndex];
-
-		const float distance =
-			glm::length(
-				getTriangleCentroid(target) -
-				getTriangleEdgeMidpoint(
-					target,
-					targetEdgeIndex));
-
-		if (distance < distances[targetIndex] &&
-			distance <= maxDistanceMeters)
-		{
-			distances[targetIndex] = distance;
-
-			queue.push(
-				{ distance, targetIndex });
-		}
-	}
-
-	//--------------------------------------------------
-	// Propagate Through Surface Adjacency
-	//--------------------------------------------------
-
-	while (!queue.empty())
-	{
-		const BlendDistanceQueueEntry current =
-			queue.top();
-
-		queue.pop();
-
-		if (current.distance !=
-			distances[current.triangleIndex])
-		{
-			continue;
-		}
-
-		const FragmentCleanupTriangleAdjacency& adjacency =
-			mesh.adjacency[current.triangleIndex];
-
-		for (uint32_t edgeIndex = 0; edgeIndex < 3; ++edgeIndex)
-		{
-			const uint32_t neighborIndex =
-				adjacency.neighbors[edgeIndex];
-
-			if (neighborIndex ==
-				std::numeric_limits<uint32_t>::max())
-			{
-				continue;
-			}
-
-			const FragmentCleanupTopologyTriangle& neighbor =
-				mesh.topologyTriangles[neighborIndex];
-
-			if (!canTraverseBlendTriangle(
-				neighbor,
-				targetMaterial))
-			{
-				continue;
-			}
-
-			const float transitionDistance =
-				getTriangleTransitionDistance(
-					mesh,
-					current.triangleIndex,
-					edgeIndex,
-					neighborIndex);
-
-			const float candidateDistance =
-				current.distance + transitionDistance;
-
-			if (candidateDistance >= distances[neighborIndex] ||
-				candidateDistance > maxDistanceMeters)
-			{
-				continue;
-			}
-
-			distances[neighborIndex] = candidateDistance;
-
-			queue.push(
-				{ candidateDistance, neighborIndex });
-		}
-	}
-
-	return seededBoundaryCount;
 }
 
 /***********************************************************

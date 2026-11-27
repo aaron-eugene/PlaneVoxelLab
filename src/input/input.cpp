@@ -66,9 +66,6 @@ static int getGlfwKeyForAction(InputAction action)
 	case InputAction::ToggleChunkWireframes:
 		return GLFW_KEY_3;
 
-	case InputAction::RebuildMeshes:
-		return GLFW_KEY_R;
-
 	default:
 		assert(false);
 		return GLFW_KEY_UNKNOWN;

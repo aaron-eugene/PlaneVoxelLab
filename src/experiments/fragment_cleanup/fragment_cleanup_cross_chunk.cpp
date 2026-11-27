@@ -231,7 +231,7 @@ static bool isEdgeOnChunkFace(
 }
 
 /***********************************************************
-* Cross-Chunk Connection Interface
+* Cross-Chunk Connection Building
 ************************************************************/
 
 bool buildFragmentCleanupCrossChunkConnections(

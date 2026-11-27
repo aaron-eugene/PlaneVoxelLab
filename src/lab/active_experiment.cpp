@@ -8,22 +8,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lab/active_experiment.h"
-#include "lab_world/lab_world.h"
 
-#include "renderer/renderer.h"
-#include "renderer/standard_render_settings.h"
-
-#if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
-#include "experiments/xz_columnar/xz_columnar_experiment.h"
-
-#elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
-#include "experiments/fragment_cleanup/fragment_cleanup_experiment.h"
-
-#else
-#error Unknown LAB_ACTIVE_EXPERIMENT
-
+#if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
+#include "experiments/fragment_cleanup/debug/fragment_cleanup_debug_ui.h"
 #endif
 
 /***********************************************************
@@ -158,24 +145,29 @@ void renderActiveExperiment(
 * Active Experiment Debug UI
 ************************************************************/
 
-bool renderActiveExperimentDebugUiContent(
+void renderActiveExperimentDebugUiContent(
 	ActiveExperiment& experiment,
-	const LabWorld& world)
+	const LabWorld& world,
+	bool& rebuildRequested)
 {
+	rebuildRequested = false;
+
 #if LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_NONE
 	(void)experiment;
 	(void)world;
-	return true;
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_XZ_COLUMNAR
 	(void)world;
-	return renderXZColumnarExperimentDebugUiContent(
-		experiment);
+
+	rebuildRequested =
+		renderXZColumnarExperimentDebugUiContent(
+			experiment);
 
 #elif LAB_ACTIVE_EXPERIMENT == LAB_EXPERIMENT_FRAGMENT_CLEANUP
-	return renderFragmentCleanupExperimentDebugUiContent(
-		experiment,
-		world);
+	rebuildRequested =
+		renderFragmentCleanupExperimentDebugUiContent(
+			experiment,
+			world);
 
 #else
 #error Unknown LAB_ACTIVE_EXPERIMENT

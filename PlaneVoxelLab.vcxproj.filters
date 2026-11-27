@@ -106,6 +106,9 @@
     <Filter Include="src\app">
       <UniqueIdentifier>{b3986637-337e-4faa-8e11-6a2368bc6498}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\experiments\fragment_cleanup\debug">
+      <UniqueIdentifier>{0184dd84-326f-4967-b025-966606c1058a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\color.frag">
@@ -365,6 +368,15 @@
     <ClCompile Include="src\app\app_debug_ui.cpp">
       <Filter>src\app</Filter>
     </ClCompile>
+    <ClCompile Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_validation.cpp">
+      <Filter>src\experiments\fragment_cleanup\debug</Filter>
+    </ClCompile>
+    <ClCompile Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_debug.cpp">
+      <Filter>src\experiments\fragment_cleanup\debug</Filter>
+    </ClCompile>
+    <ClCompile Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_debug_ui.cpp">
+      <Filter>src\experiments\fragment_cleanup\debug</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lab\active_experiment.h">
@@ -540,6 +552,15 @@
     </ClInclude>
     <ClInclude Include="src\app\app_debug_ui.h">
       <Filter>src\app</Filter>
+    </ClInclude>
+    <ClInclude Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_validation.h">
+      <Filter>src\experiments\fragment_cleanup\debug</Filter>
+    </ClInclude>
+    <ClInclude Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_debug.h">
+      <Filter>src\experiments\fragment_cleanup\debug</Filter>
+    </ClInclude>
+    <ClInclude Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_debug_ui.h">
+      <Filter>src\experiments\fragment_cleanup\debug</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

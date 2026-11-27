@@ -32,7 +32,7 @@ struct FragmentCleanupCrossChunkConnection
 };
 
 /***********************************************************
-* Cross-Chunk Connection Interface
+* Cross-Chunk Connection Building
 ************************************************************/
 
 bool buildFragmentCleanupCrossChunkConnections(

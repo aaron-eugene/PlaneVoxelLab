@@ -121,11 +121,3 @@ void renderFragmentCleanupExperiment(
 	const TerrainRenderResources& terrainRenderResources,
 	const ChunkCoord& renderOriginChunk,
 	const glm::mat4& viewProjection);
-
-/***********************************************************
-* Fragment Cleanup Debug UI
-************************************************************/
-
-bool renderFragmentCleanupExperimentDebugUiContent(
-	FragmentCleanupExperiment& experiment,
-	const LabWorld& world);

@@ -18,6 +18,6 @@ struct Lab;
 * Application Debug UI
 ************************************************************/
 
-bool renderAppDebugUi(
+void renderAppDebugUi(
 	Lab& lab,
 	const DevelopmentCamera& camera);

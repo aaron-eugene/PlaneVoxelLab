@@ -51,6 +51,7 @@ namespace
 		SurfaceIntersectionKey key = {};
 	};
 }
+
 /***********************************************************
 * Coordinate Helpers
 ************************************************************/
@@ -273,7 +274,7 @@ static bool appendOrientedTriangle(
 	const glm::vec2 uvB =
 		getTerrainAtlasUv(
 			getVoxelProjectedUv(
-				pointB,
+				finalPointB,
 				normal,
 				voxelCoord),
 			material);
@@ -281,7 +282,7 @@ static bool appendOrientedTriangle(
 	const glm::vec2 uvC =
 		getTerrainAtlasUv(
 			getVoxelProjectedUv(
-				pointC,
+				finalPointC,
 				normal,
 				voxelCoord),
 			material);

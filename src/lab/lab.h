@@ -26,11 +26,21 @@ struct InputState;
 struct Renderer;
 
 /***********************************************************
+* Lab Requests
+************************************************************/
+
+struct LabRequests
+{
+	bool rebuildDensityData = false;
+	bool rebuildActiveExperiment = false;
+};
+
+/***********************************************************
 * Lab State
 ************************************************************/
 
 struct Lab
-{	
+{
 	LabWorld world = {};
 	TerrainEdits terrainEdits = {};
 
@@ -40,6 +50,8 @@ struct Lab
 
 	StandardRenderSettings standardRenderSettings = {};
 	TerrainRenderResources terrainRenderResources = {};
+
+	LabRequests requests = {};
 
 	bool showSurfaceReference = true;
 	bool showActiveExperiment = true;
@@ -74,9 +86,9 @@ void renderLab(
 	const glm::mat4& viewProjection);
 
 /***********************************************************
-* Debug Rendering
+* Debug UI
 ************************************************************/
 
-bool renderLabDebugUiContent(Lab& lab);
+void renderLabDebugUiContent(Lab& lab);
 
-bool renderLabExperimentDebugUiContent(Lab& lab);
+void renderLabExperimentDebugUiContent(Lab& lab);

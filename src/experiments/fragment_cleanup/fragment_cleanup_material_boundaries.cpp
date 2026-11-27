@@ -13,7 +13,6 @@
 
 #include <cassert>
 #include <cstdint>
-#include <limits>
 
 /***********************************************************
 * Material Boundary Interface
@@ -28,8 +27,7 @@ void buildFragmentCleanupMaterialBoundaries(
 		mesh.adjacency.size() ==
 		mesh.topologyTriangles.size());
 
-	const uint32_t invalidIndex =
-		std::numeric_limits<uint32_t>::max();
+	const uint32_t invalidIndex = UINT32_MAX;
 
 	for (uint32_t triangleIndex = 0;
 		triangleIndex < mesh.topologyTriangles.size();

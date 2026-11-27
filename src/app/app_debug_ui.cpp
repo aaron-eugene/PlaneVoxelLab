@@ -83,7 +83,7 @@ static void renderApplicationDebugInfo(
 * Debug Window Rendering
 ************************************************************/
 
-static bool renderGeneralLabDebugWindow(
+static void renderGeneralLabDebugWindow(
 	Lab& lab,
 	const DevelopmentCamera& camera,
 	const ImGuiViewport& viewport)
@@ -95,8 +95,6 @@ static bool renderGeneralLabDebugWindow(
 		ImGuiCond_FirstUseEver,
 		ImVec2(0.0f, 0.0f));
 
-	bool succeeded = true;
-
 	if (ImGui::Begin(
 		"Plane Voxel Lab Debug",
 		nullptr,
@@ -104,16 +102,13 @@ static bool renderGeneralLabDebugWindow(
 	{
 		renderApplicationDebugInfo(camera);
 
-		succeeded =
-			renderLabDebugUiContent(lab);
+		renderLabDebugUiContent(lab);
 	}
 
 	ImGui::End();
-
-	return succeeded;
 }
 
-static bool renderActiveExperimentDebugWindow(
+static void renderActiveExperimentDebugWindow(
 	Lab& lab,
 	const ImGuiViewport& viewport)
 {
@@ -127,43 +122,34 @@ static bool renderActiveExperimentDebugWindow(
 		ImGuiCond_FirstUseEver,
 		ImVec2(1.0f, 0.0f));
 
-	bool succeeded = true;
-
 	if (ImGui::Begin(
 		"Active Experiment",
 		nullptr,
 		ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		succeeded =
-			renderLabExperimentDebugUiContent(lab);
+		renderLabExperimentDebugUiContent(lab);
 	}
 
 	ImGui::End();
-
-	return succeeded;
 }
 
 /***********************************************************
 * Application Debug UI Interface
 ************************************************************/
 
-bool renderAppDebugUi(
+void renderAppDebugUi(
 	Lab& lab,
 	const DevelopmentCamera& camera)
 {
 	const ImGuiViewport* viewport =
 		ImGui::GetMainViewport();
 
-	const bool labSucceeded =
-		renderGeneralLabDebugWindow(
-			lab,
-			camera,
-			*viewport);
+	renderGeneralLabDebugWindow(
+		lab,
+		camera,
+		*viewport);
 
-	const bool experimentSucceeded =
-		renderActiveExperimentDebugWindow(
-			lab,
-			*viewport);
-
-	return labSucceeded && experimentSucceeded;
+	renderActiveExperimentDebugWindow(
+		lab,
+		*viewport);
 }

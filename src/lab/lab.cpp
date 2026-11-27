@@ -13,35 +13,13 @@
 #include "lab_debug/chunk_wireframes.h"
 #include "lab_world/lab_world.h"
 #include "renderer/renderer.h"
-#include "spatial/spatial_coordinates.h"
 #include "surface_map/surface_map.h"
 #include "surface_ref/surface_ref.h"
 
 #include <imgui/imgui.h>
 
-#include <cassert>
 #include <cstdint>
 #include <cstdio>
-
-
-/***********************************************************
-* Local Helpers
-************************************************************/
-
-static void getSurfaceRefMeshCounts(
-	const SurfaceRef& surfaceRef,
-	uint64_t& vertexCount,
-	uint64_t& indexCount)
-{
-	vertexCount = 0;
-	indexCount = 0;
-
-	for (const SurfaceRefChunk& surfaceRefChunk : surfaceRef.chunks)
-	{
-		vertexCount += surfaceRefChunk.cpuMesh.vertices.size();
-		indexCount += surfaceRefChunk.cpuMesh.indices.size();
-	}
-}
 
 /***********************************************************
 * Lab Lifecycle
@@ -106,6 +84,73 @@ void shutdownLab(
 }
 
 /***********************************************************
+* Lab Rebuilding
+************************************************************/
+
+static bool rebuildLabDensityData(
+	Lab& lab)
+{
+	clearTerrainEdits(
+		lab.terrainEdits);
+
+	rebuildLabWorldDensityData(
+		lab.world);
+
+	if (!rebuildSurfaceRef(
+		lab.surfaceRef,
+		lab.world.chunks,
+		lab.world.surfaceMap))
+	{
+		std::printf(
+			"Failed to rebuild surface reference after density change.\n");
+
+		return false;
+	}
+
+	if (!rebuildActiveExperiment(
+		lab.activeExperiment,
+		lab.world,
+		lab.terrainEdits))
+	{
+		std::printf(
+			"Failed to rebuild active experiment after density change.\n");
+
+		return false;
+	}
+
+	return true;
+}
+
+static bool processLabRequests(
+	Lab& lab)
+{
+	const LabRequests requests = lab.requests;
+	lab.requests = {};
+
+	if (requests.rebuildDensityData)
+	{
+		return rebuildLabDensityData(lab);
+	}
+
+	if (requests.rebuildActiveExperiment)
+	{
+		if (!rebuildActiveExperiment(
+			lab.activeExperiment,
+			lab.world,
+			lab.terrainEdits))
+		{
+			std::printf(
+				"Failed to rebuild active experiment "
+				"after settings change.\n");
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/***********************************************************
 * Lab Update
 ************************************************************/
 
@@ -115,6 +160,11 @@ bool updateLab(
 	float deltaSeconds)
 {
 	(void)deltaSeconds;
+
+	if (!processLabRequests(lab))
+	{
+		return false;
+	}
 
 	if (wasActionPressed(
 		input,
@@ -138,22 +188,6 @@ bool updateLab(
 	{
 		lab.showChunkWireframes =
 			!lab.showChunkWireframes;
-	}
-
-	if (wasActionPressed(
-		input,
-		InputAction::RebuildMeshes))
-	{
-		if (!rebuildSurfaceRef(
-			lab.surfaceRef,
-			lab.world.chunks,
-			lab.world.surfaceMap))
-		{
-			std::printf(
-				"Failed to rebuild surface reference.\n");
-
-			return false;
-		}
 	}
 
 	return true;
@@ -200,7 +234,7 @@ void renderLab(
 }
 
 /***********************************************************
-* Debug Helpers
+* Debug UI Helpers
 ************************************************************/
 
 static const char* getDensityFieldTypeName(
@@ -219,6 +253,69 @@ static const char* getDensityFieldTypeName(
 	}
 }
 
+static bool renderDensityFieldSelection(
+	LabWorldDensityFieldType& selectedFieldType)
+{
+	const LabWorldDensityFieldType originalFieldType =
+		selectedFieldType;
+
+	const char* selectedFieldName =
+		getDensityFieldTypeName(
+			selectedFieldType);
+
+	if (ImGui::BeginCombo(
+		"Density Field",
+		selectedFieldName))
+	{
+		if (ImGui::Selectable(
+			"Sphere",
+			selectedFieldType ==
+			LabWorldDensityFieldType::Sphere))
+		{
+			selectedFieldType =
+				LabWorldDensityFieldType::Sphere;
+		}
+
+		if (ImGui::Selectable(
+			"Heightmap",
+			selectedFieldType ==
+			LabWorldDensityFieldType::Heightmap))
+		{
+			selectedFieldType =
+				LabWorldDensityFieldType::Heightmap;
+		}
+
+		ImGui::EndCombo();
+	}
+
+	return
+		selectedFieldType !=
+		originalFieldType;
+}
+
+static void renderLabComponentToggles(
+	Lab& lab)
+{
+	ImGui::SeparatorText(
+		"Visibility");
+
+	ImGui::Checkbox(
+		"Surface Reference",
+		&lab.showSurfaceReference);
+
+	ImGui::Checkbox(
+		"Active Experiment",
+		&lab.showActiveExperiment);
+
+	ImGui::Checkbox(
+		"Chunk Wireframes",
+		&lab.showChunkWireframes);
+}
+
+/***********************************************************
+* Debug Statistics
+************************************************************/
+
 static uint64_t getSurfaceVoxelCount(
 	const SurfaceMap& surfaceMap)
 {
@@ -232,6 +329,21 @@ static uint64_t getSurfaceVoxelCount(
 	}
 
 	return surfaceVoxelCount;
+}
+
+static void getSurfaceRefMeshCounts(
+	const SurfaceRef& surfaceRef,
+	uint64_t& vertexCount,
+	uint64_t& indexCount)
+{
+	vertexCount = 0;
+	indexCount = 0;
+
+	for (const SurfaceRefChunk& surfaceRefChunk : surfaceRef.chunks)
+	{
+		vertexCount += surfaceRefChunk.cpuMesh.vertices.size();
+		indexCount += surfaceRefChunk.cpuMesh.indices.size();
+	}
 }
 
 static void renderLabWorldStatistics(
@@ -288,104 +400,11 @@ static void renderSurfaceReferenceStatistics(
 			indexCount));
 }
 
-static void renderLabComponentToggles(
-	Lab& lab)
-{
-	ImGui::SeparatorText(
-		"Visibility");
-
-	ImGui::Checkbox(
-		"Surface Reference",
-		&lab.showSurfaceReference);
-
-	ImGui::Checkbox(
-		"Active Experiment",
-		&lab.showActiveExperiment);
-
-	ImGui::Checkbox(
-		"Chunk Wireframes",
-		&lab.showChunkWireframes);
-}
-
-static bool renderDensityFieldSelection(
-	LabWorldDensityFieldType& selectedFieldType)
-{
-	const LabWorldDensityFieldType originalFieldType =
-		selectedFieldType;
-
-	const char* selectedFieldName =
-		getDensityFieldTypeName(
-			selectedFieldType);
-
-	if (ImGui::BeginCombo(
-		"Density Field",
-		selectedFieldName))
-	{
-		if (ImGui::Selectable(
-			"Sphere",
-			selectedFieldType ==
-			LabWorldDensityFieldType::Sphere))
-		{
-			selectedFieldType =
-				LabWorldDensityFieldType::Sphere;
-		}
-
-		if (ImGui::Selectable(
-			"Heightmap",
-			selectedFieldType ==
-			LabWorldDensityFieldType::Heightmap))
-		{
-			selectedFieldType =
-				LabWorldDensityFieldType::Heightmap;
-		}
-
-		ImGui::EndCombo();
-	}
-
-	return
-		selectedFieldType !=
-		originalFieldType;
-}
-
-static bool rebuildLabDensityData(
-	Lab& lab)
-{
-	clearTerrainEdits(
-		lab.terrainEdits);
-	
-	rebuildLabWorldDensityData(
-		lab.world);
-
-	if (!rebuildSurfaceRef(
-		lab.surfaceRef,
-		lab.world.chunks,
-		lab.world.surfaceMap))
-	{
-		std::printf(
-			"Failed to rebuild surface reference after density change.\n");
-
-		return false;
-	}
-
-	if (!rebuildActiveExperiment(
-		lab.activeExperiment,
-		lab.world,
-		lab.terrainEdits))
-	{
-		std::printf(
-			"Failed to rebuild active experiment after density change.\n");
-
-		return false;
-	}
-
-	return true;
-}
-
 /***********************************************************
-* Debug Rendering
+* Debug UI
 ************************************************************/
 
-bool renderLabDebugUiContent(
+void renderLabDebugUiContent(
 	Lab& lab)
 {
 	renderLabComponentToggles(
@@ -425,10 +444,7 @@ bool renderLabDebugUiContent(
 
 	if (densityChanged)
 	{
-		if (!rebuildLabDensityData(lab))
-		{
-			return false;
-		}
+		lab.requests.rebuildDensityData = true;
 	}
 
 	//--------------------------------------------------
@@ -442,28 +458,18 @@ bool renderLabDebugUiContent(
 		lab.surfaceRef);
 }
 
-bool renderLabExperimentDebugUiContent(
+void renderLabExperimentDebugUiContent(
 	Lab& lab)
 {
-	const bool activeExperimentNeedsRebuild =
-		renderActiveExperimentDebugUiContent(
-			lab.activeExperiment,
-			lab.world);
+	bool rebuildRequested = false;
 
-	if (activeExperimentNeedsRebuild)
+	renderActiveExperimentDebugUiContent(
+		lab.activeExperiment,
+		lab.world,
+		rebuildRequested);
+
+	if (rebuildRequested)
 	{
-		if (!rebuildActiveExperiment(
-			lab.activeExperiment,
-			lab.world,
-			lab.terrainEdits))
-		{
-			std::printf(
-				"Failed to rebuild active experiment "
-				"after settings change.\n");
-
-			return false;
-		}
+		lab.requests.rebuildActiveExperiment = true;
 	}
-
-	return true;
 }

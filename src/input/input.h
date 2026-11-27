@@ -34,7 +34,6 @@ enum class InputAction : uint8_t
 	ToggleSurfaceReference,
 	ToggleActiveExperiment,
 	ToggleChunkWireframes,
-	RebuildMeshes,
 
 	Count
 };

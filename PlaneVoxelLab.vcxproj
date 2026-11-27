@@ -172,6 +172,9 @@
     <ClCompile Include="src\camera\dev_camera.cpp" />
     <ClCompile Include="src\chunk\chunk.cpp" />
     <ClCompile Include="src\chunk\chunk_sampling.cpp" />
+    <ClCompile Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_debug.cpp" />
+    <ClCompile Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_debug_ui.cpp" />
+    <ClCompile Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_validation.cpp" />
     <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_adjacency.cpp" />
     <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_blend_distance.cpp" />
     <ClCompile Include="src\experiments\fragment_cleanup\fragment_cleanup_builder.cpp" />
@@ -227,6 +230,9 @@
     <ClInclude Include="src\camera\dev_camera.h" />
     <ClInclude Include="src\chunk\chunk.h" />
     <ClInclude Include="src\chunk\chunk_sampling.h" />
+    <ClInclude Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_debug.h" />
+    <ClInclude Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_debug_ui.h" />
+    <ClInclude Include="src\experiments\fragment_cleanup\debug\fragment_cleanup_validation.h" />
     <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_adjacency.h" />
     <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_blend_distance.h" />
     <ClInclude Include="src\experiments\fragment_cleanup\fragment_cleanup_builder.h" />
